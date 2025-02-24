@@ -1,0 +1,30 @@
+{
+  "name": "tauri-game-launcher",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.0.8",
+    "@tauri-apps/api": "^2.2.0",
+    "@tauri-apps/plugin-dialog": "~2.2.0",
+    "@tauri-apps/plugin-http": "~2.3.0",
+    "@tauri-apps/plugin-opener": "^2.2.5",
+    "tailwindcss": "^4.0.8",
+    "vue": "^3.5.13",
+    "vue-i18n": "^10.0.5"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.2.7",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "daisyui": "^5.0.0-beta.8",
+    "typescript": "~5.6.3",
+    "vite": "^6.1.1",
+    "vue-tsc": "^2.2.2"
+  }
+}

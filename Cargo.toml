@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2"
+members = [
+    "downloader-core",
+    "downloader-cli",
+    "tauri-game-launcher/src-tauri"
+]
