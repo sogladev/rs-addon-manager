@@ -3,6 +3,8 @@ This monorepo contains a cross-platform (Windows + Linux) game launcher in 2 for
 
 The project is designed for easy extension with minimal dependencies, utilizing shared Rust libraries for backend operations while keeping the front-end lightweight.
 
+![Socials](images/socials.png)
+
 ## Tech Stack
 [![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org)
 [![Vue.js](https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vue.js&logoColor=4FC08D)](https://vuejs.org)
