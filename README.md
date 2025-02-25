@@ -39,6 +39,8 @@ A Tauri + Vue.js wrapper around the same Rust libraries:
 
 ![Launcher Dark](images/tauri_game_launcher_dark.png)
 
+https://github.com/user-attachments/assets/7c642947-a57c-46b0-aab9-eeb456b6e115
+
 ## Local Development
 Install Rust from the [official Rust website](https://www.rust-lang.org/).
 
