@@ -60,9 +60,9 @@ watch(currentTheme, (newTheme) => {
 let themeTimer;
 
 onMounted(() => {
-  themeTimer = setInterval(() => {
-    nextTheme();
-  }, THEME_INTERVAL_IN_MILLISECONDS);
+//   themeTimer = setInterval(() => {
+    // nextTheme();
+//   }, THEME_INTERVAL_IN_MILLISECONDS);
 });
 
 onUnmounted(() => {
