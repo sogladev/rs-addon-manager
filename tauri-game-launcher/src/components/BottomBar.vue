@@ -2,6 +2,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { listen } from '@tauri-apps/api/event';
+// Save the game directory in the store
+import { load } from '@tauri-apps/plugin-store';
 
 import { computed, ref, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -13,7 +15,6 @@ import { etaToHumanReadable, formatBytes } from '@/utils/format';
 import Toast from '@/components/ToastMessages.vue';
 const TOAST_ERROR_TIMEOUT_IN_MILLISECONDS = 5000;
 const toastRef = ref<InstanceType<typeof Toast> | null>(null);
-
 
 enum AppState {
   Verifying = 'verifying',
@@ -27,8 +28,10 @@ enum AppState {
 const appState = ref<AppState>(AppState.Verifying);
 
 const selectedDirectory = ref<string>('.');
+console.debug('selectedDirectory value:', selectedDirectory.value);
 // True if the selected directory contains the base game files
 const isValidDirectory = ref(false);
+
 const transactionReport = ref<TransactionReport | null>(null);
 const progressValue = ref(0);
 const progressText = ref<string>('');
@@ -72,6 +75,15 @@ async function verifyGameIntegrity(gameDirectory: string) {
       console.debug('Game directory is valid');
       isValidDirectory.value = true;
       appState.value = AppState.CreatingTransaction;
+
+      // Save the game directory in the store
+      try {
+        const store = await load('store.json');
+        await store.set('game-directory', { value: gameDirectory });
+        await store.save();
+      } catch (error) {
+        console.error('Failed to save to store:', error);
+      }
 
       createTransaction();
     } else {
@@ -191,6 +203,15 @@ watch(downloadProgressData, (progress) => {
 });
 
 onMounted(async () => {
+  try {
+    const store = await load('store.json');
+    const storeValue = await store.get<{ value: string }>('game-directory');
+    selectedDirectory.value = storeValue?.value || '.';
+    console.debug('Store value loaded:', selectedDirectory.value);
+  } catch (error) {
+    console.error('Failed to load from store:', error);
+  }
+
   await listen<Progress>('download-progress', (event) => {
     downloadProgressData.value = event.payload as Progress;
     const progress = downloadProgressData.value;
@@ -226,7 +247,6 @@ async function launchGame() {
     );
   }
 }
-
 </script>
 
 <template>

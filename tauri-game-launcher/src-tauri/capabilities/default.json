@@ -17,6 +17,7 @@
           "url": "http://localhost"
         }
       ]
-    }
+    },
+    "store:default"
   ]
 }
