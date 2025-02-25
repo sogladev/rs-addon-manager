@@ -44,39 +44,58 @@ A Tauri + Vue.js wrapper around the same Rust libraries:
 https://github.com/user-attachments/assets/7c642947-a57c-46b0-aab9-eeb456b6e115
 
 ## Local Development
-Install Rust from the [official Rust website](https://www.rust-lang.org/).
 
-### Test CDN Server
-Requires: go or compiled binary https://github.com/sogladev/go-manifest-patcher/releases
+### Prerequisites
+- Install Rust from the https://www.rust-lang.org/
+- Local test CDN server
+  - Install Go from https://go.dev/doc/install
+  - or compiled binary https://github.com/sogladev/go-manifest-patcher/releases
+- (Only for GUI) Install Bun package manager from https://bun.sh/docs/installation
 
-Use this test server to generate a manifest and serve files:
-```sh
-go run main.go --help
-go run main.go -create-manifest
-go run main.go
-```
 
 ### CLI
-Requires: Rust, Cargo
 
-```sh
-cargo run --bin downloader-cli -- --manifest="http://localhost:8080/manifest.json"
-```
+1. Start local CDN
+    ```sh
+    go run main.go -create-manifest
+    go run main.go
+    ```
 
-```sh
-cargo build --bin downloader-cli --release --locked
-cargo build --bin downloader-cli --target x86_64-pc-windows-gnu --release --locked
-```
+From project root
+
+2. Run the CLI
+    ```sh
+    cargo run --bin downloader-cli -- --manifest="http://localhost:8080/manifest.json"
+    ```
+
+3. Build
+    ```sh
+    cargo build --bin downloader-cli --release --locked
+    cargo build --bin downloader-cli --target x86_64-pc-windows-gnu --release --locked
+    ```
 
 ### GUI
-Requires: Rust, Cargo, Bun
+1. Start local CDN
+    ```sh
+    go run main.go -create-manifest
+    go run main.go
+    ```
 
-From `tauri-game-launcher/`:
-```sh
-bun run tauri dev
-```
-```sh
-bun run tauri build
-```
+From `tauri-game-launcher/`
+
+2. Install dependencies:
+    ```sh
+    bun install
+    ```
+
+3. Start the development server
+    ```sh
+    bun run tauri dev
+    ```
+
+4. Build the project
+    ```sh
+    bun run tauri build
+    ```
 
 ## License
