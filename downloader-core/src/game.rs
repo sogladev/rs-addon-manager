@@ -12,7 +12,7 @@
 ///
 /// # Examples
 /// ```
-/// use downloader_core::game::verify_game_integrity;
+/// use rs_manifest_patcher::game::verify_game_integrity;
 /// let game_path = std::path::Path::new("C:/Games/WoW");
 /// match verify_game_integrity(game_path) {
 ///     Ok(true) => println!("Game files verified successfully"),
@@ -30,7 +30,7 @@ pub fn verify_game_integrity(game_dir: &std::path::Path) -> Result<bool, std::io
     for dir in required_dirs.iter() {
         let dir_path = game_dir.join(dir);
         if !dir_path.is_dir() {
-            println!("Missing required directory: {}", dir);
+            println!("Missing required directory: {dir}");
             return Ok(false);
         }
     }
@@ -39,7 +39,7 @@ pub fn verify_game_integrity(game_dir: &std::path::Path) -> Result<bool, std::io
     for file in required_files.iter() {
         let file_path = game_dir.join(file);
         if !file_path.is_file() {
-            println!("Missing required file: {}", file);
+            println!("Missing required file: {file}");
             return Ok(false);
         }
     }
@@ -75,10 +75,7 @@ pub fn launch(client_directory: &std::path::Path, executable_name: String) -> st
             std::process::Command::new(executable_path).spawn()?;
         }
         _ => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Unsupported platform",
-            ));
+            return Err(std::io::Error::other("Unsupported platform".to_string()));
         }
     }
     Ok(())

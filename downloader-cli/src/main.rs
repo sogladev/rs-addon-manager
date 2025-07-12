@@ -1,7 +1,8 @@
 use std::error::Error;
 use std::process;
 
-use downloader_core::{banner, prompt, Config, Manifest, Progress, Transaction};
+use downloader_core::{banner, prompt, Progress};
+use downloader_core::{Config, Manifest, Transaction};
 
 #[cfg(target_os = "windows")]
 use std::io::Write;
@@ -40,7 +41,9 @@ async fn run(config: Config) -> Result<(), Box<dyn Error>> {
             progress.print();
             Ok(())
         };
-        transaction.download(progress_handler).await?;
+        transaction
+            .download(progress_handler, config.manifest_provider)
+            .await?;
     }
 
     println!("\n{}", "-".repeat(100));
