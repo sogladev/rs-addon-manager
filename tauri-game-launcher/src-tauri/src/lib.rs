@@ -65,7 +65,6 @@ async fn create_transaction(
     transaction.print(); // Generate a report and print to stdout
 
     let report = transaction.generate_report();
-
     {
         // Store the transaction in the app state
         let state = app_handle.state::<Mutex<AppState>>();
