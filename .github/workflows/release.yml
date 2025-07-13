@@ -35,8 +35,8 @@ jobs:
           draft: true
           prerelease: false
           files: |
-            downloader-cli-linux-x86_64
-            downloader-cli-windows-x86_64.exe
+            dist/cli/downloader-cli-linux-x86_64
+            dist/cli/downloader-cli-windows-x86_64.exe
             LICENSE
             README.md
   publish-tauri:
