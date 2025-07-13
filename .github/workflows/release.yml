@@ -48,6 +48,7 @@ jobs:
           files: |
             dist/cli/downloader-cli-linux-x86_64
             dist/cli/downloader-cli-windows-x86_64.exe
+            dist/cli/downloader-cli-macos-x86_64
             dist/cli/downloader-cli-macos-aarch64
             LICENSE
             README.md
