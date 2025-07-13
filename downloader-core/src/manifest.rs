@@ -1,6 +1,7 @@
+use std::collections::HashMap;
 use std::error::Error;
-use std::fs;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -31,7 +32,7 @@ impl Location {
         }
 
         let path = PathBuf::from(&manifest_str);
-        if path.exists() && fs::File::open(&path).is_ok() {
+        if path.exists() && std::fs::File::open(&path).is_ok() {
             return Ok(Location::FilePath(path));
         }
 
@@ -42,24 +43,88 @@ impl Location {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "lowercase")]
+pub enum Provider {
+    Cloudflare,
+    #[serde(rename = "digitalocean")]
+    DigitalOcean,
+    None,
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl Provider {
+    /// Get the provider key as used in JSON and CLI
+    pub fn key(&self) -> &str {
+        match self {
+            Provider::Cloudflare => "cloudflare",
+            Provider::DigitalOcean => "digitalocean",
+            Provider::None => "none",
+            Provider::Other(name) => name,
+        }
+    }
+
+    /// Get all known provider keys for CLI validation
+    pub fn known_keys() -> Vec<&'static str> {
+        vec!["cloudflare", "digitalocean", "none"]
+    }
+
+    /// Get the display name for UI purposes
+    pub fn display_name(&self) -> &str {
+        match self {
+            Provider::Cloudflare => "Server #1",
+            Provider::DigitalOcean => "Server #2",
+            Provider::None => "Server #3 (Slowest)",
+            Provider::Other(name) => name,
+        }
+    }
+}
+
+impl FromStr for Provider {
+    type Err = std::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "cloudflare" => Provider::Cloudflare,
+            "digitalocean" => Provider::DigitalOcean,
+            "none" => Provider::None,
+            other => Provider::Other(other.to_string()),
+        })
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 /// Represents a patch file with its associated metadata.
 ///
 /// # Fields
 ///
-/// * `path` - A string containing the file path where the patch file is located.
-/// * `hash` - A string representing the checksum or hash of the file, used for integrity verification.
-/// * `size` - A 64-bit integer indicating the file size in bytes.
+/// - `path` - A string containing the file path where the patch file is located.
+/// - `hash` - A string representing the checksum or hash of the file, used for integrity verification.
+/// - `size` - A 64-bit integer indicating the file size in bytes.
 /// * `custom` - A boolean flag that indicates if the patch file is custom.
-/// * `url` - A string holding the URL related to the patch file. This field is serialized using the name "URL".
+/// * `urls` - A map of provider names to their corresponding URLs.
 pub struct PatchFile {
     pub path: String,
     pub hash: String,
     pub size: i64,
     pub custom: bool,
-    #[serde(rename = "URL")]
-    pub url: String,
+    pub urls: HashMap<Provider, String>,
+}
+
+impl PatchFile {
+    /// Get URL for a specific provider, falling back to "none" if not found
+    pub fn get_url(&self, provider: &Provider) -> Option<&String> {
+        self.urls
+            .get(provider)
+            .or_else(|| self.urls.get(&Provider::None))
+    }
+
+    /// Get all available providers for this file
+    pub fn available_providers(&self) -> Vec<&Provider> {
+        self.urls.keys().collect()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -70,11 +135,15 @@ pub struct PatchFile {
 /// # Fields
 ///
 /// - `version`: A String representing the manifest's version.
+/// - `uid`: A String representing the unique identifier for the manifest.
 /// - `files`: A vector of `PatchFile` items, each corresponding to a file that is
+/// - `removals`: An optional vector of strings representing file paths that should be removed,
 ///   subject to patching.
 pub struct Manifest {
     pub version: String,
+    pub uid: String,
     pub files: Vec<PatchFile>,
+    pub removals: Option<Vec<String>>,
 }
 
 impl Manifest {
@@ -93,7 +162,7 @@ impl Manifest {
 
     /// Load manifest from a file
     pub fn from_file(file_path: &PathBuf) -> Result<Self, Box<dyn Error>> {
-        let contents = fs::read_to_string(file_path)?;
+        let contents = std::fs::read_to_string(file_path)?;
         Self::from_json(&contents)
     }
 
