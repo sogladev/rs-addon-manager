@@ -5,6 +5,25 @@ The project is designed for easy extension with minimal dependencies, utilizing 
 
 ![Socials](images/socials.png)
 
+## How to Use
+
+### CLI
+- Download the CLI binary for your platform from the release
+- Place the binary in your WoW folder (where `Wow.exe` is located)
+- Run the CLI binary to apply patches
+
+### GUI
+- Download the GUI binary for your platform from the release
+- Install the GUI application before launching it. This does not need to be your game folder
+- Upon first launch, select your WoW game folder
+  - The selected folder will be stored in:
+    - Windows: `%appdata%`
+    - Linux: `$XDG_CONFIG_HOME` or `~/.local/share`
+    - MacOS: `~/Library/Application Support`
+- After patching is complete, the launcher can start the game executable.
+    note: On non-Windows platforms, Wine will use the `.wine` directory located in the game folder by default. This behavior can be overridden by setting the `WINEPREFIX` environment variable before launching the GUI.
+
+
 ## Tech Stack
 [![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org)
 [![Vue.js](https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vue.js&logoColor=4FC08D)](https://vuejs.org)
@@ -18,7 +37,7 @@ The project is designed for easy extension with minimal dependencies, utilizing 
 ## Feature Comparison
 
 | Feature                                 | CLI (Rust)        | GUI (Tauri + Vue.js)   |
-| --------------------------------------- | ------------------| ---------------------- |
+| --------------------------------------- | ----------------- | ---------------------- |
 | Manifest-based patch updates            | Yes               | Yes                    |
 | Integrity verification                  | No                | Yes                    |
 | Transaction overview                    | Console output    | Detailed visual output |
