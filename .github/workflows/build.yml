@@ -90,10 +90,7 @@ jobs:
             librsvg2-dev
 
       - name: Install Bun
-        run: |
-          curl -fsSL https://bun.sh/install | bash
-          export BUN_INSTALL="$HOME/.bun"
-          export PATH="$BUN_INSTALL/bin:$PATH"
+        uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
         run: |
