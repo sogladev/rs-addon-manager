@@ -36,7 +36,7 @@ pub struct Progress {
 impl Progress {
     fn truncate_filename(name: &str) -> String {
         if name.len() <= MAX_FILENAME_LENGTH {
-            format!("{:width$}", name, width = MAX_FILENAME_LENGTH)
+            format!("{name:MAX_FILENAME_LENGTH$}")
         } else {
             format!("{}...", &name[..MAX_FILENAME_LENGTH - 3])
         }

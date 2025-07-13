@@ -7,7 +7,7 @@ use humansize::BINARY;
 use serde::{Deserialize, Serialize};
 use tokio::io::AsyncWriteExt;
 
-use super::manifest::{Manifest, PatchFile};
+use super::manifest::{Manifest, PatchFile, Provider};
 use super::Progress;
 
 #[derive(PartialEq, Clone)]
@@ -52,7 +52,7 @@ impl FileOperation {
                 match std::fs::read(&full_path) {
                     Ok(contents) => {
                         let digest = md5::compute(contents);
-                        let digest_str = format!("{:x}", digest);
+                        let digest_str = format!("{digest:x}");
                         let new_size: i64 = std::fs::metadata(&full_path)
                             .unwrap_or_else(|_| {
                                 panic!("Failed to read metadata for file: {:?}", &full_path)
@@ -90,6 +90,7 @@ pub struct FileReport {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TransactionReport {
     pub version: String,
+    pub uid: String,
     pub up_to_date_files: Vec<FileReport>,
     pub outdated_files: Vec<FileReport>,
     pub missing_files: Vec<FileReport>,
@@ -102,6 +103,7 @@ pub struct TransactionReport {
 pub struct Transaction {
     operations: Vec<FileOperation>,
     manifest_version: String,
+    manifest_uid: String,
     pub base_path: PathBuf,
 }
 
@@ -111,6 +113,7 @@ impl Transaction {
         Transaction {
             operations,
             manifest_version: manifest.version,
+            manifest_uid: manifest.uid,
             base_path,
         }
     }
@@ -118,6 +121,7 @@ impl Transaction {
     pub fn generate_report(&self) -> TransactionReport {
         TransactionReport {
             version: self.manifest_version.clone(),
+            uid: self.manifest_uid.clone(),
             up_to_date_files: self
                 .up_to_date()
                 .iter()
@@ -155,6 +159,7 @@ impl Transaction {
         let report = self.generate_report();
         println!("\nManifest Overview:");
         println!(" Version: {}", report.version);
+        println!(" UID: {}", report.uid);
         println!(" Base path: {}", report.base_path.display());
 
         println!("\n {}", "Up-to-date files:".green());
@@ -240,7 +245,7 @@ impl Transaction {
     pub fn pending_count(&self) -> usize {
         self.operations
             .iter()
-            .filter(|op| op.status != Status::Present)
+            .filter(|x| x.status != Status::Present)
             .count()
     }
 
@@ -257,8 +262,7 @@ impl Transaction {
             .sum();
         assert!(
             total >= 0,
-            "Total download size must be non-negative, but found {}.",
-            total
+            "Total download size must be non-negative, but found {total}."
         );
         total
     }
@@ -271,7 +275,11 @@ impl Transaction {
             .sum()
     }
 
-    pub async fn download<F>(&self, progress_handler: F) -> Result<(), Box<dyn Error>>
+    pub async fn download<F>(
+        &self,
+        progress_handler: F,
+        provider: Provider,
+    ) -> Result<(), Box<dyn Error>>
     where
         F: Fn(&Progress) -> Result<(), Box<dyn Error>> + Send + 'static,
     {
@@ -285,13 +293,17 @@ impl Transaction {
                 tokio::fs::create_dir_all(dir).await?;
             }
 
-            let response = http_client.get(&op.patch_file.url).send().await?;
+            // Get URL for the specified provider
+            let url = op.patch_file.get_url(&provider).ok_or_else(|| {
+                format!(
+                    "No URL found for provider {:?} for file {}",
+                    provider, op.patch_file.path
+                )
+            })?;
+
+            let response = http_client.get(url).send().await?;
             if !response.status().is_success() {
-                eprintln!(
-                    "Failed to download {}: {}",
-                    &op.patch_file.url,
-                    response.status()
-                );
+                eprintln!("Failed to download {}: {}", url, response.status());
                 continue;
             }
 

@@ -2,7 +2,7 @@ use std::io::{self, Write};
 
 /// Prompt the user for confirmation [y/N]
 pub fn confirm(message: &str) -> io::Result<bool> {
-    print!("{} [y/N]: ", message);
+    print!("{message} [y/N]: ");
     io::stdout().flush()?;
 
     let mut input = String::new();

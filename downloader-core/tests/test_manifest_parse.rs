@@ -14,14 +14,19 @@ mod tests {
         let json_content = r#"
         {
             "Version": "1.0",
+            "Uid": "5a63cd8c-956c-48a0-95ae-7e41d1e73182",
             "Files": [
-            {
-                "Path": "files/A.bin",
-                "Hash": "b6d81b360a5672d80c27430f39153e2c",
-                "Size": 1048576,
-                "Custom": true,
-                "URL": "http://localhost:8080/files/A.bin"
-            }
+                {
+                    "Path": "files/A.bin",
+                    "Hash": "b6d81b360a5672d80c27430f39153e2c",
+                    "Size": 1048576,
+                    "Custom": true,
+                    "Urls": {
+                        "cloudflare": "http://localhost:8080/files/A.bin",
+                        "digitalocean": "http://localhost:8080/files/A.bin",
+                        "none": "http://localhost:8080/files/A.bin"
+                    }
+                }
             ]
         }
         "#;
