@@ -25,7 +25,7 @@ jobs:
       - name: test
         run: cargo test --verbose
 
-  build-cli:
+  build-cli-linux-windows:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -52,5 +52,33 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cli-artifacts
+          path: dist/cli/
+          retention-days: 3
+
+  build-cli-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: moonrepo/setup-rust@v1
+        with:
+          targets: x86_64-apple-darwin,aarch64-apple-darwin
+      - name: Prepare dist directory
+        run: mkdir -p dist/cli
+      - name: Copy LICENSE to dist
+        run: cp LICENSE dist/
+      - name: Build macOS (Intel)
+        run: |
+          cd downloader-cli
+          cargo build --locked --release --target x86_64-apple-darwin
+          mv ../target/x86_64-apple-darwin/release/downloader-cli ../dist/cli/downloader-cli-macos-x86_64
+      - name: Build macOS (Apple Silicon)
+        run: |
+          cd downloader-cli
+          cargo build --locked --release --target aarch64-apple-darwin
+          mv ../target/aarch64-apple-darwin/release/downloader-cli ../dist/cli/downloader-cli-macos-aarch64
+      - name: Upload CLI artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-artifacts-macos
           path: dist/cli/
           retention-days: 3
