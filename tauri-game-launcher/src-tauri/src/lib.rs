@@ -115,6 +115,6 @@ async fn download(app_handle: tauri::AppHandle) -> Result<(), String> {
 async fn launch_game(base_path: String) -> Result<(), String> {
     println!("Launching game...");
     let base_path = std::path::PathBuf::from(base_path);
-    game::launch(&base_path, "Wow.exe".to_string()).map_err(|e| e.to_string())?;
+    game::launch(&base_path, "Project-Epoch.exe".to_string()).map_err(|e| e.to_string())?;
     std::process::exit(0);
 }
