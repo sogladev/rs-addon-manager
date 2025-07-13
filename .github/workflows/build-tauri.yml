@@ -26,6 +26,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
+      - name: Change Directory
+        run: cd tauri-game-launcher
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
