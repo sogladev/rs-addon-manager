@@ -3,7 +3,7 @@ use tauri::Emitter;
 use tauri::Manager;
 use tauri_plugin_http::reqwest;
 
-use downloader_core::{game, transaction::TransactionReport, Manifest, Progress, Transaction, Provider};
+use downloader_core::{game, Manifest, Progress, Provider, Transaction, TransactionReport};
 
 #[derive(Default)]
 struct AppState {
