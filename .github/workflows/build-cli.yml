@@ -82,3 +82,43 @@ jobs:
           name: cli-artifacts-macos
           path: dist/cli/
           retention-days: 3
+
+  release:
+    runs-on: ubuntu-24.04
+    needs: [build-cli-linux-windows, build-cli-macos]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Linux and Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-artifacts
+          run-id: ${{ github.event.inputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: dist/cli/
+
+      - name: Download macOS Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-artifacts-macos
+          run-id: ${{ github.event.inputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: dist/cli/
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: Release ${{ github.event.inputs.version }}
+          draft: true
+          prerelease: false
+          files: |
+            dist/cli/downloader-cli-linux-x86_64
+            dist/cli/downloader-cli-windows-x86_64.exe
+            dist/cli/downloader-cli-macos-aarch64
+            LICENSE
+            README.md
