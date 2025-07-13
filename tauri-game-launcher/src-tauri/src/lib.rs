@@ -3,7 +3,7 @@ use tauri::Emitter;
 use tauri::Manager;
 use tauri_plugin_http::reqwest;
 
-use downloader_core::{game, transaction::TransactionReport, Manifest, Progress, Transaction};
+use downloader_core::{game, transaction::TransactionReport, Manifest, Progress, Transaction, Provider};
 
 #[derive(Default)]
 struct AppState {
@@ -105,7 +105,7 @@ async fn download(app_handle: tauri::AppHandle) -> Result<(), String> {
         Ok(())
     };
     transaction
-        .download(progress_handler)
+        .download(progress_handler, Provider::Cloudflare)
         .await
         .map_err(|e| e.to_string())?;
     Ok(())
