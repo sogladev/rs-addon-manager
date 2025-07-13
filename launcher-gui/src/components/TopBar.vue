@@ -31,7 +31,7 @@ import ThemeController from '@/components/ThemeController.vue'
     </div>
 
     <div class="navbar-end">
-      <a href="https://github.com/sogladev/tauri-game-launcher" target="_blank"
+      <a href="https://github.com/sogladev/launcher-gui" target="_blank"
         class="text-md link link-primary flex items-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="currentColor" viewBox="0 0 24 24">
           <path fill-rule="evenodd"

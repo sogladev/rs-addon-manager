@@ -46,10 +46,10 @@ jobs:
           draft: true
           prerelease: false
           files: |
-            dist/cli/downloader-cli-linux-x86_64
-            dist/cli/downloader-cli-windows-x86_64.exe
-            dist/cli/downloader-cli-macos-x86_64
-            dist/cli/downloader-cli-macos-aarch64
+            dist/cli/epoch_patcher-cli-linux-x86_64
+            dist/cli/epoch_patcher-cli-windows-x86_64.exe
+            dist/cli/epoch_patcher-cli-macos-x86_64
+            dist/cli/epoch_patcher-cli-macos-aarch64
             LICENSE
             README.md
   publish-tauri:
@@ -88,13 +88,13 @@ jobs:
         uses: oven-sh/setup-bun@v2
       - name: Install frontend dependencies
         run: |
-          cd tauri-game-launcher
+          cd launcher-gui
           bun install
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          projectPath: tauri-game-launcher
+          projectPath: launcher-gui
           tagName: ${{ github.event.inputs.version }}
           releaseName: "App v${{ github.event.inputs.version }}"
           releaseBody: "See the assets to download this version and install."

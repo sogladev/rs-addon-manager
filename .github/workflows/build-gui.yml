@@ -1,4 +1,4 @@
-name: Build Tauri
+name: Build GUI
 
 on: [pull_request]
 
@@ -40,12 +40,13 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - name: Install frontend dependencies
         run: |
-          cd tauri-game-launcher
+          cd launcher-gui
           bun install
       # If tagName and releaseId are omitted tauri-action will only build the app and won't try to upload any assets.
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          projectPath: tauri-game-launcher
+          projectPath: launcher-gui
           args: ${{ matrix.args }}
+          releaseName: "Launcher GUI v${{ github.event.inputs.version }}"

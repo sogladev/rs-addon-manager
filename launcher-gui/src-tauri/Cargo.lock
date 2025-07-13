@@ -4019,7 +4019,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tauri-game-launcher"
+name = "launcher-gui"
 version = "0.1.0"
 dependencies = [
  "futures",

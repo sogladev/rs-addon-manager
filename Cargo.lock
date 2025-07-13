@@ -958,7 +958,7 @@ checksum = "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2"
 
 [[package]]
 name = "downloader-cli"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "clap",
  "colored",
@@ -969,7 +969,7 @@ dependencies = [
 
 [[package]]
 name = "downloader-core"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "clap",
  "colored",
@@ -2172,6 +2172,23 @@ dependencies = [
  "html5ever",
  "indexmap 2.10.0",
  "selectors",
+]
+
+[[package]]
+name = "launcher-gui"
+version = "0.1.4"
+dependencies = [
+ "downloader-core",
+ "futures",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-http",
+ "tauri-plugin-opener",
+ "tauri-plugin-store",
+ "tokio",
 ]
 
 [[package]]
@@ -4345,23 +4362,6 @@ dependencies = [
  "url",
  "uuid",
  "walkdir",
-]
-
-[[package]]
-name = "tauri-game-launcher"
-version = "0.1.3"
-dependencies = [
- "downloader-core",
- "futures",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-http",
- "tauri-plugin-opener",
- "tauri-plugin-store",
- "tokio",
 ]
 
 [[package]]
