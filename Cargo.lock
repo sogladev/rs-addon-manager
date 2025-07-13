@@ -961,6 +961,7 @@ name = "downloader-cli"
 version = "0.1.2"
 dependencies = [
  "clap",
+ "colored",
  "downloader-core",
  "figlet-rs",
  "tokio",
