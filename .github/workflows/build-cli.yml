@@ -40,14 +40,14 @@ jobs:
         run: |
           cd downloader-cli
           cargo build --locked --release --target x86_64-unknown-linux-gnu
-          mv ../target/x86_64-unknown-linux-gnu/release/downloader-cli ../dist/cli/epoch_patcher-linux-x86_64
+          mv ../target/x86_64-unknown-linux-gnu/release/downloader-cli ../dist/cli/epoch_patcher-cli-linux-x86_64
       - name: Setup Windows - Install mingw-w64
         run: sudo apt-get install -y mingw-w64
       - name: Build Windows
         run: |
           cd downloader-cli
           cargo build --locked --release --target x86_64-pc-windows-gnu
-          mv ../target/x86_64-pc-windows-gnu/release/downloader-cli.exe ../dist/cli/epoch_patcher-windows-x86_64.exe
+          mv ../target/x86_64-pc-windows-gnu/release/downloader-cli.exe ../dist/cli/epoch_patcher-cli-windows-x86_64.exe
       - name: Upload CLI artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -70,12 +70,12 @@ jobs:
         run: |
           cd downloader-cli
           cargo build --locked --release --target x86_64-apple-darwin
-          mv ../target/x86_64-apple-darwin/release/downloader-cli ../dist/cli/epoch_patcher-macos-x86_64
+          mv ../target/x86_64-apple-darwin/release/downloader-cli ../dist/cli/epoch_patcher-cli-macos-x86_64
       - name: Build macOS (Apple Silicon)
         run: |
           cd downloader-cli
           cargo build --locked --release --target aarch64-apple-darwin
-          mv ../target/aarch64-apple-darwin/release/downloader-cli ../dist/cli/epoch_patcher-macos-aarch64
+          mv ../target/aarch64-apple-darwin/release/downloader-cli ../dist/cli/epoch_patcher-cli-macos-aarch64
       - name: Upload CLI artifacts
         uses: actions/upload-artifact@v4
         with:

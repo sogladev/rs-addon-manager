@@ -46,10 +46,10 @@ jobs:
           draft: true
           prerelease: false
           files: |
-            dist/cli/epoch_patcher-linux-x86_64
-            dist/cli/epoch_patcher-windows-x86_64.exe
-            dist/cli/epoch_patcher-macos-x86_64
-            dist/cli/epoch_patcher-macos-aarch64
+            dist/cli/epoch_patcher-cli-linux-x86_64
+            dist/cli/epoch_patcher-cli-windows-x86_64.exe
+            dist/cli/epoch_patcher-cli-macos-x86_64
+            dist/cli/epoch_patcher-cli-macos-aarch64
             LICENSE
             README.md
   publish-tauri:

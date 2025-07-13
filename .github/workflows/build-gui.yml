@@ -1,4 +1,4 @@
-name: Build Tauri
+name: Build GUI
 
 on: [pull_request]
 
@@ -49,20 +49,4 @@ jobs:
         with:
           projectPath: launcher-gui
           args: ${{ matrix.args }}
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-        with:
-          tag_name: ${{ github.event.inputs.version }}
-          name: Release ${{ github.event.inputs.version }}
-          draft: true
-          prerelease: false
-          files: |
-            dist/cli/epoch_patcher-linux-x86_64
-            dist/cli/epoch_patcher-windows-x86_64.exe
-            dist/cli/epoch_patcher-macos-x86_64
-            dist/cli/epoch_patcher-macos-aarch64
-            LICENSE
-            README.md
+          releaseName: "Launcher GUI v${{ github.event.inputs.version }}"
