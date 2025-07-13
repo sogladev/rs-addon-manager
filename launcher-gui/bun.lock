@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "tauri-game-launcher",
+      "name": "launcher-gui",
       "dependencies": {
         "@tailwindcss/vite": "^4.0.8",
         "@tauri-apps/api": "^2.2.0",
