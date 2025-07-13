@@ -51,7 +51,7 @@ pub fn verify_game_integrity(game_dir: &std::path::Path) -> Result<bool, std::io
 pub fn launch(client_directory: &std::path::Path, executable_name: String) -> std::io::Result<()> {
     // Clear the cache directory
     let cache_path = client_directory.join("Cache");
-        if cache_path.exists() {
+    if cache_path.exists() {
         std::fs::remove_dir_all(&cache_path)?;
     }
 
