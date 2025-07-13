@@ -48,10 +48,10 @@ async fn create_transaction(
 ) -> Result<TransactionReport, String> {
     let base_path = std::path::PathBuf::from(base_path);
 
-    // #[cfg(debug_assertions)]
+    #[cfg(debug_assertions)]
     let manifest_url = "http://localhost:8080/manifest.json";
-    // #[cfg(not(debug_assertions))]
-    // let manifest_url = "https://mysite.com/manifest.json";
+    #[cfg(not(debug_assertions))]
+    let manifest_url = "https://updater.project-epoch.net/api/v2/manifest?environment=production";
 
     let res = reqwest::get(manifest_url)
         .await
