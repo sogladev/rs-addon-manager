@@ -24,30 +24,33 @@ jobs:
           cargo clippy -- -D warnings
       - name: test
         run: cargo test --verbose
-  build:
-    runs-on: ubuntu-latest
+
+  build-cli:
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
         with:
           targets: x86_64-unknown-linux-gnu, x86_64-pc-windows-gnu
       - name: Prepare dist directory
-        run: mkdir -p dist
+        run: mkdir -p dist/cli
       - name: Copy LICENSE to dist
         run: cp LICENSE dist/
       - name: Build Linux
         run: |
+          cd downloader-cli
           cargo build --locked --release --target x86_64-unknown-linux-gnu
-          mv ./target/x86_64-unknown-linux-gnu/release/rs_manifest_patcher dist/rs_manifest_patcher-linux-x86_64
+          mv ../target/x86_64-unknown-linux-gnu/release/downloader-cli ../dist/cli/downloader-cli-linux-x86_64
       - name: Setup Windows - Install mingw-w64
         run: sudo apt-get install -y mingw-w64
       - name: Build Windows
         run: |
-         cargo build --locked --release --target x86_64-pc-windows-gnu
-          mv ./target/x86_64-pc-windows-gnu/release/rs_manifest_patcher.exe dist/rs_manifest_patcher-windows-x86_64.exe
-      - name: Upload artifacts
+          cd downloader-cli
+          cargo build --locked --release --target x86_64-pc-windows-gnu
+          mv ../target/x86_64-pc-windows-gnu/release/downloader-cli.exe ../dist/cli/downloader-cli-windows-x86_64.exe
+      - name: Upload CLI artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifacts
-          path: dist/
+          name: cli-artifacts
+          path: dist/cli/
           retention-days: 3
