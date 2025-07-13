@@ -22,6 +22,6 @@ pub fn print_banner() {
     let figure = slant_font.convert("Project Epoch");
     print!("{}", figure.unwrap());
     println!("unofficial patch download utility - Sogladev");
-    println!("Bugs or issues: https://github.com/sogladev/rs_manifest_patcher/");
+    println!("Bugs or issues: https://github.com/sogladev/rs-game-launcher");
     println!("\n{}", "-".repeat(100));
 }
