@@ -13,3 +13,4 @@ pub use manifest::Manifest;
 pub use manifest::Provider;
 pub use progress::Progress;
 pub use transaction::Transaction;
+pub use transaction::TransactionReport;
