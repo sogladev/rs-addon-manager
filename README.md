@@ -1,5 +1,5 @@
 # Rs Game Launcher
-This monorepo contains a cross-platform (Windows + Linux) game launcher in 2 forms: minimal CLI downloader (Rust) and a Tauri-based GUI launcher. It is designed to manage patch updates using a manifest. The launcher displays a transaction overview, detailed progress, and only overwrites files listed in the manifest without removing extra files.
+This monorepo contains a cross-platform (Windows + Linux + MacOS) game launcher in 2 forms: minimal CLI downloader (Rust) and a GUI launcher (Tauri + Vue.js). It is designed to manage patch updates using a manifest. The launcher displays a transaction overview, detailed progress, and only overwrites files listed in the manifest without removing extra files.
 
 The project is designed for easy extension with minimal dependencies, utilizing shared Rust libraries for backend operations while keeping the front-end lightweight.
 
@@ -17,19 +17,20 @@ The project is designed for easy extension with minimal dependencies, utilizing 
 
 ## Feature Comparison
 
-| Feature                              | CLI (Rust)     | GUI (Tauri + Vue.js)   |
-| ------------------------------------ | -------------- | ---------------------- |
-| Manifest-based patch updates         | Yes            | Yes                    |
-| Integrity verification               | No             | Yes                    |
-| Transaction overview                 | Console output | Detailed visual output |
-| Directory selection                  | No             | GUI-based              |
-| Launch WoW.exe (wine on non-Windows) | No             | Yes                    |
-| Customizable front-end               | N/A            | Yes                    |
-| Client download                      | Not planned    | Not yet supported      |
-| Manage addons                        | Not planned    | Not planned            |
+| Feature                                 | CLI (Rust)        | GUI (Tauri + Vue.js)   |
+| --------------------------------------- | ------------------| ---------------------- |
+| Manifest-based patch updates            | Yes               | Yes                    |
+| Integrity verification                  | No                | Yes                    |
+| Transaction overview                    | Console output    | Detailed visual output |
+| Directory selection                     | No                | GUI-based              |
+| Launch executable (wine on non-Windows) | No                | Yes                    |
+| Customizable front-end                  | N/A               | Yes                    |
+| Client download                         | Not planned       | Not yet supported      |
+| Manage addons                           | Not planned       | Not planned            |
+| Remove deprecated patches               | Not yet supported | Not yet supported      |
 
 ## CLI Details
-A lightweight Rust-based terminal CLI for basic patching. It only downloads patches from a manifest.json
+A lightweight Rust-based terminal CLI for basic patching. It downloads patches from a `manifest.json`
 
 ![CLI](images/rs_patcher.gif)
 
@@ -51,7 +52,6 @@ https://github.com/user-attachments/assets/7c642947-a57c-46b0-aab9-eeb456b6e115
   - Install Go from https://go.dev/doc/install
   - or compiled binary https://github.com/sogladev/go-manifest-patcher/releases
 - (Only for GUI) Install Bun package manager from https://bun.sh/docs/installation
-
 
 ### CLI
 
@@ -81,7 +81,7 @@ From project root
     go run main.go
     ```
 
-From `tauri-game-launcher/`
+From `launcher-gui/`
 
 2. Install dependencies:
     ```sh

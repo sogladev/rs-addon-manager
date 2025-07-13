@@ -1,5 +1,5 @@
 [package]
-name = "tauri-game-launcher"
+name = "launcher-gui"
 version = "0.1.4"
 description = "Tauri Game Launcher"
 authors = ["sogladev"]
