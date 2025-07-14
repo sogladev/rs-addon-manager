@@ -3,7 +3,9 @@ use tauri::Emitter;
 use tauri::Manager;
 use tauri_plugin_http::reqwest;
 
-use downloader_core::{game, Manifest, Progress, Provider, Transaction, TransactionReport};
+use downloader_core::{
+    game, Manifest, Progress, Provider, Transaction, TransactionReport, DEFAULT_MANIFEST_URL,
+};
 
 #[derive(Default)]
 struct AppState {
@@ -48,12 +50,7 @@ async fn create_transaction(
 ) -> Result<TransactionReport, String> {
     let base_path = std::path::PathBuf::from(base_path);
 
-    #[cfg(debug_assertions)]
-    let manifest_url = "http://localhost:8080/manifest.json";
-    #[cfg(not(debug_assertions))]
-    let manifest_url = "https://updater.project-epoch.net/api/v2/manifest?environment=production";
-
-    let res = reqwest::get(manifest_url)
+    let res = reqwest::get(DEFAULT_MANIFEST_URL)
         .await
         .map_err(|e| e.to_string())?;
     let json = res.text().await.map_err(|e| e.to_string())?;

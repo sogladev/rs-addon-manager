@@ -1,21 +1,18 @@
-/// Prints the banner using a FIGlet font.
+use figlet_rs::FIGfont;
+
+/// Prints an ASCII art banner
 ///
-/// This function loads the ASCII art font from an external resource file (slant.flf)
-/// using `include_str!`, and creates a FIGlet font instance with `FIGfont::from_content`.
-/// It then converts the text "Project Epoch" into ASCII art and prints it to the console.
-/// Additionally, the function prints a tagline indicating that this is an unofficial patch download
-/// utility by Sogladev, along with a URL for reporting bugs or issues. Lastly, it prints a line
-/// of dashes as a visual separator.
+/// This function loads a FIGlet font from an embedded resource file and converts
+/// the application name into ASCII art. It also displays project information
+/// including a description and repository URL, followed by a visual separator.
 ///
 /// # Panics
 ///
 /// This function will panic if:
-/// - The font data cannot be loaded from the specified resource file.
-/// - The FIGlet font cannot be created or the conversion of the text to ASCII art fails.
+/// - The embedded font resource cannot be loaded or parsed
+/// - The text conversion to ASCII art fails
 ///
-/// Therefore, it is assumed that the required font resource exists and is correctly formatted.
-use figlet_rs::FIGfont;
-
+/// The font resource is expected to be embedded at compile time and properly formatted.
 pub fn print_banner() {
     let slant_font_data = include_str!("../resources/slant.flf");
     let slant_font = FIGfont::from_content(slant_font_data).unwrap();
