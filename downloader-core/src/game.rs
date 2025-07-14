@@ -57,7 +57,7 @@ pub fn launch(client_directory: &std::path::Path, executable_name: String) -> st
 
     let executable_path = client_directory.join(executable_name);
     match std::env::consts::OS {
-        "linux" => {
+        "linux" | "macos" => {
             let wine_prefix = std::env::var("WINEPREFIX")
                 .unwrap_or_else(|_| client_directory.join(".wine").to_string_lossy().to_string());
             let command = format!(
