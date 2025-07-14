@@ -24,6 +24,8 @@ jobs:
           cargo clippy -- -D warnings
       - name: test
         run: cargo test --verbose
+      - name: test docs
+        run: cargo test --doc
 
   build-cli-linux-windows:
     runs-on: ubuntu-24.04
