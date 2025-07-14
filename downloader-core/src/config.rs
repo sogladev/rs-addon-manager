@@ -10,7 +10,7 @@ pub struct Config {
 
 impl Config {
     pub fn build() -> Result<Config, &'static str> {
-        let matches = Command::new("rs_manifest_patcher")
+        let matches = Command::new("downloader-cli")
             .arg(arg!(-m --manifest <String> "Path to manifest.json file or URL (e.g., http://localhost:8080/manifest.json)")
                 .default_value(DEFAULT_MANIFEST_URL))
             .arg(arg!(-p --provider <Provider> "Provider to use for downloads")
