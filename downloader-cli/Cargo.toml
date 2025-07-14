@@ -11,9 +11,3 @@ downloader-core = {path = "../downloader-core" }
 
 [target.'cfg(not(unix))'.dependencies]
 colored = "3.0.0"
-
-[profile.release]
-lto = true
-codegen-units = 1
-opt-level = "z"
-panic = "abort"
