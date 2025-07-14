@@ -1,4 +1,4 @@
-// Types for the Rust API (rs_manifest_patcher)
+// Types for the Rust API
 export interface FileReport {
   path: string;
   current_size: number | null;  // None if file is missing

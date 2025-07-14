@@ -1,19 +1,21 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::PathBuf;
-use std::str::FromStr;
 
+use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use url::Url;
+
+// Default manifest URL for development and production environment
+#[cfg(debug_assertions)]
+pub const DEFAULT_MANIFEST_URL: &str = "http://localhost:8080/manifest.json";
+#[cfg(not(debug_assertions))]
+pub const DEFAULT_MANIFEST_URL: &str =
+    "https://updater.project-epoch.net/api/v2/manifest?environment=production";
 
 #[derive(Debug, Clone)]
 pub enum Location {
     Url(Url),
-    /// Wraps a [std::path::PathBuf] representing a file system path.
-    ///
-    /// This field stores an independently owned and mutable file system path.
-    /// It leverages the platform-specific features of [std::path::PathBuf]
-    /// to provide a reliable method for handling file paths regardless of the operating system.
     FilePath(PathBuf),
 }
 
@@ -43,55 +45,13 @@ impl Location {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, ValueEnum)]
 #[serde(rename_all = "lowercase")]
 pub enum Provider {
     Cloudflare,
-    #[serde(rename = "digitalocean")]
+    #[value(name = "digitalocean")]
     DigitalOcean,
     None,
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl Provider {
-    /// Get the provider key as used in JSON and CLI
-    pub fn key(&self) -> &str {
-        match self {
-            Provider::Cloudflare => "cloudflare",
-            Provider::DigitalOcean => "digitalocean",
-            Provider::None => "none",
-            Provider::Other(name) => name,
-        }
-    }
-
-    /// Get all known provider keys for CLI validation
-    pub fn known_keys() -> Vec<&'static str> {
-        vec!["cloudflare", "digitalocean", "none"]
-    }
-
-    /// Get the display name for UI purposes
-    pub fn display_name(&self) -> &str {
-        match self {
-            Provider::Cloudflare => "Server #1",
-            Provider::DigitalOcean => "Server #2",
-            Provider::None => "Server #3 (Slowest)",
-            Provider::Other(name) => name,
-        }
-    }
-}
-
-impl FromStr for Provider {
-    type Err = std::convert::Infallible;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
-            "cloudflare" => Provider::Cloudflare,
-            "digitalocean" => Provider::DigitalOcean,
-            "none" => Provider::None,
-            other => Provider::Other(other.to_string()),
-        })
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -135,13 +95,14 @@ impl PatchFile {
 /// # Fields
 ///
 /// - `version`: A String representing the manifest's version.
-/// - `uid`: A String representing the unique identifier for the manifest.
+/// - `uuid`: A String representing the unique identifier for the manifest.
 /// - `files`: A vector of `PatchFile` items, each corresponding to a file that is
 /// - `removals`: An optional vector of strings representing file paths that should be removed,
 ///   subject to patching.
 pub struct Manifest {
     pub version: String,
-    pub uid: String,
+    #[serde(rename = "Uid")]
+    pub uuid: String,
     pub files: Vec<PatchFile>,
     pub removals: Option<Vec<String>>,
 }

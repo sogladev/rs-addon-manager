@@ -4,7 +4,7 @@ version = "0.1.4"
 edition = "2021"
 
 [dependencies]
-clap = "4.5.28"
+clap = { version = "4", features = ["derive"] }
 colored = "3.0.0"
 figlet-rs = "0.1.5"
 futures = "0.3.31"
