@@ -15,7 +15,7 @@
 /// # Examples
 ///
 /// ```
-/// use rs_manifest_patcher::format::eta_to_human_readable;
+/// use downloader_core::format::eta_to_human_readable;
 /// assert_eq!(eta_to_human_readable(3661.0), "1h01m01s");
 /// assert_eq!(eta_to_human_readable(61.0), "1m01s");
 /// assert_eq!(eta_to_human_readable(30.0), "30s");

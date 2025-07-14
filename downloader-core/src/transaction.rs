@@ -113,7 +113,7 @@ impl Transaction {
         Transaction {
             operations,
             manifest_version: manifest.version,
-            manifest_uid: manifest.uid,
+            manifest_uid: manifest.uuid,
             base_path,
         }
     }
