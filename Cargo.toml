@@ -5,3 +5,9 @@ members = [
     "downloader-cli",
     "launcher-gui/src-tauri"
 ]
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = "z"
+panic = "abort"
