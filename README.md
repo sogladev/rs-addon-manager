@@ -84,13 +84,22 @@ From project root
 
 2. Run the CLI
     ```sh
-    cargo run --bin downloader-cli -- --manifest="http://localhost:8080/manifest.json"
+    # Demo mode (default)
+    cargo run --bin downloader-cli
+
+    # Production mode (sets production banner, description, and manifest URL)
+    cargo run --features production --bin downloader-cli
     ```
 
 3. Build
     ```sh
+    # Demo build (default)
     cargo build --bin downloader-cli --release --locked
     cargo build --bin downloader-cli --target x86_64-pc-windows-gnu --release --locked
+
+    # Production build (sets production banner, description, and manifest URL)
+    cargo build --features production --bin downloader-cli --release --locked
+    cargo build --features production --bin downloader-cli --target x86_64-pc-windows-gnu --release --locked
     ```
 
 ### GUI
@@ -109,12 +118,20 @@ From `launcher-gui/`
 
 3. Start the development server
     ```sh
+    # Demo mode (default)
     bun run tauri dev
+
+    # Production mode (sets production banner, description, and manifest URL in the GUI)
+    bun run tauri dev --features production
     ```
 
 4. Build the project
     ```sh
+    # Demo build (default)
     bun run tauri build
+
+    # Production build (sets production banner, description, and manifest URL in the GUI)
+    bun run tauri build --features production
     ```
 
 #### Fake client directory

@@ -1,6 +1,6 @@
 [package]
 name = "downloader-cli"
-version = "0.1.4"
+version = "0.1.7"
 edition = "2021"
 
 [dependencies]
@@ -11,3 +11,8 @@ downloader-core = {path = "../downloader-core" }
 
 [target.'cfg(not(unix))'.dependencies]
 colored = "3.0.0"
+
+[features]
+default = ["demo"]
+demo = ["downloader-core/demo"]
+production = ["downloader-core/production"]
