@@ -3,17 +3,101 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      run_id:
-        description: 'Run ID of the build workflow (build-cli.yml) to use for the artifacts'
-        required: true
-        default: '13042045029'
       version:
         description: 'desired version'
         required: true
-        default: 'v0.1.7'
+        default: 'v0.1.9'
 
 jobs:
+  build-cli-all-platforms:
+    strategy:
+      matrix:
+        include:
+          - platform: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            artifact-name: cli-artifacts
+            setup-windows: true
+          - platform: macos-latest
+            target: x86_64-apple-darwin,aarch64-apple-darwin
+            artifact-name: cli-artifacts-macos
+            setup-windows: false
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: moonrepo/setup-rust@v1
+        with:
+          targets: ${{ matrix.target }}${{ matrix.setup-windows && ',x86_64-pc-windows-gnu' || '' }}
+      - name: Prepare dist directory
+        run: mkdir -p dist/cli
+      - name: Copy LICENSE to dist
+        run: cp LICENSE dist/
+
+      # Linux builds (on Ubuntu runner)
+      - name: Build Linux (Demo)
+        if: matrix.platform == 'ubuntu-24.04'
+        run: |
+          cd downloader-cli
+          cargo build --locked --release --target x86_64-unknown-linux-gnu
+          mv ../target/x86_64-unknown-linux-gnu/release/downloader-cli ../dist/cli/downloader-cli-linux-x86_64
+      - name: Build Linux (Production)
+        if: matrix.platform == 'ubuntu-24.04'
+        run: |
+          cd downloader-cli
+          cargo build --features production --locked --release --target x86_64-unknown-linux-gnu --bin downloader-cli
+          mv ../target/x86_64-unknown-linux-gnu/release/downloader-cli ../dist/cli/epoch_patcher-cli-linux-x86_64
+
+      # Windows builds (on Ubuntu runner with cross-compilation)
+      - name: Setup Windows - Install mingw-w64
+        if: matrix.platform == 'ubuntu-24.04'
+        run: sudo apt-get install -y mingw-w64
+      - name: Build Windows (Demo)
+        if: matrix.platform == 'ubuntu-24.04'
+        run: |
+          cd downloader-cli
+          cargo build --locked --release --target x86_64-pc-windows-gnu
+          mv ../target/x86_64-pc-windows-gnu/release/downloader-cli.exe ../dist/cli/downloader-cli-windows-x86_64.exe
+
+      - name: Build Windows (Production)
+        if: matrix.platform == 'ubuntu-24.04'
+        run: |
+          cd downloader-cli
+          cargo build --features production --locked --release --target x86_64-pc-windows-gnu --bin downloader-cli
+          mv ../target/x86_64-pc-windows-gnu/release/downloader-cli.exe ../dist/cli/epoch_patcher-cli-windows-x86_64.exe
+
+      # macOS builds (on macOS runner)
+      - name: Build macOS (Intel, Demo)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          cd downloader-cli
+          cargo build --locked --release --target x86_64-apple-darwin
+          mv ../target/x86_64-apple-darwin/release/downloader-cli ../dist/cli/downloader-cli-macos-x86_64
+      - name: Build macOS (Intel, Production)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          cd downloader-cli
+          cargo build --features production --locked --release --target x86_64-apple-darwin --bin downloader-cli
+          mv ../target/x86_64-apple-darwin/release/downloader-cli ../dist/cli/epoch_patcher-cli-macos-x86_64
+      - name: Build macOS (Apple Silicon, Demo)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          cd downloader-cli
+          cargo build --locked --release --target aarch64-apple-darwin
+          mv ../target/aarch64-apple-darwin/release/downloader-cli ../dist/cli/downloader-cli-macos-aarch64
+      - name: Build macOS (Apple Silicon, Production)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          cd downloader-cli
+          cargo build --features production --locked --release --target aarch64-apple-darwin --bin downloader-cli
+          mv ../target/aarch64-apple-darwin/release/downloader-cli ../dist/cli/epoch_patcher-cli-macos-aarch64
+      - name: Upload CLI artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: dist/cli/
+          retention-days: 3
+
   publish-production:
+    needs: build-cli-all-platforms
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -23,16 +107,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: cli-artifacts
-          run-id: ${{ github.event.inputs.run_id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           path: dist/cli/
 
       - name: Download macOS Artifacts
         uses: actions/download-artifact@v4
         with:
           name: cli-artifacts-macos
-          run-id: ${{ github.event.inputs.run_id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           path: dist/cli/
 
       - name: Create Production Release
@@ -54,6 +134,7 @@ jobs:
             README.md
 
   publish-demo:
+    needs: build-cli-all-platforms
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -63,16 +144,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: cli-artifacts
-          run-id: ${{ github.event.inputs.run_id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           path: dist/cli/
 
       - name: Download macOS Artifacts
         uses: actions/download-artifact@v4
         with:
           name: cli-artifacts-macos
-          run-id: ${{ github.event.inputs.run_id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           path: dist/cli/
 
       - name: Create Demo Release
@@ -94,6 +171,7 @@ jobs:
             README.md
 
   publish-demo-tauri:
+    needs: build-cli-all-platforms # only build the GUI once all CLI artifacts are ready
     permissions:
       contents: write
     strategy:
