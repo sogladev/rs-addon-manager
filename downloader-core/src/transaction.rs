@@ -17,18 +17,23 @@ enum Status {
     Missing,
 }
 
+#[derive(PartialEq, Clone)]
+enum OperationType {
+    FileUpdate(PatchFile),
+    FileRemoval(String),
+}
+
 #[derive(Clone)]
-/// Represents a transaction operation involving file patching.
+/// Represents a transaction operation involving file patching or removal.
 ///
-/// This struct holds the details for an operation that patches a file, including the patch file data,
-/// the size of the file patch, and the current status of the operation.
+/// This struct holds the details for an operation that either patches a file or removes a file.
 ///
 /// # Fields
-/// - `patch_file`: The patch file associated with the operation.
-/// - `size`: The size of the patch, represented as a 64-bit signed integer.
+/// - `operation_type`: The type of operation (file update or removal).
+/// - `size`: The current size of the file, represented as a 64-bit signed integer.
 /// - `status`: The status of the file operation.
 struct FileOperation {
-    patch_file: PatchFile,
+    operation_type: OperationType,
     size: i64,
     status: Status,
 }
@@ -36,47 +41,103 @@ struct FileOperation {
 impl FileOperation {
     /// Process the manifest and return a list of file operations
     fn process(manifest: &Manifest, base_path: &std::path::Path) -> Vec<FileOperation> {
-        manifest
-            .files
-            .iter()
-            .map(|file| {
-                let full_path = base_path.join(&file.path);
-                if !full_path.exists() {
-                    return FileOperation {
-                        status: Status::Missing,
-                        patch_file: file.clone(),
-                        size: 0,
-                    };
+        let mut operations = Vec::new();
+
+        // Process file updates
+        for file in &manifest.files {
+            let full_path = base_path.join(&file.path);
+            if !full_path.exists() {
+                operations.push(FileOperation {
+                    status: Status::Missing,
+                    operation_type: OperationType::FileUpdate(file.clone()),
+                    size: 0,
+                });
+                continue;
+            }
+
+            match std::fs::read(&full_path) {
+                Ok(contents) => {
+                    let digest = md5::compute(contents);
+                    let digest_str = format!("{digest:x}");
+                    let new_size: i64 = std::fs::metadata(&full_path)
+                        .unwrap_or_else(|_| {
+                            panic!("Failed to read metadata for file: {:?}", &full_path)
+                        })
+                        .len()
+                        .try_into()
+                        .unwrap();
+
+                    operations.push(FileOperation {
+                        status: if digest_str == file.hash {
+                            Status::Present
+                        } else {
+                            Status::OutOfDate
+                        },
+                        operation_type: OperationType::FileUpdate(file.clone()),
+                        size: new_size,
+                    });
                 }
+                Err(e) => {
+                    panic!("Failed to read file {}: {}", full_path.display(), e);
+                }
+            }
+        }
 
-                match std::fs::read(&full_path) {
-                    Ok(contents) => {
-                        let digest = md5::compute(contents);
-                        let digest_str = format!("{digest:x}");
-                        let new_size: i64 = std::fs::metadata(&full_path)
-                            .unwrap_or_else(|_| {
-                                panic!("Failed to read metadata for file: {:?}", &full_path)
-                            })
-                            .len()
-                            .try_into()
-                            .unwrap();
-
-                        FileOperation {
-                            status: if digest_str == file.hash {
-                                Status::Present
-                            } else {
-                                Status::OutOfDate
-                            },
-                            patch_file: file.clone(),
-                            size: new_size,
+        // Process file removals
+        if let Some(removals) = &manifest.removals {
+            for removal_path in removals {
+                let full_path = base_path.join(removal_path);
+                let size = if full_path.exists() {
+                    match std::fs::metadata(&full_path) {
+                        Ok(metadata) => metadata.len() as i64,
+                        Err(e) => {
+                            eprintln!("Warning: Failed to read metadata for file to be removed {}: {}. Using size 0.", full_path.display(), e);
+                            0
                         }
                     }
-                    Err(e) => {
-                        panic!("Failed to read file {}: {}", full_path.display(), e);
-                    }
-                }
-            })
-            .collect()
+                } else {
+                    0
+                };
+
+                operations.push(FileOperation {
+                    status: if full_path.exists() {
+                        Status::OutOfDate
+                    } else {
+                        Status::Present
+                    },
+                    operation_type: OperationType::FileRemoval(removal_path.clone()),
+                    size,
+                });
+            }
+        }
+
+        operations
+    }
+
+    /// Get the file path for this operation
+    fn get_path(&self) -> &str {
+        match &self.operation_type {
+            OperationType::FileUpdate(patch_file) => &patch_file.path,
+            OperationType::FileRemoval(path) => path,
+        }
+    }
+
+    /// Get the patch file if this is a file update operation
+    fn get_patch_file(&self) -> Option<&PatchFile> {
+        match &self.operation_type {
+            OperationType::FileUpdate(patch_file) => Some(patch_file),
+            OperationType::FileRemoval(_) => None,
+        }
+    }
+
+    /// Check if this is a file update operation
+    fn is_file_update(&self) -> bool {
+        matches!(self.operation_type, OperationType::FileUpdate(_))
+    }
+
+    /// Check if this is a file removal operation
+    fn is_file_removal(&self) -> bool {
+        matches!(self.operation_type, OperationType::FileRemoval(_))
     }
 }
 
@@ -94,6 +155,7 @@ pub struct TransactionReport {
     pub up_to_date_files: Vec<FileReport>,
     pub outdated_files: Vec<FileReport>,
     pub missing_files: Vec<FileReport>,
+    pub removed_files: Vec<FileReport>,
     pub total_download_size: u64,
     pub disk_space_change: i64,
     pub base_path: PathBuf,
@@ -125,28 +187,43 @@ impl Transaction {
             up_to_date_files: self
                 .up_to_date()
                 .iter()
-                .map(|op| FileReport {
-                    path: op.patch_file.path.clone(),
-                    current_size: Some(op.size),
-                    new_size: op.patch_file.size,
+                .filter_map(|op| {
+                    op.get_patch_file().map(|patch_file| FileReport {
+                        path: patch_file.path.clone(),
+                        current_size: Some(op.size),
+                        new_size: patch_file.size,
+                    })
                 })
                 .collect(),
             outdated_files: self
                 .outdated()
                 .iter()
-                .map(|op| FileReport {
-                    path: op.patch_file.path.clone(),
-                    current_size: Some(op.size),
-                    new_size: op.patch_file.size,
+                .filter_map(|op| {
+                    op.get_patch_file().map(|patch_file| FileReport {
+                        path: patch_file.path.clone(),
+                        current_size: Some(op.size),
+                        new_size: patch_file.size,
+                    })
                 })
                 .collect(),
             missing_files: self
                 .missing()
                 .iter()
+                .filter_map(|op| {
+                    op.get_patch_file().map(|patch_file| FileReport {
+                        path: patch_file.path.clone(),
+                        current_size: None,
+                        new_size: patch_file.size,
+                    })
+                })
+                .collect(),
+            removed_files: self
+                .removals()
+                .iter()
                 .map(|op| FileReport {
-                    path: op.patch_file.path.clone(),
-                    current_size: None,
-                    new_size: op.patch_file.size,
+                    path: op.get_path().to_string(),
+                    current_size: Some(op.size),
+                    new_size: 0,
                 })
                 .collect(),
             total_download_size: self.total_download_size() as u64,
@@ -187,6 +264,15 @@ impl Transaction {
                 "  {} (New Size: {})",
                 file.path.red(),
                 humansize::format_size(file.new_size as u64, BINARY)
+            );
+        }
+
+        println!("\n {}", "Files to be removed:".magenta());
+        for file in &report.removed_files {
+            println!(
+                "  {} (Current Size: {})",
+                file.path.magenta(),
+                humansize::format_size(file.current_size.unwrap_or(0) as u64, BINARY)
             );
         }
 
@@ -242,6 +328,13 @@ impl Transaction {
             .collect()
     }
 
+    fn removals(&self) -> Vec<&FileOperation> {
+        self.operations
+            .iter()
+            .filter(|op| op.is_file_removal())
+            .collect()
+    }
+
     pub fn pending_count(&self) -> usize {
         self.operations
             .iter()
@@ -257,8 +350,9 @@ impl Transaction {
         let total = self
             .operations
             .iter()
-            .filter(|x| x.status != Status::Present)
-            .map(|x| x.patch_file.size)
+            .filter(|x| x.status != Status::Present && x.is_file_update())
+            .filter_map(|x| x.get_patch_file())
+            .map(|x| x.size)
             .sum();
         assert!(
             total >= 0,
@@ -271,7 +365,10 @@ impl Transaction {
         self.operations
             .iter()
             .filter(|x| x.status != Status::Present)
-            .map(|x| x.patch_file.size - x.size)
+            .map(|x| match &x.operation_type {
+                OperationType::FileUpdate(patch_file) => patch_file.size - x.size,
+                OperationType::FileRemoval(_) => -x.size, // Removing a file frees up space
+            })
             .sum()
     }
 
@@ -286,72 +383,90 @@ impl Transaction {
         let http_client = reqwest::Client::new();
         let mut total_size_downloaded = 0;
         let total_download_size = self.total_download_size();
+
         for (idx, op) in self.pending().iter().enumerate() {
-            // Create parent directories if they don't exist
-            let dest_path = self.base_path.join(&op.patch_file.path);
-            if let Some(dir) = dest_path.parent() {
-                tokio::fs::create_dir_all(dir).await?;
-            }
+            match &op.operation_type {
+                OperationType::FileUpdate(patch_file) => {
+                    // Handle file downloads/updates
+                    let dest_path = self.base_path.join(&patch_file.path);
 
-            // Get URL for the specified provider
-            let url = op.patch_file.get_url(&provider).ok_or_else(|| {
-                format!(
-                    "No URL found for provider {:?} for file {}",
-                    provider, op.patch_file.path
-                )
-            })?;
+                    // Create parent directories if they don't exist
+                    if let Some(dir) = dest_path.parent() {
+                        tokio::fs::create_dir_all(dir).await?;
+                    }
 
-            let response = http_client.get(url).send().await?;
-            if !response.status().is_success() {
-                eprintln!("Failed to download {}: {}", url, response.status());
-                continue;
-            }
+                    // Get URL for the specified provider
+                    let url = patch_file.get_url(&provider).ok_or_else(|| {
+                        format!(
+                            "No URL found for provider {:?} for file {}",
+                            provider, patch_file.path
+                        )
+                    })?;
 
-            let file_size = op.patch_file.size;
-            let mut file = tokio::fs::File::create(dest_path.clone()).await?;
-            let start = std::time::Instant::now();
-            let mut downloaded: u64 = 0;
+                    let response = http_client.get(url).send().await?;
+                    if !response.status().is_success() {
+                        eprintln!("Failed to download {}: {}", url, response.status());
+                        continue;
+                    }
 
-            let mut stream = response.bytes_stream();
-            while let Some(chunk) = stream.next().await {
-                let chunk = chunk.map_err(|e| e.to_string())?;
-                file.write_all(&chunk).await.map_err(|e| e.to_string())?;
-                downloaded += chunk.len() as u64;
-                total_size_downloaded += chunk.len() as u64;
+                    let file_size = patch_file.size;
+                    let mut file = tokio::fs::File::create(dest_path.clone()).await?;
+                    let start = std::time::Instant::now();
+                    let mut downloaded: u64 = 0;
 
-                // Handle potential underflow
-                let total_amount_left =
-                    (total_download_size as u64).saturating_sub(total_size_downloaded);
+                    let mut stream = response.bytes_stream();
+                    while let Some(chunk) = stream.next().await {
+                        let chunk = chunk.map_err(|e| e.to_string())?;
+                        file.write_all(&chunk).await.map_err(|e| e.to_string())?;
+                        downloaded += chunk.len() as u64;
+                        total_size_downloaded += chunk.len() as u64;
 
-                // Compute download speed and expected time left
-                let speed = downloaded as f64 / start.elapsed().as_secs_f64();
-                let expected_time_left = if speed > 0.0 {
-                    // Compute remaining time and cap at, say, 24 hours (86400 s).
-                    (total_amount_left as f64 / speed).min(86400.0)
-                } else {
-                    0.0
-                };
+                        // Handle potential underflow
+                        let total_amount_left =
+                            (total_download_size as u64).saturating_sub(total_size_downloaded);
 
-                let progress = Progress {
-                    current: downloaded,
-                    file_index: idx + 1,
-                    total_files: self.pending_count(),
-                    speed,
-                    file_size: file_size.try_into().unwrap(),
-                    elapsed: start.elapsed(),
-                    filename: dest_path
-                        .file_name()
-                        .unwrap_or_default()
-                        .to_string_lossy()
-                        .to_string(),
+                        // Compute download speed and expected time left
+                        let speed = downloaded as f64 / start.elapsed().as_secs_f64();
+                        let expected_time_left = if speed > 0.0 {
+                            // Compute remaining time and cap at, say, 24 hours (86400 s).
+                            (total_amount_left as f64 / speed).min(86400.0)
+                        } else {
+                            0.0
+                        };
 
-                    total_size_downloaded,
-                    total_amount_left,
-                    expected_time_left,
-                    total_download_size,
-                };
+                        let progress = Progress {
+                            current: downloaded,
+                            file_index: idx + 1,
+                            total_files: self.pending_count(),
+                            speed,
+                            file_size: file_size.try_into().unwrap(),
+                            elapsed: start.elapsed(),
+                            filename: dest_path
+                                .file_name()
+                                .unwrap_or_default()
+                                .to_string_lossy()
+                                .to_string(),
 
-                progress_handler(&progress)?;
+                            total_size_downloaded,
+                            total_amount_left,
+                            expected_time_left,
+                            total_download_size,
+                        };
+
+                        progress_handler(&progress)?;
+                    }
+                }
+
+                OperationType::FileRemoval(path) => {
+                    // Handle file removals
+                    let dest_path = self.base_path.join(path);
+                    if dest_path.exists() {
+                        tokio::fs::remove_file(&dest_path).await.map_err(|e| {
+                            format!("Failed to remove file {}: {}", dest_path.display(), e)
+                        })?;
+                        println!("Removed file: {}", dest_path.display());
+                    }
+                }
             }
         }
         Ok(())

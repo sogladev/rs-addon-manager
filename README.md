@@ -1,5 +1,5 @@
 # Rs Game Launcher
-This monorepo contains a cross-platform (Windows + Linux + MacOS) game launcher in 2 forms: minimal CLI downloader (Rust) and a GUI launcher (Tauri + Vue.js). It is designed to manage patch updates using a manifest. The launcher displays a transaction overview, detailed progress, and only overwrites files listed in the manifest without removing extra files.
+This monorepo contains a cross-platform (Windows + Linux + MacOS) game launcher in 2 forms: minimal CLI downloader (Rust) and a GUI launcher (Tauri + Vue.js). It is designed to manage patch updates using a manifest. The launcher displays a transaction overview, detailed progress, and only overwrites files listed in the manifest. It can also remove deprecated files specified by the manifest.
 
 The project is designed for easy extension with minimal dependencies, utilizing shared Rust libraries for backend operations while keeping the front-end lightweight.
 
@@ -40,13 +40,13 @@ The project is designed for easy extension with minimal dependencies, utilizing 
 | --------------------------------------- | ----------------- | ---------------------- |
 | Manifest-based patch updates            | Yes               | Yes                    |
 | Integrity verification                  | No                | Yes                    |
+| Remove deprecated patches               | Yes               | Yes                    |
 | Transaction overview                    | Console output    | Detailed visual output |
 | Directory selection                     | No                | GUI-based              |
 | Launch executable (wine on non-Windows) | No                | Yes                    |
 | Customizable front-end                  | N/A               | Yes                    |
 | Client download                         | Not planned       | Not yet supported      |
 | Manage addons                           | Not planned       | Not planned            |
-| Remove deprecated patches               | Not yet supported | Not yet supported      |
 
 ## CLI Details
 A lightweight Rust-based terminal CLI for basic patching. It downloads patches from a `manifest.json`
