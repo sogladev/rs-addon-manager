@@ -232,49 +232,83 @@ impl Transaction {
         }
     }
 
-    pub fn print(&self) {
+    pub fn print(&self, verbose: bool) {
         let report = self.generate_report();
         println!("\nManifest Overview:");
         println!(" Version: {}", report.version);
         println!(" UID: {}", report.uid);
         println!(" Base path: {}", report.base_path.display());
 
-        println!("\n {}", "Up-to-date files:".green());
-        for file in &report.up_to_date_files {
-            println!(
-                "  {} (Size: {})",
-                file.path.green(),
-                humansize::format_size(file.new_size as u64, BINARY)
-            );
-        }
+        // Helper closure to print a file category section
+        let print_section =
+            |files: &[FileReport],
+             header: &str,
+             color_fn: fn(&str) -> colored::ColoredString,
+             format_fn: &dyn Fn(&FileReport) -> String| {
+                if !files.is_empty() || verbose {
+                    println!("\n {}", color_fn(header));
+                    for file in files {
+                        println!("  {}", format_fn(file));
+                    }
+                }
+            };
 
-        println!("\n {}", "Outdated files (will be updated):".yellow());
-        for file in &report.outdated_files {
-            println!(
-                "  {} (Current Size: {}, New Size: {})",
-                file.path.yellow(),
-                humansize::format_size(file.current_size.unwrap() as u64, BINARY),
-                humansize::format_size(file.new_size as u64, BINARY)
-            );
-        }
+        // Up-to-date files
+        print_section(
+            &report.up_to_date_files,
+            "Up-to-date files:",
+            |s| s.green(),
+            &|file| {
+                format!(
+                    "{} (Size: {})",
+                    file.path.green(),
+                    humansize::format_size(file.new_size as u64, BINARY)
+                )
+            },
+        );
 
-        println!("\n {}", "Missing files (will be downloaded):".red());
-        for file in &report.missing_files {
-            println!(
-                "  {} (New Size: {})",
-                file.path.red(),
-                humansize::format_size(file.new_size as u64, BINARY)
-            );
-        }
+        // Outdated files
+        print_section(
+            &report.outdated_files,
+            "Outdated files (will be updated):",
+            |s| s.yellow(),
+            &|file| {
+                format!(
+                    "{} (Current Size: {}, New Size: {})",
+                    file.path.yellow(),
+                    humansize::format_size(file.current_size.unwrap() as u64, BINARY),
+                    humansize::format_size(file.new_size as u64, BINARY)
+                )
+            },
+        );
 
-        println!("\n {}", "Files to be removed:".magenta());
-        for file in &report.removed_files {
-            println!(
-                "  {} (Current Size: {})",
-                file.path.magenta(),
-                humansize::format_size(file.current_size.unwrap_or(0) as u64, BINARY)
-            );
-        }
+        // Missing files
+        print_section(
+            &report.missing_files,
+            "Missing files (will be downloaded):",
+            |s| s.red(),
+            &|file| {
+                format!(
+                    "{} (New Size: {})",
+                    file.path.red(),
+                    humansize::format_size(file.new_size as u64, BINARY)
+                )
+            },
+        );
+
+        // Files to be removed
+        print_section(
+            &report.removed_files,
+            "Files to be removed:",
+            |s| s.magenta(),
+            &|file| {
+                format!(
+                    "{} (Current Size: {})",
+                    file.path.magenta(),
+                    humansize::format_size(file.current_size.unwrap_or(0) as u64, BINARY)
+                )
+            },
+        );
 
         if self.has_pending_operations() {
             println!("\nTransaction Summary:");
