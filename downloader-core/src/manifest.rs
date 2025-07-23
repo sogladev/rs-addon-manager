@@ -48,7 +48,7 @@ pub enum Provider {
     None,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 /// Represents a patch file with its associated metadata.
 ///

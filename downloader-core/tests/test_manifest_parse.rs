@@ -27,6 +27,10 @@ mod tests {
                         "none": "http://localhost:8080/files/A.bin"
                     }
                 }
+            ],
+            "Removals": [
+              "old/deprecated_file.txt",
+              "old/another_file.dll"
             ]
         }
         "#;
@@ -40,6 +44,10 @@ mod tests {
         assert_eq!(manifest.version, "1.0");
         assert_eq!(manifest.files.len(), 1);
         assert_eq!(manifest.files[0].path, "files/A.bin");
+        let removals = manifest.removals.unwrap();
+        assert_eq!(removals.len(), 2);
+        assert_eq!(removals[0], "old/deprecated_file.txt");
+        assert_eq!(removals[1], "old/another_file.dll");
     }
 
     #[cfg(test)]
