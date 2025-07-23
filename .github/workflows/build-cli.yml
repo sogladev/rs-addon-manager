@@ -31,13 +31,13 @@ jobs:
       - name: test docs
         run: cargo test --doc
 
-  build-cli-linux-windows:
+  build-cli-linux:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
         with:
-          targets: x86_64-unknown-linux-gnu, x86_64-pc-windows-gnu
+          targets: x86_64-unknown-linux-gnu
       - name: Prepare dist directory
         run: mkdir -p dist/cli
       - name: Copy LICENSE to dist
@@ -46,65 +46,3 @@ jobs:
         run: |
           cd downloader-cli
           cargo build --locked --release --target x86_64-unknown-linux-gnu
-          mv ../target/x86_64-unknown-linux-gnu/release/downloader-cli ../dist/cli/downloader-cli-linux-x86_64
-      - name: Build Linux (Production)
-        run: |
-          cd downloader-cli
-          cargo build --features production --locked --release --target x86_64-unknown-linux-gnu --bin downloader-cli
-          mv ../target/x86_64-unknown-linux-gnu/release/downloader-cli ../dist/cli/epoch_patcher-cli-linux-x86_64
-      - name: Setup Windows - Install mingw-w64
-        run: sudo apt-get install -y mingw-w64
-      - name: Build Windows (Demo)
-        run: |
-          cd downloader-cli
-          cargo build --locked --release --target x86_64-pc-windows-gnu
-          mv ../target/x86_64-pc-windows-gnu/release/downloader-cli.exe ../dist/cli/downloader-cli-windows-x86_64.exe
-      - name: Build Windows (Production)
-        run: |
-          cd downloader-cli
-          cargo build --features production --locked --release --target x86_64-pc-windows-gnu --bin downloader-cli
-          mv ../target/x86_64-pc-windows-gnu/release/downloader-cli.exe ../dist/cli/epoch_patcher-cli-windows-x86_64.exe
-      - name: Upload CLI artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: cli-artifacts
-          path: dist/cli/
-          retention-days: 3
-
-  build-cli-macos:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: moonrepo/setup-rust@v1
-        with:
-          targets: x86_64-apple-darwin,aarch64-apple-darwin
-      - name: Prepare dist directory
-        run: mkdir -p dist/cli
-      - name: Copy LICENSE to dist
-        run: cp LICENSE dist/
-      - name: Build macOS (Intel, Demo)
-        run: |
-          cd downloader-cli
-          cargo build --locked --release --target x86_64-apple-darwin
-          mv ../target/x86_64-apple-darwin/release/downloader-cli ../dist/cli/downloader-cli-macos-x86_64
-      - name: Build macOS (Intel, Production)
-        run: |
-          cd downloader-cli
-          cargo build --features production --locked --release --target x86_64-apple-darwin --bin downloader-cli
-          mv ../target/x86_64-apple-darwin/release/downloader-cli ../dist/cli/epoch_patcher-cli-macos-x86_64
-      - name: Build macOS (Apple Silicon, Demo)
-        run: |
-          cd downloader-cli
-          cargo build --locked --release --target aarch64-apple-darwin
-          mv ../target/aarch64-apple-darwin/release/downloader-cli ../dist/cli/downloader-cli-macos-aarch64
-      - name: Build macOS (Apple Silicon, Production)
-        run: |
-          cd downloader-cli
-          cargo build --features production --locked --release --target aarch64-apple-darwin --bin downloader-cli
-          mv ../target/aarch64-apple-darwin/release/downloader-cli ../dist/cli/epoch_patcher-cli-macos-aarch64
-      - name: Upload CLI artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: cli-artifacts-macos
-          path: dist/cli/
-          retention-days: 3
