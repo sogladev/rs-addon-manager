@@ -1,11 +1,32 @@
 use clap::{arg, Command};
 
-use super::manifest::{Location, Provider, DEFAULT_MANIFEST_URL};
+use super::manifest::{Location, Provider};
+
+// Define configuration constants based on feature flags
+#[cfg(feature = "production")]
+mod app_config {
+    pub const DEFAULT_MANIFEST_URL: &str =
+        "https://updater.project-epoch.net/api/v2/manifest?environment=production";
+    pub const DEFAULT_FIGURE_TEXT: &str = "Project Epoch";
+    pub const DEFAULT_DESCRIPTION: &str = "unofficial patch download utility - Sogladev";
+}
+
+#[cfg(not(feature = "production"))]
+mod app_config {
+    pub const DEFAULT_MANIFEST_URL: &str = "http://localhost:8080/manifest.json";
+    pub const DEFAULT_FIGURE_TEXT: &str = "Demo Launcher";
+    pub const DEFAULT_DESCRIPTION: &str = "Demo version - For testing purposes only";
+}
+
+// Use the constants from the module
+use app_config::*;
 
 #[derive(Debug)]
 pub struct Config {
     pub manifest_location: Location,
     pub manifest_provider: Provider,
+    pub figure_text: String,
+    pub description: String,
 }
 
 impl Config {
@@ -20,13 +41,14 @@ impl Config {
             .get_matches();
 
         let manifest_str = matches.get_one::<String>("manifest").unwrap().to_string();
-        let manifest = Location::parse(manifest_str)?;
-
-        let provider = matches.get_one::<Provider>("provider").unwrap().clone();
+        let manifest_location = Location::parse(manifest_str)?;
+        let manifest_provider = matches.get_one::<Provider>("provider").unwrap().clone();
 
         Ok(Config {
-            manifest_location: manifest,
-            manifest_provider: provider,
+            manifest_location,
+            manifest_provider,
+            figure_text: DEFAULT_FIGURE_TEXT.to_string(),
+            description: DEFAULT_DESCRIPTION.to_string(),
         })
     }
 }
