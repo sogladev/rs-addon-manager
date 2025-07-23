@@ -60,7 +60,7 @@ async fn create_transaction(
     // Create a transaction
     let transaction = Transaction::new(manifest, base_path);
     #[cfg(debug_assertions)]
-    transaction.print(); // Generate a report and print to stdout
+    transaction.print(true);
 
     let report = transaction.generate_report();
     {

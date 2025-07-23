@@ -32,6 +32,7 @@ pub struct Config {
     pub manifest_provider: Provider,
     pub figure_text: String,
     pub description: String,
+    pub verbose: bool,
 }
 
 impl Config {
@@ -43,17 +44,20 @@ impl Config {
                 .value_parser(clap::value_parser!(Provider))
                 .default_value("cloudflare")
                 .help("Available providers: cloudflare (Server #1), digitalocean (Server #2), none (Server #3 - Slowest)"))
+            .arg(arg!(-v --verbose "Show verbose output including empty categories"))
             .get_matches();
 
         let manifest_str = matches.get_one::<String>("manifest").unwrap().to_string();
         let manifest_location = Location::parse(manifest_str)?;
         let manifest_provider = matches.get_one::<Provider>("provider").unwrap().clone();
+        let verbose = matches.get_flag("verbose");
 
         Ok(Config {
             manifest_location,
             manifest_provider,
             figure_text: DEFAULT_FIGURE_TEXT.to_string(),
             description: DEFAULT_DESCRIPTION.to_string(),
+            verbose,
         })
     }
 }
