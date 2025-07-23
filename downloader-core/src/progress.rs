@@ -71,7 +71,7 @@ impl Progress {
                 progress_bar,
                 speed,
                 file_size,
-                crate::format::eta_to_human_readable(self.expected_time_left),
+                crate::format::eta_to_human_readable(0.0),
                 width = total_files_width,
                 filename_width = MAX_FILENAME_LENGTH - 1
             );
