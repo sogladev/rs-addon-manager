@@ -971,7 +971,7 @@ checksum = "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2"
 
 [[package]]
 name = "downloader-cli"
-version = "0.1.4"
+version = "0.1.7"
 dependencies = [
  "clap",
  "colored",
@@ -982,7 +982,7 @@ dependencies = [
 
 [[package]]
 name = "downloader-core"
-version = "0.1.4"
+version = "0.1.7"
 dependencies = [
  "clap",
  "colored",
@@ -2189,7 +2189,7 @@ dependencies = [
 
 [[package]]
 name = "launcher-gui"
-version = "0.1.4"
+version = "0.1.7"
 dependencies = [
  "downloader-core",
  "futures",

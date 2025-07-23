@@ -7,12 +7,6 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 
 // Default manifest URL for development and production environment
-#[cfg(debug_assertions)]
-pub const DEFAULT_MANIFEST_URL: &str = "http://localhost:8080/manifest.json";
-#[cfg(not(debug_assertions))]
-pub const DEFAULT_MANIFEST_URL: &str =
-    "https://updater.project-epoch.net/api/v2/manifest?environment=production";
-
 #[derive(Debug, Clone)]
 pub enum Location {
     Url(Url),
