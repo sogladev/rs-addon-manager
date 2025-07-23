@@ -20,7 +20,7 @@ enum Status {
 #[derive(PartialEq, Clone)]
 enum OperationType {
     FileUpdate(PatchFile),
-    FileRemoval(String), // String is the file path to remove
+    FileRemoval(String),
 }
 
 #[derive(Clone)]
@@ -223,7 +223,7 @@ impl Transaction {
                 .map(|op| FileReport {
                     path: op.get_path().to_string(),
                     current_size: Some(op.size),
-                    new_size: 0, // Files being removed have new_size of 0
+                    new_size: 0,
                 })
                 .collect(),
             total_download_size: self.total_download_size() as u64,
@@ -456,6 +456,7 @@ impl Transaction {
                         progress_handler(&progress)?;
                     }
                 }
+
                 OperationType::FileRemoval(path) => {
                     // Handle file removals
                     let dest_path = self.base_path.join(path);
