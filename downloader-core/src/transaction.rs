@@ -88,9 +88,13 @@ impl FileOperation {
             for removal_path in removals {
                 let full_path = base_path.join(removal_path);
                 let size = if full_path.exists() {
-                    std::fs::metadata(&full_path)
-                        .map(|m| m.len() as i64)
-                        .unwrap_or(0)
+                    match std::fs::metadata(&full_path) {
+                        Ok(metadata) => metadata.len() as i64,
+                        Err(e) => {
+                            eprintln!("Warning: Failed to read metadata for file to be removed {}: {}. Using size 0.", full_path.display(), e);
+                            0
+                        }
+                    }
                 } else {
                     0
                 };
