@@ -232,14 +232,16 @@ impl Transaction {
         }
     }
 
-    pub fn print(&self) {
+    pub fn print(&self, verbose: bool) {
         let report = self.generate_report();
         println!("\nManifest Overview:");
         println!(" Version: {}", report.version);
         println!(" UID: {}", report.uid);
         println!(" Base path: {}", report.base_path.display());
 
-        println!("\n {}", "Up-to-date files:".green());
+        if !report.up_to_date_files.is_empty() || verbose {
+            println!("\n {}", "Up-to-date files:".green());
+        }
         for file in &report.up_to_date_files {
             println!(
                 "  {} (Size: {})",
@@ -248,7 +250,9 @@ impl Transaction {
             );
         }
 
-        println!("\n {}", "Outdated files (will be updated):".yellow());
+        if !report.outdated_files.is_empty() || verbose {
+            println!("\n {}", "Outdated files (will be updated):".yellow());
+        }
         for file in &report.outdated_files {
             println!(
                 "  {} (Current Size: {}, New Size: {})",
@@ -258,7 +262,9 @@ impl Transaction {
             );
         }
 
-        println!("\n {}", "Missing files (will be downloaded):".red());
+        if !report.missing_files.is_empty() || verbose {
+            println!("\n {}", "Missing files (will be downloaded):".red());
+        }
         for file in &report.missing_files {
             println!(
                 "  {} (New Size: {})",
@@ -267,7 +273,9 @@ impl Transaction {
             );
         }
 
-        println!("\n {}", "Files to be removed:".magenta());
+        if !report.removed_files.is_empty() || verbose {
+            println!("\n {}", "Files to be removed:".magenta());
+        }
         for file in &report.removed_files {
             println!(
                 "  {} (Current Size: {})",

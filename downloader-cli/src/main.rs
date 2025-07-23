@@ -30,7 +30,7 @@ async fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let manifest = Manifest::build(&config.manifest_location).await?;
     let transaction = Transaction::new(manifest, base_path);
 
-    transaction.print();
+    transaction.print(config.verbose);
 
     if transaction.has_pending_operations() {
         if !prompt::confirm("Is this ok")? {
