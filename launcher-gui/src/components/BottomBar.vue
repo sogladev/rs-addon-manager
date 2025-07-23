@@ -307,6 +307,8 @@ async function launchGame() {
         <h4 class="text-md font-bold mt-4">Transaction Summary</h4>
         Installing/Updating: {{ transactionReport.missing_files.length + transactionReport.outdated_files.length }} files
         <br>
+        Removing: {{ transactionReport.removed_files.length }} files
+        <br>
         Total size of inbound files is {{ formatBytes(transactionReport.total_download_size) }}. Need to download {{
           formatBytes(transactionReport.total_download_size) }}.
         <span v-if="transactionReport.disk_space_change > 0">
