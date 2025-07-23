@@ -11,7 +11,6 @@ pub use config::Config;
 pub use manifest::Location;
 pub use manifest::Manifest;
 pub use manifest::Provider;
-pub use manifest::DEFAULT_MANIFEST_URL;
 pub use progress::Progress;
 pub use transaction::Transaction;
 pub use transaction::TransactionReport;

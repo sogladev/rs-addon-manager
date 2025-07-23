@@ -4,16 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       run_id:
-        description: 'Run ID of the build workflow'
+        description: 'Run ID of the build workflow (build-cli.yml) to use for the artifacts'
         required: true
         default: '13042045029'
       version:
         description: 'desired version'
         required: true
-        default: 'v1.0.0'
+        default: 'v0.1.7'
 
 jobs:
-  publish-cli:
+  publish-production:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -35,14 +35,14 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: dist/cli/
 
-      - name: Create Release
-        id: create_release
+      - name: Create Production Release
+        id: create_production_release
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         with:
           tag_name: ${{ github.event.inputs.version }}
-          name: Release ${{ github.event.inputs.version }}
+          name: Project Epoch Release ${{ github.event.inputs.version }}
           draft: true
           prerelease: false
           files: |
@@ -52,7 +52,48 @@ jobs:
             dist/cli/epoch_patcher-cli-macos-aarch64
             LICENSE
             README.md
-  publish-tauri:
+
+  publish-demo:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Linux and Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-artifacts
+          run-id: ${{ github.event.inputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: dist/cli/
+
+      - name: Download macOS Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-artifacts-macos
+          run-id: ${{ github.event.inputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: dist/cli/
+
+      - name: Create Demo Release
+        id: create_demo_release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.version }}-demo
+          name: Demo Launcher Release ${{ github.event.inputs.version }}
+          draft: true
+          prerelease: true
+          files: |
+            dist/cli/downloader-cli-linux-x86_64
+            dist/cli/downloader-cli-windows-x86_64.exe
+            dist/cli/downloader-cli-macos-x86_64
+            dist/cli/downloader-cli-macos-aarch64
+            LICENSE
+            README.md
+
+  publish-demo-tauri:
     permissions:
       contents: write
     strategy:
@@ -95,9 +136,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: launcher-gui
-          tagName: ${{ github.event.inputs.version }}
-          releaseName: "App v${{ github.event.inputs.version }}"
-          releaseBody: "See the assets to download this version and install."
+          tagName: ${{ github.event.inputs.version }}-demo
+          releaseName: "Demo Launcher GUI v${{ github.event.inputs.version }}"
+          releaseBody: "Demo version - For testing purposes only. See the assets to download this version and install."
           releaseDraft: true
-          prerelease: false
+          prerelease: true
           args: ${{ matrix.args }}

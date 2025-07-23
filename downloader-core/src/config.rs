@@ -4,22 +4,27 @@ use super::manifest::{Location, Provider};
 
 // Define configuration constants based on feature flags
 #[cfg(feature = "production")]
-mod app_config {
+pub mod app_config {
     pub const DEFAULT_MANIFEST_URL: &str =
         "https://updater.project-epoch.net/api/v2/manifest?environment=production";
     pub const DEFAULT_FIGURE_TEXT: &str = "Project Epoch";
-    pub const DEFAULT_DESCRIPTION: &str = "unofficial patch download utility - Sogladev";
+    pub const DEFAULT_DESCRIPTION: &str =
+        "unofficial patch download utility - Sogladev\n\
+        Bugs or issues: https://github.com/sogladev/rs-game-launcher\n\
+        ----------------------------------------------------------------------------------------------------";
 }
 
 #[cfg(not(feature = "production"))]
-mod app_config {
+pub mod app_config {
     pub const DEFAULT_MANIFEST_URL: &str = "http://localhost:8080/manifest.json";
     pub const DEFAULT_FIGURE_TEXT: &str = "Demo Launcher";
-    pub const DEFAULT_DESCRIPTION: &str = "Demo version - For testing purposes only";
+    pub const DEFAULT_DESCRIPTION: &str =
+        "Demo version - For testing purposes only\n\
+        Bugs or issues: https://github.com/sogladev/rs-game-launcher\n\
+        ----------------------------------------------------------------------------------------------------";
 }
 
-// Use the constants from the module
-use app_config::*;
+pub use app_config::*;
 
 #[derive(Debug)]
 pub struct Config {
@@ -43,6 +48,10 @@ impl Config {
         let manifest_str = matches.get_one::<String>("manifest").unwrap().to_string();
         let manifest_location = Location::parse(manifest_str)?;
         let manifest_provider = matches.get_one::<Provider>("provider").unwrap().clone();
+
+        println!("{DEFAULT_FIGURE_TEXT}");
+        println!("{DEFAULT_FIGURE_TEXT}");
+        println!("{DEFAULT_FIGURE_TEXT}");
 
         Ok(Config {
             manifest_location,

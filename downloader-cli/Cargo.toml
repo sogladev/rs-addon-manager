@@ -11,3 +11,8 @@ downloader-core = {path = "../downloader-core" }
 
 [target.'cfg(not(unix))'.dependencies]
 colored = "3.0.0"
+
+[features]
+default = ["demo"]
+demo = ["downloader-core/demo"]
+production = ["downloader-core/production"]

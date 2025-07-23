@@ -4,7 +4,7 @@ use tauri::Manager;
 use tauri_plugin_http::reqwest;
 
 use downloader_core::{
-    game, Manifest, Progress, Provider, Transaction, TransactionReport, DEFAULT_MANIFEST_URL,
+    game, Manifest, Progress, Provider, Transaction, TransactionReport, config::DEFAULT_MANIFEST_URL
 };
 
 #[derive(Default)]
