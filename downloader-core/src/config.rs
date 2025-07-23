@@ -49,10 +49,6 @@ impl Config {
         let manifest_location = Location::parse(manifest_str)?;
         let manifest_provider = matches.get_one::<Provider>("provider").unwrap().clone();
 
-        println!("{DEFAULT_FIGURE_TEXT}");
-        println!("{DEFAULT_FIGURE_TEXT}");
-        println!("{DEFAULT_FIGURE_TEXT}");
-
         Ok(Config {
             manifest_location,
             manifest_provider,
