@@ -10,6 +10,7 @@ export interface TransactionReport {
   up_to_date_files: FileReport[];
   outdated_files: FileReport[];
   missing_files: FileReport[];
+  removed_files: FileReport[];
   total_download_size: number;
   disk_space_change: number;
   base_path: string;

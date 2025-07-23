@@ -294,6 +294,16 @@ async function launchGame() {
           </li>
         </ul>
 
+        <h4 class="text-md font-bold mt-4">Files to be removed:</h4>
+        <ul>
+          <li v-for="file in transactionReport.removed_files" :key="file.path">
+            {{ file.path }}
+            <span class="opacity-50">
+              (Current Size: {{ formatBytes(file.current_size!) }})
+            </span>
+          </li>
+        </ul>
+
         <h4 class="text-md font-bold mt-4">Transaction Summary</h4>
         Installing/Updating: {{ transactionReport.missing_files.length + transactionReport.outdated_files.length }} files
         <br>
