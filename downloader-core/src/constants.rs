@@ -12,9 +12,9 @@ pub const IS_PRODUCTION: bool = false;
 
 pub fn default_version_label() -> String {
     if IS_PRODUCTION {
-        format!("v{}", VERSION)
+        format!("v{VERSION}")
     } else {
-        format!("v{}-demo", VERSION)
+        format!("v{VERSION}-demo")
     }
 }
 
@@ -39,16 +39,14 @@ pub fn default_description() -> String {
         format!(
             "unofficial patch download utility - Sogladev v{}\n\
             Bugs or issues: https://github.com/sogladev/rs-game-launcher\n\
-            {}",
-            VERSION,
+            {VERSION}",
             "-".repeat(100)
         )
     } else {
         format!(
             "Demo version - For testing purposes only v{}-demo\n\
             Bugs or issues: https://github.com/sogladev/rs-game-launcher\n\
-            {}",
-            VERSION,
+            {VERSION}",
             "-".repeat(100)
         )
     }

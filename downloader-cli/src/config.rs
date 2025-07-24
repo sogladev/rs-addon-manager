@@ -1,9 +1,9 @@
 use clap::Parser;
-use url::Url;
 use downloader_core::{
-    constants::{VERSION, default_description, default_figure_text, default_manifest_url},
+    constants::{default_description, default_figure_text, default_manifest_url, VERSION},
     manifest::Provider,
 };
+use url::Url;
 
 #[derive(Debug, Parser)]
 #[command(name = "downloader-cli", version = VERSION, about = "Rust-based patch downloader")]
