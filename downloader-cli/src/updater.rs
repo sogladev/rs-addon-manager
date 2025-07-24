@@ -1,4 +1,7 @@
-use std::{env, process::{self, Command}};
+use std::{
+    env,
+    process::{self, Command},
+};
 
 use downloader_core::constants::{BIN_NAME_CLI, CURRENT_VERSION, REPO_NAME, REPO_OWNER};
 
