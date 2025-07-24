@@ -1,27 +1,55 @@
 //! Define constants based on feature flags
 
-#[cfg(feature = "production")]
-pub const DEFAULT_MANIFEST_URL: &str =
-    "https://updater.project-epoch.net/api/v2/manifest?environment=production";
-#[cfg(feature = "production")]
-pub const DEFAULT_FIGURE_TEXT: &str = "Project Epoch";
-#[cfg(feature = "production")]
-pub const DEFAULT_DESCRIPTION: &str =
-    "unofficial patch download utility - Sogladev\n\
-    Bugs or issues: https://github.com/sogladev/rs-game-launcher\n\
-    ----------------------------------------------------------------------------------------------------";
-
-#[cfg(not(feature = "production"))]
-pub const DEFAULT_MANIFEST_URL: &str = "http://localhost:8080/manifest.json";
-#[cfg(not(feature = "production"))]
-pub const DEFAULT_FIGURE_TEXT: &str = "Demo Launcher";
-#[cfg(not(feature = "production"))]
-pub const DEFAULT_DESCRIPTION: &str =
-    "Demo version - For testing purposes only\n\
-    Bugs or issues: https://github.com/sogladev/rs-game-launcher\n\
-    ----------------------------------------------------------------------------------------------------";
-
 pub const BIN_NAME_CLI: &str = "downloader-cli";
 pub const REPO_OWNER: &str = "sogladev";
 pub const REPO_NAME: &str = "rs-game-launcher";
-pub const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+#[cfg(feature = "production")]
+pub const IS_PRODUCTION: bool = true;
+#[cfg(not(feature = "production"))]
+pub const IS_PRODUCTION: bool = false;
+
+pub fn default_version_label() -> String {
+    if IS_PRODUCTION {
+        format!("v{}", VERSION)
+    } else {
+        format!("v{}-demo", VERSION)
+    }
+}
+
+pub fn default_manifest_url() -> &'static str {
+    if IS_PRODUCTION {
+        "https://updater.project-epoch.net/api/v2/manifest?environment=production"
+    } else {
+        "http://localhost:8080/manifest.json"
+    }
+}
+
+pub fn default_figure_text() -> &'static str {
+    if IS_PRODUCTION {
+        "Project Epoch"
+    } else {
+        "Demo Launcher"
+    }
+}
+
+pub fn default_description() -> String {
+    if IS_PRODUCTION {
+        format!(
+            "unofficial patch download utility - Sogladev v{}\n\
+            Bugs or issues: https://github.com/sogladev/rs-game-launcher\n\
+            {}",
+            VERSION,
+            "-".repeat(100)
+        )
+    } else {
+        format!(
+            "Demo version - For testing purposes only v{}-demo\n\
+            Bugs or issues: https://github.com/sogladev/rs-game-launcher\n\
+            {}",
+            VERSION,
+            "-".repeat(100)
+        )
+    }
+}

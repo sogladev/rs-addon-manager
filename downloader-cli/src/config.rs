@@ -1,70 +1,49 @@
-use clap::{arg, Command};
+use clap::Parser;
 use downloader_core::{
-    constants::{CURRENT_VERSION, DEFAULT_DESCRIPTION, DEFAULT_FIGURE_TEXT, DEFAULT_MANIFEST_URL},
+    constants::{VERSION, default_description, default_figure_text, default_manifest_url},
     manifest::{Location, Provider},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Parser)]
+#[command(name = "downloader-cli", version = VERSION, about = "Rust-based patch downloader")]
 pub struct Config {
-    pub manifest_location: Location,
-    pub manifest_provider: Provider,
-    pub figure_text: String,
-    pub description: String,
+    /// Path to manifest.json file or URL (e.g., http://localhost:8080/manifest.json)
+    #[arg(short, long, default_value = default_manifest_url())]
+    pub manifest: String,
+
+    /// Provider to use for downloads
+    #[arg(
+        short,
+        long,
+        value_enum,
+        default_value = "cloudflare",
+        help = "Available providers: cloudflare (Server #1), digitalocean (Server #2), none (Server #3 - Slowest)"
+    )]
+    pub provider: Provider,
+
+    /// Show verbose output including empty categories
+    #[arg(short, long, default_value_t = false)]
     pub verbose: bool,
+
+    /// Automatically answer yes to all prompts and proceed with download
+    #[arg(short, long, default_value_t = false)]
     pub yes: bool,
-    pub check_updates: bool,
+
+    /// Check for application updates
+    #[arg(short = 'u', long, default_value_t = false)]
+    pub update: bool,
+
+    /// ASCII art figure text (internal use)
+    #[arg(skip = default_figure_text())]
+    pub figure_text: String,
+
+    /// Description (internal use)
+    #[arg(skip = default_description())]
+    pub description: String,
 }
 
 impl Config {
-    pub fn new(
-        manifest_location: Location,
-        manifest_provider: Provider,
-        verbose: bool,
-        yes: bool,
-        check_updates: bool,
-    ) -> Self {
-        Config {
-            manifest_location,
-            manifest_provider,
-            figure_text: DEFAULT_FIGURE_TEXT.to_string(),
-            description: DEFAULT_DESCRIPTION.to_string(),
-            verbose,
-            yes,
-            check_updates,
-        }
-    }
-
-    pub fn build_config() -> Result<Config, &'static str> {
-        let matches = Command::new("downloader-cli")
-            .version(CURRENT_VERSION)
-            .arg(arg!(-m --manifest <String> "Path to manifest.json file or URL (e.g., http://localhost:8080/manifest.json)"))
-            .arg(arg!(-p --provider <Provider> "Provider to use for downloads")
-                .value_parser(clap::value_parser!(Provider))
-                .default_value("cloudflare")
-                .help("Available providers: cloudflare (Server #1), digitalocean (Server #2), none (Server #3 - Slowest)"))
-            .arg(arg!(-v --verbose "Show verbose output including empty categories"))
-            .arg(arg!(-y --yes "Automatically answer yes to all prompts and proceed with download"))
-            .arg(arg!(-u --update "Check for application updates"))
-            .get_matches();
-
-        let manifest_location = if let Some(manifest_str) = matches.get_one::<String>("manifest") {
-            Location::parse(manifest_str.to_string())?
-        } else {
-            Location::parse(DEFAULT_MANIFEST_URL.to_string())?
-        };
-
-        let manifest_provider = matches.get_one::<Provider>("provider").unwrap().clone();
-
-        let verbose = matches.get_flag("verbose");
-        let yes = matches.get_flag("yes");
-        let check_updates = matches.get_flag("update");
-
-        Ok(Config::new(
-            manifest_location,
-            manifest_provider,
-            verbose,
-            yes,
-            check_updates,
-        ))
+    pub fn manifest_location(&self) -> Result<Location, &'static str> {
+        Location::parse(self.manifest.clone())
     }
 }
