@@ -4,7 +4,7 @@ members = [
     "downloader-core",
     "downloader-cli",
     "launcher-gui/src-tauri"
-]
+, "manifest-cdn"]
 
 [profile.release]
 lto = true
