@@ -1,9 +1,7 @@
-use std::env;
 use std::error::Error;
-use std::process::{self, Command};
+use std::process;
 
-use downloader_cli::Config;
-use downloader_core::constants::{BIN_NAME_CLI, CURRENT_VERSION, REPO_NAME, REPO_OWNER};
+use downloader_cli::{updater, Config};
 use downloader_core::{banner, prompt, Progress};
 use downloader_core::{Manifest, Transaction};
 
@@ -19,50 +17,8 @@ fn main() {
         process::exit(1);
     });
 
-    // Self-update logic (must not run inside async context)
     if config.check_updates {
-        let update_result = self_update::backends::github::Update::configure()
-            .repo_owner(REPO_OWNER)
-            .repo_name(REPO_NAME)
-            .bin_name(BIN_NAME_CLI)
-            .show_download_progress(true)
-            .current_version(CURRENT_VERSION)
-            .build()
-            .and_then(|u| u.update());
-
-        match update_result {
-            Ok(status) => {
-                if status.updated() {
-                    println!("Updated to version {}!", status.version());
-                    println!("Restarting the application...");
-
-                    // On Windows, the file may be locked briefly after replacement.
-                    #[cfg(target_os = "windows")]
-                    {
-                        println!("Waiting a moment to ensure update is complete...");
-                        std::thread::sleep(std::time::Duration::from_millis(1200));
-                    }
-
-                    let args: Vec<String> = env::args().collect();
-                    match Command::new(&args[0]).args(&args[1..]).spawn() {
-                        Ok(_) => {
-                            println!("Launched new version, exiting old process.");
-                            process::exit(0);
-                        }
-                        Err(e) => {
-                            println!("Failed to restart: {e}");
-                            println!("Please restart the application manually.");
-                            process::exit(1);
-                        }
-                    }
-                } else {
-                    println!("No update available.");
-                }
-            }
-            Err(e) => {
-                println!("Failed to update: {e}");
-            }
-        }
+        updater::self_update();
     }
 
     // Now enter async context
