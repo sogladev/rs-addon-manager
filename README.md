@@ -67,22 +67,24 @@ https://github.com/user-attachments/assets/7c642947-a57c-46b0-aab9-eeb456b6e115
 
 ### Prerequisites
 - Install Rust from the https://www.rust-lang.org/
-- Local test CDN server to serve `manifest.json` and files
-  - Install Go from https://go.dev/doc/install
-  - or compiled binary https://github.com/sogladev/go-manifest-patcher/releases
 - (Only for GUI) Install Bun package manager from https://bun.sh/docs/installation
 
-### CLI
+### Local CDN
 
-1. Start local CDN
-    ```sh
-    go run main.go -create-manifest
-    go run main.go
-    ```
+The local CDN serves patch files and the manifest for both the CLI and GUI. Run these commands from the project root:
+
+```sh
+# Generate manifest.json (run once or when files change)
+cargo run --bin manifest-cdn -- --create
+# Start the local CDN server
+cargo run --bin manifest-cdn
+```
+
+## CLI
 
 From project root
 
-2. Run the CLI
+1. Run the CLI
     ```sh
     # Demo mode (default)
     cargo run --bin downloader-cli
@@ -103,11 +105,6 @@ From project root
     ```
 
 ### GUI
-1. Start local CDN
-    ```sh
-    go run main.go -create-manifest
-    go run main.go
-    ```
 
 From `launcher-gui/`
 
@@ -135,6 +132,7 @@ From `launcher-gui/`
     ```
 
 #### Fake client directory
+The downloader CLI does not do any client validation.
 ```
 mkdir -p client client/Data
 touch client/Battle.net.dll
