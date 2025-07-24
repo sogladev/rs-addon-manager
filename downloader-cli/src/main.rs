@@ -1,23 +1,29 @@
 use std::error::Error;
 use std::process;
 
+use downloader_cli::{updater, Config};
 use downloader_core::{banner, prompt, Progress};
-use downloader_core::{Config, Manifest, Transaction};
+use downloader_core::{Manifest, Transaction};
 
 #[cfg(target_os = "windows")]
 use std::io::Write;
 
-#[tokio::main]
-async fn main() {
+fn main() {
     #[cfg(not(unix))]
     colored::control::set_virtual_terminal(true).unwrap();
 
-    let config = Config::build().unwrap_or_else(|err| {
+    let config = Config::build_config().unwrap_or_else(|err| {
         println!("Problem parsing arguments: {err}");
         process::exit(1);
     });
 
-    if let Err(e) = run(config).await {
+    if config.check_updates {
+        updater::self_update();
+    }
+
+    // Now enter async context
+    let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
+    if let Err(e) = rt.block_on(run(config)) {
         println!("Application error: {e}");
         process::exit(1);
     }
