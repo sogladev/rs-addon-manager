@@ -9,6 +9,7 @@ pub mod transaction;
 
 pub use manifest::Location;
 pub use manifest::Manifest;
+pub use manifest::PatchFile;
 pub use manifest::Provider;
 pub use progress::Progress;
 pub use transaction::Transaction;
