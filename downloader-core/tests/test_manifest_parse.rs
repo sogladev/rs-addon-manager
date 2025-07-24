@@ -1,7 +1,7 @@
 mod common;
 
 use common::TempFile;
-use downloader_core::manifest::{Location, Manifest};
+use downloader_core::manifest::{Url, Manifest};
 
 #[cfg(test)]
 mod tests {
@@ -37,7 +37,7 @@ mod tests {
         let temp_file = TempFile::new("temp_manifest_valid.json", json_content);
 
         // Deserialize manifest from the file
-        let location = Location::FilePath(temp_file.path.clone());
+        let location = Url::FilePath(temp_file.path.clone());
         let manifest = Manifest::build(&location)
             .await
             .expect("Failed to build manifest");
@@ -58,7 +58,7 @@ mod tests {
         let temp_file = common::TempFile::new("temp_manifest_invalid.json", "invalid json");
 
         // Expect Manifest::build to error out on invalid JSON
-        let location = Location::FilePath(temp_file.path.clone());
+        let location = Url::FilePath(temp_file.path.clone());
         let result = Manifest::build(&location).await;
         assert!(result.is_err());
     }

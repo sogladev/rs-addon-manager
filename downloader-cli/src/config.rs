@@ -1,7 +1,8 @@
 use clap::Parser;
+use url::Url;
 use downloader_core::{
     constants::{VERSION, default_description, default_figure_text, default_manifest_url},
-    manifest::{Location, Provider},
+    manifest::Provider,
 };
 
 #[derive(Debug, Parser)]
@@ -9,7 +10,7 @@ use downloader_core::{
 pub struct Config {
     /// Path to manifest.json file or URL (e.g., http://localhost:8080/manifest.json)
     #[arg(short, long, default_value = default_manifest_url())]
-    pub manifest: String,
+    pub manifest: Url,
 
     /// Provider to use for downloads
     #[arg(
@@ -40,10 +41,4 @@ pub struct Config {
     /// Description (internal use)
     #[arg(skip = default_description())]
     pub description: String,
-}
-
-impl Config {
-    pub fn manifest_location(&self) -> Result<Location, &'static str> {
-        Location::parse(self.manifest.clone())
-    }
 }

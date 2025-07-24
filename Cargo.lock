@@ -1004,6 +1004,7 @@ dependencies = [
  "figlet-rs",
  "self_update",
  "tokio",
+ "url",
 ]
 
 [[package]]

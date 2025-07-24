@@ -7,7 +7,6 @@ pub mod progress;
 pub mod prompt;
 pub mod transaction;
 
-pub use manifest::Location;
 pub use manifest::Manifest;
 pub use manifest::PatchFile;
 pub use manifest::Provider;
