@@ -1,6 +1,6 @@
 use clap::{arg, Command};
 use downloader_core::{
-    constants::{DEFAULT_DESCRIPTION, DEFAULT_FIGURE_TEXT, DEFAULT_MANIFEST_URL},
+    constants::{CURRENT_VERSION, DEFAULT_DESCRIPTION, DEFAULT_FIGURE_TEXT, DEFAULT_MANIFEST_URL},
     manifest::{Location, Provider},
 };
 
@@ -36,7 +36,7 @@ impl Config {
 
     pub fn build_config() -> Result<Config, &'static str> {
         let matches = Command::new("downloader-cli")
-            .version(env!("CARGO_PKG_VERSION"))
+            .version(CURRENT_VERSION)
             .arg(arg!(-m --manifest <String> "Path to manifest.json file or URL (e.g., http://localhost:8080/manifest.json)"))
             .arg(arg!(-p --provider <Provider> "Provider to use for downloads")
                 .value_parser(clap::value_parser!(Provider))

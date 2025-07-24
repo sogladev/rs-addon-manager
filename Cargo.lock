@@ -990,6 +990,7 @@ dependencies = [
  "colored",
  "downloader-core",
  "figlet-rs",
+ "self_update",
  "tokio",
 ]
 

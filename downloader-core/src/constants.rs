@@ -20,3 +20,8 @@ pub const DEFAULT_DESCRIPTION: &str =
     "Demo version - For testing purposes only\n\
     Bugs or issues: https://github.com/sogladev/rs-game-launcher\n\
     ----------------------------------------------------------------------------------------------------";
+
+pub const BIN_NAME_CLI: &str = "downloader-cli";
+pub const REPO_OWNER: &str = "sogladev";
+pub const REPO_NAME: &str = "rs-game-launcher";
+pub const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
