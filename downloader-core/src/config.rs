@@ -38,6 +38,7 @@ pub struct Config {
 impl Config {
     pub fn build() -> Result<Config, &'static str> {
         let matches = Command::new("downloader-cli")
+            .version(env!("CARGO_PKG_VERSION"))
             .arg(arg!(-m --manifest <String> "Path to manifest.json file or URL (e.g., http://localhost:8080/manifest.json)")
                 .default_value(DEFAULT_MANIFEST_URL))
             .arg(arg!(-p --provider <Provider> "Provider to use for downloads")
