@@ -33,7 +33,7 @@ async fn run(config: Config) -> Result<(), Box<dyn Error>> {
     transaction.print(config.verbose);
 
     if transaction.has_pending_operations() {
-        if !prompt::confirm("Is this ok")? {
+        if !config.yes && !prompt::confirm("Is this ok")? {
             process::exit(1);
         }
 

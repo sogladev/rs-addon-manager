@@ -33,6 +33,7 @@ pub struct Config {
     pub figure_text: String,
     pub description: String,
     pub verbose: bool,
+    pub yes: bool,
 }
 
 impl Config {
@@ -46,12 +47,14 @@ impl Config {
                 .default_value("cloudflare")
                 .help("Available providers: cloudflare (Server #1), digitalocean (Server #2), none (Server #3 - Slowest)"))
             .arg(arg!(-v --verbose "Show verbose output including empty categories"))
+            .arg(arg!(-y --yes "Automatically answer yes to all prompts and proceed with download"))
             .get_matches();
 
         let manifest_str = matches.get_one::<String>("manifest").unwrap().to_string();
         let manifest_location = Location::parse(manifest_str)?;
         let manifest_provider = matches.get_one::<Provider>("provider").unwrap().clone();
         let verbose = matches.get_flag("verbose");
+        let yes = matches.get_flag("yes");
 
         Ok(Config {
             manifest_location,
@@ -59,6 +62,7 @@ impl Config {
             figure_text: DEFAULT_FIGURE_TEXT.to_string(),
             description: DEFAULT_DESCRIPTION.to_string(),
             verbose,
+            yes,
         })
     }
 }
