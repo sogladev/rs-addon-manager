@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::path::PathBuf;
 
-use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -39,11 +38,13 @@ impl Location {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, ValueEnum)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
+#[cfg_attr(feature = "cli", derive(clap::ValueEnum))]
 pub enum Provider {
     Cloudflare,
-    #[value(name = "digitalocean")]
+    #[serde(rename = "digitalocean")]
+    #[cfg_attr(feature = "cli", clap(name = "digitalocean"))]
     DigitalOcean,
     None,
 }
