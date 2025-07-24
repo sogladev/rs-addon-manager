@@ -1,10 +1,11 @@
 use std::sync::Mutex;
+use downloader_core::constants::default_manifest_url;
 use tauri::Emitter;
 use tauri::Manager;
 use tauri_plugin_http::reqwest;
 
 use downloader_core::{
-    constants::DEFAULT_MANIFEST_URL, game, Manifest, Progress, Provider, Transaction,
+    constants::default_figure_text, game, Manifest, Progress, Provider, Transaction,
     TransactionReport,
 };
 
@@ -51,7 +52,7 @@ async fn create_transaction(
 ) -> Result<TransactionReport, String> {
     let base_path = std::path::PathBuf::from(base_path);
 
-    let res = reqwest::get(DEFAULT_MANIFEST_URL)
+    let res = reqwest::get(default_manifest_url())
         .await
         .map_err(|e| e.to_string())?;
     let json = res.text().await.map_err(|e| e.to_string())?;
