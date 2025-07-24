@@ -38,13 +38,13 @@ jobs:
         run: |
           cd downloader-cli
           cargo build --locked --release --target x86_64-unknown-linux-gnu
-          mv ../target/x86_64-unknown-linux-gnu/release/downloader-cli ../dist/cli/downloader-cli-linux-x86_64
+          mv ../target/x86_64-unknown-linux-gnu/release/downloader-cli ../dist/cli/downloader-cli-${{ github.event.inputs.version }}-linux-x86_64
       - name: Build Linux (Production)
         if: matrix.platform == 'ubuntu-24.04'
         run: |
           cd downloader-cli
           cargo build --features production --locked --release --target x86_64-unknown-linux-gnu --bin downloader-cli
-          mv ../target/x86_64-unknown-linux-gnu/release/downloader-cli ../dist/cli/epoch_patcher-cli-linux-x86_64
+          mv ../target/x86_64-unknown-linux-gnu/release/downloader-cli ../dist/cli/epoch_patcher-cli-${{ github.event.inputs.version }}-linux-x86_64
 
       # Windows builds (on Ubuntu runner with cross-compilation)
       - name: Setup Windows - Install mingw-w64
@@ -55,14 +55,14 @@ jobs:
         run: |
           cd downloader-cli
           cargo build --locked --release --target x86_64-pc-windows-gnu
-          mv ../target/x86_64-pc-windows-gnu/release/downloader-cli.exe ../dist/cli/downloader-cli-windows-x86_64.exe
+          mv ../target/x86_64-pc-windows-gnu/release/downloader-cli.exe ../dist/cli/downloader-cli-${{ github.event.inputs.version }}-windows-x86_64.exe
 
       - name: Build Windows (Production)
         if: matrix.platform == 'ubuntu-24.04'
         run: |
           cd downloader-cli
           cargo build --features production --locked --release --target x86_64-pc-windows-gnu --bin downloader-cli
-          mv ../target/x86_64-pc-windows-gnu/release/downloader-cli.exe ../dist/cli/epoch_patcher-cli-windows-x86_64.exe
+          mv ../target/x86_64-pc-windows-gnu/release/downloader-cli.exe ../dist/cli/epoch_patcher-cli-${{ github.event.inputs.version }}-windows-x86_64.exe
 
       # macOS builds (on macOS runner)
       - name: Build macOS (Intel, Demo)
@@ -70,25 +70,25 @@ jobs:
         run: |
           cd downloader-cli
           cargo build --locked --release --target x86_64-apple-darwin
-          mv ../target/x86_64-apple-darwin/release/downloader-cli ../dist/cli/downloader-cli-macos-x86_64
+          mv ../target/x86_64-apple-darwin/release/downloader-cli ../dist/cli/downloader-cli-${{ github.event.inputs.version }}-macos-x86_64
       - name: Build macOS (Intel, Production)
         if: matrix.platform == 'macos-latest'
         run: |
           cd downloader-cli
           cargo build --features production --locked --release --target x86_64-apple-darwin --bin downloader-cli
-          mv ../target/x86_64-apple-darwin/release/downloader-cli ../dist/cli/epoch_patcher-cli-macos-x86_64
+          mv ../target/x86_64-apple-darwin/release/downloader-cli ../dist/cli/epoch_patcher-cli-${{ github.event.inputs.version }}-macos-x86_64
       - name: Build macOS (Apple Silicon, Demo)
         if: matrix.platform == 'macos-latest'
         run: |
           cd downloader-cli
           cargo build --locked --release --target aarch64-apple-darwin
-          mv ../target/aarch64-apple-darwin/release/downloader-cli ../dist/cli/downloader-cli-macos-aarch64
+          mv ../target/aarch64-apple-darwin/release/downloader-cli ../dist/cli/downloader-cli-${{ github.event.inputs.version }}-macos-aarch64
       - name: Build macOS (Apple Silicon, Production)
         if: matrix.platform == 'macos-latest'
         run: |
           cd downloader-cli
           cargo build --features production --locked --release --target aarch64-apple-darwin --bin downloader-cli
-          mv ../target/aarch64-apple-darwin/release/downloader-cli ../dist/cli/epoch_patcher-cli-macos-aarch64
+          mv ../target/aarch64-apple-darwin/release/downloader-cli ../dist/cli/epoch_patcher-cli-${{ github.event.inputs.version }}-macos-aarch64
       - name: Upload CLI artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -126,10 +126,10 @@ jobs:
           draft: true
           prerelease: false
           files: |
-            dist/cli/epoch_patcher-cli-linux-x86_64
-            dist/cli/epoch_patcher-cli-windows-x86_64.exe
-            dist/cli/epoch_patcher-cli-macos-x86_64
-            dist/cli/epoch_patcher-cli-macos-aarch64
+            dist/cli/epoch_patcher-cli-${{ github.event.inputs.version }}-linux-x86_64
+            dist/cli/epoch_patcher-cli-${{ github.event.inputs.version }}-windows-x86_64.exe
+            dist/cli/epoch_patcher-cli-${{ github.event.inputs.version }}-macos-x86_64
+            dist/cli/epoch_patcher-cli-${{ github.event.inputs.version }}-macos-aarch64
             LICENSE
             README.md
 
@@ -163,10 +163,10 @@ jobs:
           draft: true
           prerelease: true
           files: |
-            dist/cli/downloader-cli-linux-x86_64
-            dist/cli/downloader-cli-windows-x86_64.exe
-            dist/cli/downloader-cli-macos-x86_64
-            dist/cli/downloader-cli-macos-aarch64
+            dist/cli/downloader-cli-${{ github.event.inputs.version }}-linux-x86_64
+            dist/cli/downloader-cli-${{ github.event.inputs.version }}-windows-x86_64.exe
+            dist/cli/downloader-cli-${{ github.event.inputs.version }}-macos-x86_64
+            dist/cli/downloader-cli-${{ github.event.inputs.version }}-macos-aarch64
             LICENSE
             README.md
 
