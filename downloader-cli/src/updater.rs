@@ -3,7 +3,7 @@ use std::{
     process::{self, Command},
 };
 
-use downloader_core::constants::{BIN_NAME_CLI, VERSION, REPO_NAME, REPO_OWNER};
+use downloader_core::constants::{BIN_NAME_CLI, REPO_NAME, REPO_OWNER, VERSION};
 
 pub fn self_update() {
     let update_result = self_update::backends::github::Update::configure()

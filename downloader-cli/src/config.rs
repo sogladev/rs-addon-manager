@@ -1,15 +1,16 @@
 use clap::Parser;
 use downloader_core::{
-    constants::{VERSION, default_description, default_figure_text, default_manifest_url},
-    manifest::{Location, Provider},
+    constants::{default_description, default_figure_text, default_manifest_url, VERSION},
+    manifest::Provider,
 };
+use url::Url;
 
 #[derive(Debug, Parser)]
 #[command(name = "downloader-cli", version = VERSION, about = "Rust-based patch downloader")]
 pub struct Config {
     /// Path to manifest.json file or URL (e.g., http://localhost:8080/manifest.json)
     #[arg(short, long, default_value = default_manifest_url())]
-    pub manifest: String,
+    pub manifest: Url,
 
     /// Provider to use for downloads
     #[arg(
@@ -40,10 +41,4 @@ pub struct Config {
     /// Description (internal use)
     #[arg(skip = default_description())]
     pub description: String,
-}
-
-impl Config {
-    pub fn manifest_location(&self) -> Result<Location, &'static str> {
-        Location::parse(self.manifest.clone())
-    }
 }

@@ -9,6 +9,7 @@ figlet-rs = "0.1.5"
 tokio = { version = "1.43.0", features = ["full"] }
 downloader-core = {path = "../downloader-core", features = ["cli"] }
 self_update = "0.42.0"
+url = "2.5.4"
 
 [target.'cfg(not(unix))'.dependencies]
 colored = "3.0.0"

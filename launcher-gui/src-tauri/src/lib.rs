@@ -5,7 +5,7 @@ use tauri::Manager;
 use tauri_plugin_http::reqwest;
 
 use downloader_core::{
-    constants::default_figure_text, game, Manifest, Progress, Provider, Transaction,
+    game, Manifest, Progress, Provider, Transaction,
     TransactionReport,
 };
 
