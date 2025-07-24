@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::process;
 
+use clap::Parser;
 use downloader_cli::{updater, Config};
 use downloader_core::{banner, prompt, Progress};
 use downloader_core::{Manifest, Transaction};
@@ -12,12 +13,9 @@ fn main() {
     #[cfg(not(unix))]
     colored::control::set_virtual_terminal(true).unwrap();
 
-    let config = Config::build_config().unwrap_or_else(|err| {
-        println!("Problem parsing arguments: {err}");
-        process::exit(1);
-    });
+    let config = Config::parse();
 
-    if config.check_updates {
+    if config.update {
         updater::self_update();
     }
 
@@ -33,7 +31,7 @@ async fn run(config: Config) -> Result<(), Box<dyn Error>> {
     banner::print_banner(&config.figure_text, &config.description);
 
     let base_path = std::env::current_dir().expect("Failed to get current directory");
-    let manifest = Manifest::build(&config.manifest_location).await?;
+    let manifest = Manifest::build(&config.manifest_location()?).await?;
     let transaction = Transaction::new(manifest, base_path);
 
     transaction.print(config.verbose);
@@ -48,7 +46,7 @@ async fn run(config: Config) -> Result<(), Box<dyn Error>> {
             Ok(())
         };
         transaction
-            .download(progress_handler, config.manifest_provider)
+            .download(progress_handler, config.provider)
             .await?;
     }
 

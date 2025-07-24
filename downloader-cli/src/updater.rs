@@ -3,7 +3,7 @@ use std::{
     process::{self, Command},
 };
 
-use downloader_core::constants::{BIN_NAME_CLI, CURRENT_VERSION, REPO_NAME, REPO_OWNER};
+use downloader_core::constants::{BIN_NAME_CLI, VERSION, REPO_NAME, REPO_OWNER};
 
 pub fn self_update() {
     let update_result = self_update::backends::github::Update::configure()
@@ -11,7 +11,7 @@ pub fn self_update() {
         .repo_name(REPO_NAME)
         .bin_name(BIN_NAME_CLI)
         .show_download_progress(true)
-        .current_version(CURRENT_VERSION)
+        .current_version(VERSION)
         .build()
         .and_then(|u| u.update());
 
