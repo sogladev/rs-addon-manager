@@ -4,10 +4,10 @@ version = "0.1.9"
 edition = "2021"
 
 [dependencies]
-clap = "4.5.28"
+clap = { version = "4.5.28", features = ["derive"] }
 figlet-rs = "0.1.5"
 tokio = { version = "1.43.0", features = ["full"] }
-downloader-core = {path = "../downloader-core" }
+downloader-core = {path = "../downloader-core", features = ["cli"] }
 
 [target.'cfg(not(unix))'.dependencies]
 colored = "3.0.0"

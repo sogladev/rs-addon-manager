@@ -1,8 +1,9 @@
 use std::error::Error;
 use std::process;
 
+use downloader_cli::Config;
 use downloader_core::{banner, prompt, Progress};
-use downloader_core::{Config, Manifest, Transaction};
+use downloader_core::{Manifest, Transaction};
 
 #[cfg(target_os = "windows")]
 use std::io::Write;
@@ -12,7 +13,7 @@ async fn main() {
     #[cfg(not(unix))]
     colored::control::set_virtual_terminal(true).unwrap();
 
-    let config = Config::build().unwrap_or_else(|err| {
+    let config = Config::build_config().unwrap_or_else(|err| {
         println!("Problem parsing arguments: {err}");
         process::exit(1);
     });
