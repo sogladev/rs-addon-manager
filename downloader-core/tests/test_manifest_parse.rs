@@ -1,7 +1,7 @@
 mod common;
 
 use common::TempFile;
-use downloader_core::manifest::{Url, Manifest};
+use downloader_core::manifest::{Manifest, Url};
 
 #[cfg(test)]
 mod tests {

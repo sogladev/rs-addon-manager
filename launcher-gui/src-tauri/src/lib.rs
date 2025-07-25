@@ -1,13 +1,10 @@
-use std::sync::Mutex;
 use downloader_core::constants::default_manifest_url;
+use std::sync::Mutex;
 use tauri::Emitter;
 use tauri::Manager;
 use tauri_plugin_http::reqwest;
 
-use downloader_core::{
-    game, Manifest, Progress, Provider, Transaction,
-    TransactionReport,
-};
+use downloader_core::{game, Manifest, Progress, Provider, Transaction, TransactionReport};
 
 #[derive(Default)]
 struct AppState {
