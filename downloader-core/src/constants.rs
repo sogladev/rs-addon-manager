@@ -37,16 +37,16 @@ pub fn default_figure_text() -> &'static str {
 pub fn default_description() -> String {
     if IS_PRODUCTION {
         format!(
-            "unofficial patch download utility - Sogladev v{}\n\
+            "unofficial patch download utility - Sogladev v{VERSION}\n\
             Bugs or issues: https://github.com/sogladev/rs-game-launcher\n\
-            {VERSION}",
+            {}",
             "-".repeat(100)
         )
     } else {
         format!(
-            "Demo version - For testing purposes only v{}-demo\n\
+            "Demo version - For testing purposes only v{VERSION}-demo\n\
             Bugs or issues: https://github.com/sogladev/rs-game-launcher\n\
-            {VERSION}",
+            {}",
             "-".repeat(100)
         )
     }
