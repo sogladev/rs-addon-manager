@@ -29,8 +29,8 @@ jobs:
           targets: ${{ matrix.target }}${{ matrix.setup-windows && ',x86_64-pc-windows-gnu' || '' }}
       - name: Prepare dist directory
         run: mkdir -p dist/cli
-      - name: Copy LICENSE to dist
-        run: cp LICENSE dist/
+      # - name: Copy LICENSE to dist
+      #   run: cp LICENSE dist/
 
       # Linux builds (on Ubuntu runner)
       - name: Build Linux (Demo)

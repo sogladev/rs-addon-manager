@@ -3,8 +3,9 @@ resolver = "2"
 members = [
     "downloader-core",
     "downloader-cli",
-    "launcher-gui/src-tauri"
-, "manifest-cdn"]
+    "launcher-gui/src-tauri",
+    "manifest-cdn"
+]
 
 [profile.release]
 lto = true
