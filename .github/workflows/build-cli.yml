@@ -15,21 +15,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: moonrepo/setup-rust@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
-      - name: format
-        run: |
-          cargo fmt --version
-          cargo fmt --all -- --check
-      - name: lint
-        run: |
-          cargo clippy --version
-          cargo clippy -- -D warnings
-      - name: test
-        run: cargo test --verbose
-      - name: test docs
-        run: cargo test --doc
+      - name: cargo fmt
+        run: cargo fmt --all -- --check
+      - name: cargo clippy
+        run: cargo clippy --all-features -- -D warnings
+      - name: cargo test
+        run: cargo test --all-features --verbose
 
   build-cli-linux:
     runs-on: ubuntu-24.04
