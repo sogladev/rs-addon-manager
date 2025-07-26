@@ -30,7 +30,7 @@ enum OperationType {
 ///
 /// # Fields
 /// - `operation_type`: The type of operation (file update or removal).
-/// - `size`: The current size of the file, represented as a 64-bit signed integer.
+/// - `size`: The current size of the file.
 /// - `status`: The status of the file operation.
 struct FileOperation {
     operation_type: OperationType,
@@ -129,16 +129,6 @@ impl FileOperation {
             OperationType::FileRemoval(_) => None,
         }
     }
-
-    /// Check if this is a file update operation
-    fn is_file_update(&self) -> bool {
-        matches!(self.operation_type, OperationType::FileUpdate(_))
-    }
-
-    /// Check if this is a file removal operation
-    fn is_file_removal(&self) -> bool {
-        matches!(self.operation_type, OperationType::FileRemoval(_))
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -151,7 +141,7 @@ pub struct FileReport {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TransactionReport {
     pub version: String,
-    pub uid: String,
+    pub uuid: String,
     pub up_to_date_files: Vec<FileReport>,
     pub outdated_files: Vec<FileReport>,
     pub missing_files: Vec<FileReport>,
@@ -180,52 +170,46 @@ impl Transaction {
         }
     }
 
+    fn update_file_reports(&self, status: Status) -> Vec<FileReport> {
+        self.operations
+            .iter()
+            .filter(|op| {
+                matches!(op.operation_type, OperationType::FileUpdate(_)) && op.status == status
+            })
+            .filter_map(|op| {
+                op.get_patch_file().map(|p| FileReport {
+                    path: p.path.clone(),
+                    current_size: if status == Status::Missing {
+                        None
+                    } else {
+                        Some(op.size)
+                    },
+                    new_size: p.size,
+                })
+            })
+            .collect()
+    }
+
+    fn removal_file_reports(&self) -> Vec<FileReport> {
+        self.operations
+            .iter()
+            .filter(|op| matches!(op.operation_type, OperationType::FileRemoval(_)))
+            .map(|op| FileReport {
+                path: op.get_path().to_string(),
+                current_size: Some(op.size),
+                new_size: 0,
+            })
+            .collect()
+    }
+
     pub fn generate_report(&self) -> TransactionReport {
         TransactionReport {
             version: self.manifest_version.clone(),
-            uid: self.manifest_uid.clone(),
-            up_to_date_files: self
-                .up_to_date()
-                .iter()
-                .filter_map(|op| {
-                    op.get_patch_file().map(|patch_file| FileReport {
-                        path: patch_file.path.clone(),
-                        current_size: Some(op.size),
-                        new_size: patch_file.size,
-                    })
-                })
-                .collect(),
-            outdated_files: self
-                .outdated()
-                .iter()
-                .filter_map(|op| {
-                    op.get_patch_file().map(|patch_file| FileReport {
-                        path: patch_file.path.clone(),
-                        current_size: Some(op.size),
-                        new_size: patch_file.size,
-                    })
-                })
-                .collect(),
-            missing_files: self
-                .missing()
-                .iter()
-                .filter_map(|op| {
-                    op.get_patch_file().map(|patch_file| FileReport {
-                        path: patch_file.path.clone(),
-                        current_size: None,
-                        new_size: patch_file.size,
-                    })
-                })
-                .collect(),
-            removed_files: self
-                .removals()
-                .iter()
-                .map(|op| FileReport {
-                    path: op.get_path().to_string(),
-                    current_size: Some(op.size),
-                    new_size: 0,
-                })
-                .collect(),
+            uuid: self.manifest_uid.clone(),
+            up_to_date_files: self.update_file_reports(Status::Present),
+            outdated_files: self.update_file_reports(Status::OutOfDate),
+            missing_files: self.update_file_reports(Status::Missing),
+            removed_files: self.removal_file_reports(),
             total_download_size: self.total_download_size() as u64,
             disk_space_change: self.disk_space_change(),
             base_path: self.base_path.clone(),
@@ -236,7 +220,7 @@ impl Transaction {
         let report = self.generate_report();
         println!("\nManifest Overview:");
         println!(" Version: {}", report.version);
-        println!(" UID: {}", report.uid);
+        println!(" UID: {}", report.uuid);
         println!(" Base path: {}", report.base_path.display());
 
         // Helper closure to print a file category section
@@ -334,20 +318,6 @@ impl Transaction {
         }
     }
 
-    fn up_to_date(&self) -> Vec<&FileOperation> {
-        self.operations
-            .iter()
-            .filter(|op| op.status == Status::Present)
-            .collect()
-    }
-
-    fn outdated(&self) -> Vec<&FileOperation> {
-        self.operations
-            .iter()
-            .filter(|op| op.status == Status::OutOfDate)
-            .collect()
-    }
-
     fn pending(&self) -> Vec<&FileOperation> {
         self.operations
             .iter()
@@ -355,24 +325,10 @@ impl Transaction {
             .collect()
     }
 
-    fn missing(&self) -> Vec<&FileOperation> {
-        self.operations
-            .iter()
-            .filter(|op| op.status == Status::Missing)
-            .collect()
-    }
-
-    fn removals(&self) -> Vec<&FileOperation> {
-        self.operations
-            .iter()
-            .filter(|op| op.is_file_removal())
-            .collect()
-    }
-
     pub fn pending_count(&self) -> usize {
         self.operations
             .iter()
-            .filter(|x| x.status != Status::Present)
+            .filter(|op| op.status != Status::Present)
             .count()
     }
 
@@ -384,9 +340,12 @@ impl Transaction {
         let total = self
             .operations
             .iter()
-            .filter(|x| x.status != Status::Present && x.is_file_update())
-            .filter_map(|x| x.get_patch_file())
-            .map(|x| x.size)
+            .filter(|op| {
+                matches!(op.operation_type, OperationType::FileUpdate(_))
+                    && op.status != Status::Present
+            })
+            .filter_map(|op| op.get_patch_file())
+            .map(|p| p.size)
             .sum();
         assert!(
             total >= 0,
@@ -398,10 +357,10 @@ impl Transaction {
     fn disk_space_change(&self) -> i64 {
         self.operations
             .iter()
-            .filter(|x| x.status != Status::Present)
-            .map(|x| match &x.operation_type {
-                OperationType::FileUpdate(patch_file) => patch_file.size - x.size,
-                OperationType::FileRemoval(_) => -x.size, // Removing a file frees up space
+            .filter(|op| op.status != Status::Present)
+            .map(|op| match &op.operation_type {
+                OperationType::FileUpdate(p) => p.size - op.size,
+                OperationType::FileRemoval(_) => -op.size, // Removing a file frees up space
             })
             .sum()
     }
@@ -426,7 +385,7 @@ impl Transaction {
 
                     // Create parent directories if they don't exist
                     if let Some(dir) = dest_path.parent() {
-                        tokio::fs::create_dir_all(dir).await?;
+                        std::fs::create_dir_all(dir)?;
                     }
 
                     // Get URL for the specified provider
@@ -495,7 +454,7 @@ impl Transaction {
                     // Handle file removals
                     let dest_path = self.base_path.join(path);
                     if dest_path.exists() {
-                        tokio::fs::remove_file(&dest_path).await.map_err(|e| {
+                        std::fs::remove_file(&dest_path).map_err(|e| {
                             format!("Failed to remove file {}: {}", dest_path.display(), e)
                         })?;
                         println!("Removed file: {}", dest_path.display());
