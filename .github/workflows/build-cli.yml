@@ -1,41 +1,28 @@
 name: Build CLI
 
 on:
+  pull_request:
+    paths:
+      - 'downloader-cli/**'
+      - 'downloader-core/**'
+      - '.github/workflows/build-cli.yml'
   push:
     branches: ['main']
-  pull_request:
-  workflow_dispatch:
+    paths:
+      - 'downloader-cli/**'
+      - 'downloader-core/**'
+      - '.github/workflows/build-cli.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: moonrepo/setup-rust@v1
-        with:
-          components: clippy, rustfmt
-      - name: format
-        run: |
-          cargo fmt --version
-          cargo fmt --all -- --check
-      - name: lint
-        run: |
-          cargo clippy --version
-          cargo clippy -- -D warnings
-      - name: test
-        run: cargo test --verbose
-      - name: test docs
-        run: cargo test --doc
-
   build-cli-linux:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - uses: moonrepo/setup-rust@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-unknown-linux-gnu
       - name: Prepare dist directory

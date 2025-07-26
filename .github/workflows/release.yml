@@ -6,7 +6,7 @@ on:
       version:
         description: 'desired version'
         required: true
-        default: 'v0.1.9'
+        default: 'v0.2.3'
 
 jobs:
   build-cli-all-platforms:
@@ -24,7 +24,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
-      - uses: moonrepo/setup-rust@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}${{ matrix.setup-windows && ',x86_64-pc-windows-gnu' || '' }}
       - name: Prepare dist directory

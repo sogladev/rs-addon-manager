@@ -1,6 +1,17 @@
 name: Build GUI
 
-on: [pull_request]
+on:
+  pull_request:
+    paths:
+      - 'launcher-gui/**'
+      - 'downloader-core/**'
+      - '.github/workflows/build-gui.yml'
+  push:
+    branches: ['main']
+    paths:
+      - 'launcher-gui/**'
+      - 'downloader-core/**'
+      - '.github/workflows/build-gui.yml'
 
 # This workflow will build your tauri app without uploading it anywhere.
 
