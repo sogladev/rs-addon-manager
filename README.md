@@ -74,6 +74,7 @@ https://github.com/user-attachments/assets/7c642947-a57c-46b0-aab9-eeb456b6e115
 The local CDN serves patch files and the manifest for both the CLI and GUI. Run these commands from the project root:
 
 ```sh
+cd manifest-cdn
 # Generate manifest.json (run once or when files change)
 cargo run --bin manifest-cdn -- --create
 # Start the local CDN server

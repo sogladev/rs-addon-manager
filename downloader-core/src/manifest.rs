@@ -66,6 +66,7 @@ pub struct Manifest {
     #[serde(rename = "Uid")]
     pub uuid: String,
     pub files: Vec<PatchFile>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub removals: Option<Vec<String>>,
 }
 
