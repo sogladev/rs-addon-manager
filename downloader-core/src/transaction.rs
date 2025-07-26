@@ -155,7 +155,7 @@ pub struct TransactionReport {
 pub struct Transaction {
     operations: Vec<FileOperation>,
     manifest_version: String,
-    manifest_uid: String,
+    manifest_uuid: String,
     pub base_path: PathBuf,
 }
 
@@ -165,7 +165,7 @@ impl Transaction {
         Transaction {
             operations,
             manifest_version: manifest.version,
-            manifest_uid: manifest.uuid,
+            manifest_uuid: manifest.uuid,
             base_path,
         }
     }
@@ -205,7 +205,7 @@ impl Transaction {
     pub fn generate_report(&self) -> TransactionReport {
         TransactionReport {
             version: self.manifest_version.clone(),
-            uuid: self.manifest_uid.clone(),
+            uuid: self.manifest_uuid.clone(),
             up_to_date_files: self.update_file_reports(Status::Present),
             outdated_files: self.update_file_reports(Status::OutOfDate),
             missing_files: self.update_file_reports(Status::Missing),
