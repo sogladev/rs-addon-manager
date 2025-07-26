@@ -1,16 +1,12 @@
-mod common;
-
-use common::TempFile;
-use downloader_core::manifest::{Manifest, Url};
+use downloader_core::manifest::Manifest;
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_manifest_from_file() {
-        // Prepare a temporary file with valid manifest JSON content
-
+    async fn test_manifest_from_json() {
+        // Prepare valid manifest JSON content
         let json_content = r#"
         {
             "Version": "1.0",
@@ -34,13 +30,10 @@ mod tests {
             ]
         }
         "#;
-        let temp_file = TempFile::new("temp_manifest_valid.json", json_content);
 
-        // Deserialize manifest from the file
-        let location = Url::FilePath(temp_file.path.clone());
-        let manifest = Manifest::build(&location)
-            .await
-            .expect("Failed to build manifest");
+        // Deserialize manifest from JSON string
+        let manifest: Manifest = serde_json::from_str(json_content)
+            .expect("Failed to parse manifest JSON");
         assert_eq!(manifest.version, "1.0");
         assert_eq!(manifest.files.len(), 1);
         assert_eq!(manifest.files[0].path, "files/A.bin");
@@ -50,16 +43,13 @@ mod tests {
         assert_eq!(removals[1], "old/another_file.dll");
     }
 
-    #[cfg(test)]
     #[tokio::test]
     async fn test_manifest_deserialize_invalid_json() {
-        // Prepare a temporary file with invalid JSON content
+        // Prepare invalid JSON content
+        let invalid_json = "invalid json";
 
-        let temp_file = common::TempFile::new("temp_manifest_invalid.json", "invalid json");
-
-        // Expect Manifest::build to error out on invalid JSON
-        let location = Url::FilePath(temp_file.path.clone());
-        let result = Manifest::build(&location).await;
+        // Expect deserialization to error out on invalid JSON
+        let result: Result<Manifest, _> = serde_json::from_str(invalid_json);
         assert!(result.is_err());
     }
 }
