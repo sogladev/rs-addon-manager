@@ -32,8 +32,8 @@ mod tests {
         "#;
 
         // Deserialize manifest from JSON string
-        let manifest: Manifest = serde_json::from_str(json_content)
-            .expect("Failed to parse manifest JSON");
+        let manifest: Manifest =
+            serde_json::from_str(json_content).expect("Failed to parse manifest JSON");
         assert_eq!(manifest.version, "1.0");
         assert_eq!(manifest.files.len(), 1);
         assert_eq!(manifest.files[0].path, "files/A.bin");
