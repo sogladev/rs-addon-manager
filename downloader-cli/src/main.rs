@@ -37,6 +37,7 @@ fn main() {
 
 async fn run(config: Config) -> Result<(), Box<dyn Error>> {
     banner::print_banner(&config.figure_text, &config.description);
+    println!("Fetching manifest and preparing transaction...");
 
     let base_path = std::env::current_dir().expect("Failed to get current directory");
     let manifest = Manifest::build(&config.manifest).await?;
