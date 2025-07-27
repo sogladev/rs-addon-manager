@@ -105,13 +105,28 @@ fn run_server(serve_dir: String, throttle: u64) {
 
     for request in server.incoming_requests() {
         let url = request.url();
+        let file_path;
+
         if url.starts_with("/files/") {
             // Serve from files directory
             let rel_path = url.strip_prefix("/files/").unwrap_or("");
-            let mut file_path = PathBuf::from(&serve_dir);
-            file_path.push(rel_path);
+            let mut path = PathBuf::from(&serve_dir);
+            path.push(rel_path);
+            file_path = Some(path);
+        } else if url.ends_with(".bin") {
+            // Serve root-level bin files from serve_dir
+            let rel_path = url.trim_start_matches('/');
+            let mut path = PathBuf::from(&serve_dir);
+            path.push(rel_path);
+            file_path = Some(path);
+        } else {
+            // Serve from current directory (e.g. manifest.json)
+            let path = url.trim_start_matches('/');
+            file_path = Some(PathBuf::from(path));
+        }
 
-            match fs::File::open(&file_path) {
+        if let Some(path) = file_path {
+            match fs::File::open(&path) {
                 Ok(mut file) => {
                     let mut buf = [0u8; 1024];
                     let mut response_data = Vec::new();
@@ -128,20 +143,6 @@ fn run_server(serve_dir: String, throttle: u64) {
                         }
                     }
                     let response = Response::from_data(response_data);
-                    request.respond(response).ok();
-                }
-                Err(_) => {
-                    request.respond(Response::empty(StatusCode(404))).ok();
-                }
-            }
-        } else {
-            // Serve from current directory (e.g. manifest.json)
-            let path = url.trim_start_matches('/');
-            match fs::File::open(path) {
-                Ok(mut file) => {
-                    let mut body = Vec::new();
-                    file.read_to_end(&mut body).ok();
-                    let response = Response::from_data(body);
                     request.respond(response).ok();
                 }
                 Err(_) => {
