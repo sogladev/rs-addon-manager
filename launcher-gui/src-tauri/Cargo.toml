@@ -1,6 +1,6 @@
 [package]
 name = "launcher-gui"
-version = "0.2.5"
+version = "0.2.6"
 description = "Tauri Game Launcher"
 authors = ["sogladev"]
 edition = "2021"
