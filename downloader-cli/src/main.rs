@@ -5,9 +5,7 @@ use clap::Parser;
 use downloader_cli::{prompt, updater, Config};
 use downloader_core::{banner, Progress};
 use downloader_core::{Manifest, Transaction};
-
-#[cfg(target_os = "windows")]
-use std::io::Write;
+mod wait;
 
 fn main() {
     #[cfg(not(unix))]
@@ -31,10 +29,7 @@ fn main() {
                     println!("Right-click the executable and choose 'Run as administrator'.");
                 }
             }
-            println!("\nPress Enter to exit...");
-            let _ = std::io::stdout().flush();
-            let mut input = String::new();
-            let _ = std::io::stdin().read_line(&mut input);
+            wait::wait_for_exit();
         }
         process::exit(1);
     }
@@ -78,12 +73,7 @@ async fn run(config: Config) -> Result<(), Box<dyn Error>> {
     println!("All files are up to date or successfully downloaded.");
 
     #[cfg(target_os = "windows")]
-    {
-        println!("\nPress Enter to exit...");
-        let _ = std::io::stdout().flush();
-        let mut input = String::new();
-        let _ = std::io::stdin().read_line(&mut input);
-    }
+    wait::wait_for_exit();
 
     Ok(())
 }
