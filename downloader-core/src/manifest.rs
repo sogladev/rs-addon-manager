@@ -5,10 +5,11 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default, Copy)]
 #[serde(rename_all = "lowercase")]
 #[cfg_attr(feature = "cli", derive(clap::ValueEnum))]
 pub enum Provider {
+    #[default]
     Cloudflare,
     #[serde(rename = "digitalocean")]
     #[cfg_attr(feature = "cli", clap(name = "digitalocean"))]

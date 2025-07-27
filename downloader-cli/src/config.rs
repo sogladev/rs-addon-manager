@@ -12,15 +12,14 @@ pub struct Config {
     #[arg(short, long, default_value = default_manifest_url())]
     pub manifest: Url,
 
-    /// Provider to use for downloads
+    /// Provider to use for downloads. If not specified, you will be prompted interactively.
     #[arg(
         short,
         long,
         value_enum,
-        default_value = "cloudflare",
-        help = "Available providers: cloudflare (Server #1), digitalocean (Server #2), none (Server #3 - Slowest)"
+        help = "Available providers: cloudflare (Server #1), digitalocean (Server #2), none (Server #3 - Slowest). If not specified, you will be prompted interactively."
     )]
-    pub provider: Provider,
+    pub provider: Option<Provider>,
 
     /// Show verbose output including empty categories
     #[arg(short, long, default_value_t = false)]

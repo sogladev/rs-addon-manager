@@ -4,7 +4,6 @@ pub mod format;
 pub mod game;
 pub mod manifest;
 pub mod progress;
-pub mod prompt;
 pub mod transaction;
 
 pub use manifest::Manifest;
