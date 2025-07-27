@@ -23,6 +23,19 @@ fn main() {
     let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
     if let Err(e) = rt.block_on(run(config)) {
         println!("Application error: {e}");
+        #[cfg(target_os = "windows")]
+        {
+            if let Some(io_err) = e.downcast_ref::<std::io::Error>() {
+                if io_err.kind() == std::io::ErrorKind::PermissionDenied {
+                    println!("Permission denied. Please run this program as administrator.");
+                    println!("Right-click the executable and choose 'Run as administrator'.");
+                }
+            }
+            println!("\nPress Enter to exit...");
+            let _ = std::io::stdout().flush();
+            let mut input = String::new();
+            let _ = std::io::stdin().read_line(&mut input);
+        }
         process::exit(1);
     }
 }
