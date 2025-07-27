@@ -2,8 +2,8 @@ use std::error::Error;
 use std::process;
 
 use clap::Parser;
-use downloader_cli::{updater, Config};
-use downloader_core::{banner, prompt, Progress};
+use downloader_cli::{prompt, updater, Config};
+use downloader_core::{banner, Progress};
 use downloader_core::{Manifest, Transaction};
 
 #[cfg(target_os = "windows")]
@@ -32,13 +32,24 @@ async fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
     let base_path = std::env::current_dir().expect("Failed to get current directory");
     let manifest = Manifest::build(&config.manifest).await?;
-    let transaction = Transaction::new(manifest, base_path);
+    let transaction = Transaction::new(manifest.clone(), base_path);
 
     transaction.print(config.verbose);
 
     if transaction.has_pending_operations() {
-        if !config.yes && !prompt::confirm("Is this ok")? {
-            process::exit(1);
+        let mut provider = config.provider;
+
+        if !config.yes {
+            match provider {
+                Some(_) => {
+                    if !prompt::confirm("Is this ok")? {
+                        process::exit(1);
+                    }
+                }
+                None => {
+                    provider = prompt::select_provider(&manifest.files);
+                }
+            }
         }
 
         let progress_handler = |progress: &Progress| {
@@ -46,7 +57,7 @@ async fn run(config: Config) -> Result<(), Box<dyn Error>> {
             Ok(())
         };
         transaction
-            .download(progress_handler, config.provider)
+            .download(progress_handler, provider.unwrap_or_default())
             .await?;
     }
 
