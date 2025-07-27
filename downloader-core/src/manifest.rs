@@ -93,7 +93,10 @@ impl Manifest {
 
     /// Build manifest from a location (URL or file)
     pub async fn build(url: &Url) -> Result<Self, Box<dyn Error>> {
-        let response = reqwest::get(url.as_str()).await?;
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(10))
+            .build()?;
+        let response = client.get(url.as_str()).send().await?;
         let contents = response.text().await?;
         Self::from_json(&contents)
     }
