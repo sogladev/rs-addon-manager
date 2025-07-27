@@ -1001,6 +1001,7 @@ dependencies = [
  "clap",
  "colored",
  "downloader-core",
+ "embed-resource",
  "figlet-rs",
  "self_update",
  "tokio",
