@@ -2,7 +2,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { listen } from '@tauri-apps/api/event';
-// Save the game directory in the store
 import { load } from '@tauri-apps/plugin-store';
 
 import { computed, ref, onMounted, watch } from 'vue';
@@ -136,8 +135,8 @@ async function createTransaction() {
     });
     console.log('Transaction report:', report);
     transactionReport.value = report;
-    // If there are no pending files the game is up-to-date
-    if (report.missing_files.length === 0 && report.outdated_files.length === 0) {
+    const isUpToDate = report.missing_files.length === 0 && report.outdated_files.length === 0;
+    if (isUpToDate) {
       appState.value = AppState.Complete;
       return;
     }
@@ -159,7 +158,7 @@ async function createTransaction() {
 const modalRef = ref(<InstanceType<typeof HTMLDialogElement> | null>(null));
 watch(appState, (newState) => {
   if (newState === AppState.AwaitingApproval) {
-    modalRef.value?.showModal(); // Open the modal
+    modalRef.value?.showModal();
   } else {
     modalRef.value?.close(); // Close the modal when the state changes
   }
@@ -253,9 +252,6 @@ async function launchGame() {
   <Toast ref="toastRef" />
   <dialog ref="modalRef" id="transaction_modal" class="modal">
     <div class="modal-box">
-      <!-- <form method="dialog">
-        <button class="btn btn-md btn-ghost absolute right-2 top-2">Cancel</button>
-      </form> -->
       <h3 class="text-lg font-bold">Transaction Overview</h3>
       <div v-if="!transactionReport">
         <p>No transaction report available</p>
@@ -264,8 +260,10 @@ async function launchGame() {
         <h4 class="text-md font-bold mt-4">Base path</h4>
         <p> {{ transactionReport?.base_path }} </p>
 
-        <h4 class="text-md font-bold mt-4">Up-to-date files</h4>
-        <ul>
+        <h4 v-if="transactionReport.up_to_date_files.length" class="text-md font-bold mt-4">
+          Up-to-date files
+        </h4>
+        <ul v-if="transactionReport.up_to_date_files.length">
           <li v-for="file in transactionReport.up_to_date_files" :key="file.path">
             {{ file.path }}
             <span v-if="file.current_size" class="opacity-50">
@@ -274,8 +272,10 @@ async function launchGame() {
           </li>
         </ul>
 
-        <h4 class="text-md font-bold mt-4">Outdated files (will be updated)</h4>
-        <ul>
+        <h4 v-if="transactionReport.outdated_files.length" class="text-md font-bold mt-4">
+          Outdated files (will be updated)
+        </h4>
+        <ul v-if="transactionReport.outdated_files.length">
           <li v-for="file in transactionReport.outdated_files" :key="file.path">
             {{ file.path }}
             <span v-if="file.current_size" class="opacity-50">
@@ -284,8 +284,10 @@ async function launchGame() {
           </li>
         </ul>
 
-        <h4 class="text-md font-bold mt-4">Missing files (will be downloaded)</h4>
-        <ul>
+        <h4 v-if="transactionReport.missing_files.length" class="text-md font-bold mt-4">
+          Missing files (will be downloaded)
+        </h4>
+        <ul v-if="transactionReport.missing_files.length">
           <li v-for="file in transactionReport.missing_files" :key="file.path">
             {{ file.path }}
             <span class="opacity-50">
@@ -294,8 +296,9 @@ async function launchGame() {
           </li>
         </ul>
 
-        <h4 class="text-md font-bold mt-4">Files to be removed:</h4>
-        <ul>
+        <h4 v-if="transactionReport.removed_files.length" class="text-md font-bold mt-4">
+          Files to be removed:</h4>
+        <ul v-if="transactionReport.removed_files.length">
           <li v-for="file in transactionReport.removed_files" :key="file.path">
             {{ file.path }}
             <span class="opacity-50">
@@ -305,7 +308,8 @@ async function launchGame() {
         </ul>
 
         <h4 class="text-md font-bold mt-4">Transaction Summary</h4>
-        Installing/Updating: {{ transactionReport.missing_files.length + transactionReport.outdated_files.length }} files
+        Installing/Updating: {{ transactionReport.missing_files.length + transactionReport.outdated_files.length }}
+        files
         <br>
         Removing: {{ transactionReport.removed_files.length }} files
         <br>
@@ -329,7 +333,10 @@ async function launchGame() {
       </div>
     </div>
   </dialog>
-  <button v-if="appState == AppState.AwaitingApproval" class="btn" onclick="transaction_modal.showModal()">Open Transaction</button>
+  <button v-if="appState == AppState.AwaitingApproval" class="btn" onclick="transaction_modal.showModal()">
+    Open Transaction
+  </button>
+  <!-- For debugging -->
   <!-- <button class="btn" onclick="transaction_modal.showModal()">Open Transaction</button> -->
 
   <div class="p-4 bg-base-200/75">
@@ -345,13 +352,12 @@ async function launchGame() {
         <progress class="progress progress-primary" :value="progressValue" max="100"></progress>
       </div>
       <div class="ml-2 flex flex-col items-end">
-        <button class="btn btn-primary w-full items-center justify-center text-center"
-          :disabled="buttonDisabled" @click="handleButtonClick"> {{ buttonLabel }}
+        <button class="btn btn-primary w-full items-center justify-center text-center" :disabled="buttonDisabled"
+          @click="handleButtonClick"> {{ buttonLabel }}
         </button>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>
