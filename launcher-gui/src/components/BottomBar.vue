@@ -253,9 +253,6 @@ async function launchGame() {
   <Toast ref="toastRef" />
   <dialog ref="modalRef" id="transaction_modal" class="modal">
     <div class="modal-box">
-      <!-- <form method="dialog">
-        <button class="btn btn-md btn-ghost absolute right-2 top-2">Cancel</button>
-      </form> -->
       <h3 class="text-lg font-bold">Transaction Overview</h3>
       <div v-if="!transactionReport">
         <p>No transaction report available</p>
@@ -264,8 +261,8 @@ async function launchGame() {
         <h4 class="text-md font-bold mt-4">Base path</h4>
         <p> {{ transactionReport?.base_path }} </p>
 
-        <h4 class="text-md font-bold mt-4">Up-to-date files</h4>
-        <ul>
+        <h4 v-if="transactionReport.up_to_date_files.length" class="text-md font-bold mt-4">Up-to-date files</h4>
+        <ul v-if="transactionReport.up_to_date_files.length">
           <li v-for="file in transactionReport.up_to_date_files" :key="file.path">
             {{ file.path }}
             <span v-if="file.current_size" class="opacity-50">
@@ -274,8 +271,8 @@ async function launchGame() {
           </li>
         </ul>
 
-        <h4 class="text-md font-bold mt-4">Outdated files (will be updated)</h4>
-        <ul>
+        <h4 v-if="transactionReport.outdated_files.length" class="text-md font-bold mt-4">Outdated files (will be updated)</h4>
+        <ul v-if="transactionReport.outdated_files.length">
           <li v-for="file in transactionReport.outdated_files" :key="file.path">
             {{ file.path }}
             <span v-if="file.current_size" class="opacity-50">
@@ -284,8 +281,8 @@ async function launchGame() {
           </li>
         </ul>
 
-        <h4 class="text-md font-bold mt-4">Missing files (will be downloaded)</h4>
-        <ul>
+        <h4 v-if="transactionReport.missing_files.length" class="text-md font-bold mt-4">Missing files (will be downloaded)</h4>
+        <ul v-if="transactionReport.missing_files.length">
           <li v-for="file in transactionReport.missing_files" :key="file.path">
             {{ file.path }}
             <span class="opacity-50">
@@ -294,8 +291,8 @@ async function launchGame() {
           </li>
         </ul>
 
-        <h4 class="text-md font-bold mt-4">Files to be removed:</h4>
-        <ul>
+        <h4 v-if="transactionReport.removed_files.length" class="text-md font-bold mt-4">Files to be removed:</h4>
+        <ul v-if="transactionReport.removed_files.length">
           <li v-for="file in transactionReport.removed_files" :key="file.path">
             {{ file.path }}
             <span class="opacity-50">
@@ -330,6 +327,7 @@ async function launchGame() {
     </div>
   </dialog>
   <button v-if="appState == AppState.AwaitingApproval" class="btn" onclick="transaction_modal.showModal()">Open Transaction</button>
+  <!-- For debugging -->
   <!-- <button class="btn" onclick="transaction_modal.showModal()">Open Transaction</button> -->
 
   <div class="p-4 bg-base-200/75">
