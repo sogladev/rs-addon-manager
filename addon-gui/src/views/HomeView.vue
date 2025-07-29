@@ -9,7 +9,7 @@ import AddonCollapse from '@/components/AddonCollapse.vue';
 import { invoke } from '@tauri-apps/api/core';
 
 async function isValidGitUrl(url: string): Promise<boolean> {
-    return await invoke<boolean>('validate_repo_url', { url });
+    return await invoke<boolean>('is_valid_repo_url', { url });
 }
 
 const gitUrl = ref('');
