@@ -6,27 +6,46 @@ import { useTimeoutFn } from '@vueuse/core';
 import { Plus, ArrowDownToLine, Ellipsis, CircleArrowDown, RefreshCcw } from 'lucide-vue-next';
 import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next';
 import AddonCollapse from '@/components/AddonCollapse.vue';
+import { invoke } from '@tauri-apps/api/core';
+
+async function isValidGitUrl(url: string): Promise<boolean> {
+    return await invoke<boolean>('validate_repo_url', { url });
+}
+
+const gitUrl = ref('');
+const isGitUrlValid = ref<boolean | null>(null);
+
+import { watch } from 'vue';
+
+watch(gitUrl, async () => {
+    if (!trimmedGitUrl.value) {
+        isGitUrlValid.value = null;
+        return;
+    }
+    isGitUrlValid.value = await isValidGitUrl(trimmedGitUrl.value);
+});
+
 
 const paths = ref([
     {
         path: '/home/jelle/Games',
         addons: [
-            { name: 'Addon One', notes: '#.toc notes', branch: 'main', branches: ['main', 'dev', 'release', 'origin/HEAD/verylongbranchanemasaaa'] },
-            { name: 'Addon Two', notes: '#.toc notes', branch: 'dev', branches: ['main', 'dev', 'release'] },
-            { name: 'Addon Three', notes: '#.toc notes', branch: 'release', branches: ['main', 'dev', 'release'] },
-            { name: 'Addon Four', notes: '#.toc notes', branch: 'dev', branches: ['main', 'dev', 'release'] },
-            { name: 'Addon Five', notes: '#.toc notes', branch: 'dev', branches: ['main', 'dev', 'release'] },
-            { name: 'Addon Six', notes: '#.toc notes', branch: 'main', branches: ['main', 'dev', 'release'] },
-            { name: 'Addon Seven', notes: '#.toc notes', branch: 'release', branches: ['main', 'dev', 'release'] },
+            { name: 'Addon One', notes: '#.toc notes', branch: 'main', branches: ['main', 'dev', 'release', 'origin/HEAD/verylongbranchanemasaaa'], isUpdateAvailable: false },
+            { name: 'Addon Two', notes: '#.toc notes', branch: 'dev', branches: ['main', 'dev', 'release'], isUpdateAvailable: true },
+            { name: 'Addon Three', notes: '#.toc notes', branch: 'release', branches: ['main', 'dev', 'release'], isUpdateAvailable: false },
+            { name: 'Addon Four', notes: '#.toc notes', branch: 'dev', branches: ['main', 'dev', 'release'], isUpdateAvailable: true },
+            { name: 'Addon Five', notes: '#.toc notes', branch: 'dev', branches: ['main', 'dev', 'release'], isUpdateAvailable: false },
+            { name: 'Addon Six', notes: '#.toc notes', branch: 'main', branches: ['main', 'dev', 'release'], isUpdateAvailable: false },
+            { name: 'Addon Seven', notes: '#.toc notes', branch: 'release', branches: ['main', 'dev', 'release'], isUpdateAvailable: true },
         ]
     },
     {
         path: '/mnt/games/wow/addons',
         addons: [
-            { name: 'Addon Eight', notes: '#.toc notes', branch: 'release', branches: ['main', 'release'] },
-            { name: 'Addon Nine', notes: '#.toc notes', branch: 'main', branches: ['main', 'release'] },
-            { name: 'Addon Ten', notes: '#.toc notes', branch: 'main', branches: ['main', 'release'] },
-            { name: 'Addon Eleven', notes: '#.toc notes', branch: 'release', branches: ['main', 'release'] },
+            { name: 'Addon Eight', notes: '#.toc notes', branch: 'release', branches: ['main', 'release'], isUpdateAvailable: false },
+            { name: 'Addon Nine', notes: '#.toc notes', branch: 'main', branches: ['main', 'release'], isUpdateAvailable: true },
+            { name: 'Addon Ten', notes: '#.toc notes', branch: 'main', branches: ['main', 'release'], isUpdateAvailable: false },
+            { name: 'Addon Eleven', notes: '#.toc notes', branch: 'release', branches: ['main', 'release'], isUpdateAvailable: false },
         ]
     }
 ])
@@ -53,9 +72,10 @@ const addAddonDirectory = async () => {
 };
 
 const showAddModal = ref(false)
-const gitUrl = ref('')
-const selectedDir = ref('')
-const availableDirs = ['/home/user/wow/addons', '/mnt/games/wow/addons']
+const availableDirs = computed(() =>
+    paths.value.map(pathObj => pathObj.path)
+);
+const selectedDir = ref(availableDirs.value[0] || '')
 
 const isOpening = ref(false)
 
@@ -87,50 +107,48 @@ function handleOpenPath(path: string) {
         isOpening.value = false
     }, FOLDER_REVEAL_TIMEOUT_IN_MS)
 }
+
+const handleClone = async () => {
+    if (!isGitUrlValid.value) return;
+    // Use trimmedGitUrl.value
+    showAddModal.value = false;
+};
+
+const trimmedGitUrl = computed(() => gitUrl.value.trim());
 </script>
 
 <template>
     <!-- <MainLayout> -->
     <div class="flex flex-col h-full gap-4">
 
-    <!-- top bar: navbar + controls row -->
-    <div class="sticky top-0 z-10 bg-base-200 rounded-box mb-2 flex flex-col gap-0">
-        <div class="navbar justify-center">
-            <div class="navbar-center w-full flex justify-center">
-                <div class="tabs tabs-box text-lg">
-                    <button class="tab tab-active px-8 py-2">addons</button>
-                    <button class="tab px-8 py-2">about</button>
-                    <button class="tab px-8 py-2">config</button>
+        <!-- top bar: navbar + controls row -->
+        <div class="sticky top-0 z-10 bg-base-200 rounded-box mb-2 flex flex-col gap-0">
+            <div class="navbar justify-center">
+                <div class="navbar-center w-full flex justify-center">
+                    <div class="tabs tabs-box text-lg">
+                        <button class="tab tab-active px-8 py-2">addons</button>
+                        <button class="tab px-8 py-2">about</button>
+                        <button class="tab px-8 py-2">config</button>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="flex flex-wrap items-center gap-2 bg-base-200 pb-2 pt-2 px-2">
-            <button class="btn btn-primary">Update All</button>
-            <button class="btn btn-primary">
-                <ArrowDownToLine />
-            </button>
-            <button class="btn btn-primary">
-                <ArrowDownToLine />
-                Update All
-            </button>
+            <div class="flex flex-wrap items-center gap-2 bg-base-200 pb-2 pt-2 px-2">
+                <button class="btn btn-primary">Update All</button>
+                <!-- <button class="btn btn-primary"> <ArrowDownToLine /> </button> -->
+                <!-- <button class="btn btn-primary"> <ArrowDownToLine /> Update All </button> -->
 
-            <button class="btn btn-secondary">Refresh</button>
-            <button class="btn btn-secondary">
-                <RefreshCcw />
-                Refresh
-            </button>
-            <button class="btn btn-secondary">
-                <RefreshCcw />
-            </button>
+                <button class="btn btn-secondary">Refresh</button>
+                <!-- <button class="btn btn-secondary"> <RefreshCcw /> Refresh </button> -->
+                <!-- <button class="btn btn-secondary"> <RefreshCcw /> </button> -->
 
-            <input v-model="search" class="input input-bordered flex-1 max-w-xs ml-auto"
-                placeholder="Search installed addons..." type="search" />
-            <button class="btn btn-accent ml-2" @click="showAddModal = true">
-                <Plus />
-                Add addon
-            </button>
+                <input v-model="search" class="input input-bordered flex-1 max-w-xs ml-auto"
+                    placeholder="Search installed addons..." type="search" />
+                <button class="btn btn-accent ml-2" @click="showAddModal = true">
+                    <Plus />
+                    Add addon
+                </button>
+            </div>
         </div>
-    </div>
 
         <!-- Add Addon Modal -->
         <dialog :open="showAddModal" class="modal">
@@ -142,6 +160,10 @@ function handleOpenPath(path: string) {
                     </label>
                     <input v-model="gitUrl" class="input input-bordered w-full"
                         placeholder="https://github.com/user/repo.git" />
+                    <div :class="{ 'visible': isGitUrlValid === false && gitUrl, 'invisible': !gitUrl || isGitUrlValid !== false }"
+                        class="text-error text-xs mt-1">
+                        Please enter a valid HTTPS Git URL ending with <code>.git</code>
+                    </div>
                 </div>
                 <div class="form-control mb-4">
                     <label class="label">
@@ -153,7 +175,9 @@ function handleOpenPath(path: string) {
                     </select>
                 </div>
                 <div class="modal-action">
-                    <button class="btn btn-primary" @click="showAddModal = false">Clone</button>
+                    <button class="btn btn-primary" @click="handleClone" :disabled="!isGitUrlValid">
+                        Clone
+                    </button>
                     <button class="btn" @click="showAddModal = false">Cancel</button>
                 </div>
             </div>
@@ -181,15 +205,11 @@ function handleOpenPath(path: string) {
                                     </option>
                                 </select>
                             </div>
-                            <button class="btn btn-sm btn-primary"
+                            <button v-if="addon.isUpdateAvailable" class="btn btn-sm btn-primary"
                                 @click="console.log('Update clicked', addon)">Update</button>
-                            <button class="btn btn-sm btn-ghost btn-disabled">Update</button>
-                            <button class="btn btn-sm btn-primary" @click="console.log('Download clicked', addon)">
-                                <CircleArrowDown />
-                            </button>
-                            <button class="btn btn-sm btn-ghost btn-disabled">
-                                <CircleArrowDown />
-                            </button>
+                            <button v-else class="btn btn-sm btn-ghost btn-disabled">Update</button>
+                            <!-- <button class="btn btn-sm btn-primary" @click="console.log('Download clicked', addon)"> <CircleArrowDown /> </button> -->
+                            <!-- <button class="btn btn-sm btn-ghost btn-disabled"> <CircleArrowDown /> </button> -->
                             <div class="dropdown dropdown-end">
                                 <button tabindex="0" class="btn btn-sm btn-ghost">
                                     <Ellipsis />
@@ -231,7 +251,8 @@ function handleOpenPath(path: string) {
             </AddonCollapse>
             <!-- Add addon directory entry -->
             <button class="btn btn-outline btn-accent mt-2 self-start" @click="addAddonDirectory">
-                <Plus class="mr-2" /> Add addon directory
+                <!-- <Plus class="mr-2" /> -->
+                Add addon directory
             </button>
         </div>
     </div>

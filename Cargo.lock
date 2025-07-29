@@ -7,6 +7,7 @@ name = "addon-gui"
 version = "0.1.0"
 dependencies = [
  "git2",
+ "regex",
  "serde",
  "serde_json",
  "tauri",
@@ -14,6 +15,7 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-opener",
  "tempfile",
+ "url",
 ]
 
 [[package]]
