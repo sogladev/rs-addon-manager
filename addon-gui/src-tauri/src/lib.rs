@@ -11,7 +11,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             validate::is_valid_repo_url,
-            validate::is_valid_addons_folder_tauri_str,
+            validate::is_valid_addons_folder_str,
             install_addon
         ])
         .run(tauri::generate_context!())

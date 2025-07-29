@@ -19,14 +19,33 @@ pub fn is_valid_repo_url(url: &str) -> bool {
     re.is_match(url)
 }
 
-#[tauri::command]
-pub fn is_valid_addons_folder_tauri_str(path: &str) -> bool {
-    let path = Path::new(path);
-    is_valid_addons_folder_tauri(path)
-}
-
-pub fn is_valid_addons_folder_tauri(path: &Path) -> bool {
+/// Checks if the given path is a valid AddOns folder
+///
+/// # Examples
+///
+/// ```
+/// use tempfile::tempdir;
+/// use std::fs;
+/// use std::path::Path;
+/// use addon_gui_lib::validate::is_valid_addons_folder;
+///
+/// let temp = tempdir().unwrap();
+/// let interface_dir = temp.path().join("Interface");
+/// let addons_dir = interface_dir.join("AddOns");
+/// fs::create_dir_all(&addons_dir).unwrap();
+///
+/// assert!(is_valid_addons_folder(Path::new(&addons_dir)));
+/// assert!(!is_valid_addons_folder(temp.path()));
+/// assert!(!is_valid_addons_folder(&interface_dir));
+/// ```
+pub fn is_valid_addons_folder(path: &Path) -> bool {
     let dir_name = path.file_name().and_then(|n| n.to_str());
     let parent_name = path.parent().and_then(|p| p.file_name()).and_then(|n| n.to_str());
     dir_name == Some("AddOns") && parent_name == Some("Interface")
+}
+
+#[tauri::command]
+pub fn is_valid_addons_folder_str(path: &str) -> bool {
+    let path = Path::new(path);
+    is_valid_addons_folder(path)
 }

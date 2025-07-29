@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open, ask } from '@tauri-apps/plugin-dialog';
 import { ref } from 'vue';
 import { useTimeoutFn } from '@vueuse/core';
 import { Plus, ArrowDownToLine, Ellipsis, CircleArrowDown, RefreshCcw } from 'lucide-vue-next';
@@ -25,10 +25,25 @@ watch(gitUrl, async () => {
     isGitUrlValid.value = await isValidGitUrl(trimmedGitUrl.value);
 });
 
+async function handleDeleteFolder(path: string) {
+    // const answer = await ask('This action cannot be reverted. Are you sure?', {
+    //   title: 'Tauri',
+    //   kind: 'warning',
+    // });
+    // if (answer) {
+//        console.log(`Deleting folder: ${path}`);
+//        // Here you would typically call a backend function to delete the folder
+//        // For now, we will just remove it from the paths array
+//        // deleteFolder(path);
+//        paths.value = paths.value.filter(p => p.path !== path);
+//    } else {
+//        console.log('Deletion cancelled');
+//    }
+}
 
 const paths = ref([
     {
-        path: '/home/jelle/Games',
+        path: '/home/jelle/Games/AddOns-test/Interface/AddOns',
         addons: [
             { name: 'Addon One', notes: '#.toc notes', branch: 'main', branches: ['main', 'dev', 'release', 'origin/HEAD/verylongbranchanemasaaa'], isUpdateAvailable: false },
             { name: 'Addon Two', notes: '#.toc notes', branch: 'dev', branches: ['main', 'dev', 'release'], isUpdateAvailable: true },
@@ -37,7 +52,8 @@ const paths = ref([
             { name: 'Addon Five', notes: '#.toc notes', branch: 'dev', branches: ['main', 'dev', 'release'], isUpdateAvailable: false },
             { name: 'Addon Six', notes: '#.toc notes', branch: 'main', branches: ['main', 'dev', 'release'], isUpdateAvailable: false },
             { name: 'Addon Seven', notes: '#.toc notes', branch: 'release', branches: ['main', 'dev', 'release'], isUpdateAvailable: true },
-        ]
+        ],
+        isValid: true
     },
     {
         path: '/mnt/games/wow/addons',
@@ -46,7 +62,8 @@ const paths = ref([
             { name: 'Addon Nine', notes: '#.toc notes', branch: 'main', branches: ['main', 'release'], isUpdateAvailable: true },
             { name: 'Addon Ten', notes: '#.toc notes', branch: 'main', branches: ['main', 'release'], isUpdateAvailable: false },
             { name: 'Addon Eleven', notes: '#.toc notes', branch: 'release', branches: ['main', 'release'], isUpdateAvailable: false },
-        ]
+        ],
+        isValid: false
     }
 ])
 
@@ -57,11 +74,16 @@ const addAddonDirectory = async () => {
             directory: true,
         });
         if (directory) {
-            // Add the new directory to the paths list if not already present
-            if (!paths.value.some(p => p.path === directory)) {
-                paths.value.push({ path: directory, addons: [] });
+            const isAlreadyAdded = paths.value.some(p => p.path === directory);
+            if (isAlreadyAdded) {
+                console.warn(`Directory ${directory} is already added.`);
+                return;
             }
-            console.debug(`Selected directory: ${directory}`);
+            const isValid = await invoke<boolean>('is_valid_addons_folder_str', { path: directory });
+            if (!paths.value.some(p => p.path === directory)) {
+                paths.value.push({ path: directory, addons: [], isValid });
+            }
+            console.debug(`Selected directory: ${directory}, valid: ${isValid}`);
         } else {
             console.debug('No directory selected');
         }
@@ -72,10 +94,7 @@ const addAddonDirectory = async () => {
 };
 
 const showAddModal = ref(false)
-const availableDirs = computed(() =>
-    paths.value.map(pathObj => pathObj.path)
-);
-const selectedDir = ref(availableDirs.value[0] || '')
+const selectedDirectory = ref(paths.value[0]?.path || '');
 
 const isOpening = ref(false)
 
@@ -95,7 +114,7 @@ const filteredPaths = computed(() => {
                 ? { ...pathObj, addons: filteredAddons }
                 : null
         })
-        .filter(Boolean)
+        .filter(p => p !== null)
 })
 
 const FOLDER_REVEAL_TIMEOUT_IN_MS = 800;
@@ -110,11 +129,37 @@ function handleOpenPath(path: string) {
 
 const handleClone = async () => {
     if (!isGitUrlValid.value) return;
-    // Use trimmedGitUrl.value
-    showAddModal.value = false;
+    try {
+        await invoke('install_addon', { url: trimmedGitUrl.value, dir: selectedDirectory.value });
+        console.log('Addon cloned successfully');
+        showAddModal.value = false;
+    } catch (err) {
+        console.error('Failed to clone addon', err);
+    }
 };
 
 const trimmedGitUrl = computed(() => gitUrl.value.trim());
+
+const showDeleteModal = ref(false);
+const folderToDelete = ref<string | null>(null);
+
+function requestDeleteFolder(path: string) {
+    folderToDelete.value = path;
+    showDeleteModal.value = true;
+}
+
+function confirmDeleteFolder() {
+    if (folderToDelete.value) {
+        paths.value = paths.value.filter(p => p.path !== folderToDelete.value);
+    }
+    showDeleteModal.value = false;
+    folderToDelete.value = null;
+}
+
+function cancelDeleteFolder() {
+    showDeleteModal.value = false;
+    folderToDelete.value = null;
+}
 </script>
 
 <template>
@@ -156,7 +201,7 @@ const trimmedGitUrl = computed(() => gitUrl.value.trim());
                 <h3 class="font-bold text-lg mb-4">Clone Repository</h3>
                 <div class="form-control mb-2">
                     <label class="label">
-                        <span class="label-text">Git URL</span>
+                        <span class="label-text">Clone using the web URL</span>
                     </label>
                     <input v-model="gitUrl" class="input input-bordered w-full"
                         placeholder="https://github.com/user/repo.git" />
@@ -169,16 +214,19 @@ const trimmedGitUrl = computed(() => gitUrl.value.trim());
                     <label class="label">
                         <span class="label-text">Install Directory</span>
                     </label>
-                    <select v-model="selectedDir" class="select select-bordered w-full">
+                    <select v-model="selectedDirectory" class="select select-bordered w-full">
                         <option value="" disabled>Select directory</option>
-                        <option v-for="dir in availableDirs" :key="dir" :value="dir">{{ dir }}</option>
+                        <option v-for="p in paths" :key="p.path" :value="p.path">{{ p.path }}</option>
                     </select>
+                    <!-- <div :class="{ 'visible': selectedDirectory.isValid === false && gitUrl, 'invisible': !gitUrl || selectedDirectory.isValid !== false }" -->
+                        <!-- class="text-error text-xs mt-1"> -->
+                        <!-- Please enter a valid HTTPS Git URL ending with <code>.git</code> -->
+                    <!-- </div> -->
                 </div>
                 <div class="modal-action">
-                    <button class="btn btn-primary" @click="handleClone" :disabled="!isGitUrlValid">
-                        Clone
-                    </button>
+                    <button class="btn btn-primary" @click="handleClone">Clone</button>
                     <button class="btn" @click="showAddModal = false">Cancel</button>
+
                 </div>
             </div>
             <form method="dialog" class="modal-backdrop">
@@ -186,10 +234,34 @@ const trimmedGitUrl = computed(() => gitUrl.value.trim());
             </form>
         </dialog>
 
+        <!-- Delete Folder Confirmation Modal -->
+        <dialog :open="showDeleteModal" class="modal">
+            <div class="modal-box">
+                <h3 class="font-bold text-lg mb-4">Delete Folder</h3>
+                <p>
+                    Are you sure you want to stop managing <span class="font-mono">{{ folderToDelete }}</span>?<br>
+                    <strong>This will not delete the AddOns folder, any installed addons, or remove the <code>.addonmanager</code> folder.</strong><br>
+                    The folder will simply be removed from the list of managed directories.
+                </p>
+                <div class="modal-action">
+                    <button class="btn btn-error" @click="confirmDeleteFolder">Delete</button>
+                    <button class="btn" @click="cancelDeleteFolder">Cancel</button>
+                </div>
+            </div>
+            <form method="dialog" class="modal-backdrop">
+                <button @click="cancelDeleteFolder">close</button>
+            </form>
+        </dialog>
+
         <!-- Paths and Addons list -->
         <div class="flex flex-col gap-4 overflow-y-auto p-4">
             <AddonCollapse v-for="(pathObj, idx) in filteredPaths" :key="idx" :path="pathObj.path"
-                :isOpening="isOpening" @open-folder="handleOpenPath">
+                :isOpening="isOpening" @open-folder="handleOpenPath" @delete-folder="requestDeleteFolder">
+                <div class="flex items-center gap-2">
+                    <span v-if="pathObj.isValid === false" class="alert alert-warning alert-soft ml-2">
+                        Warning! Not a valid AddOns directory
+                    </span>
+                </div>
                 <div class="flex flex-col gap-1.5 mt-2">
                     <div v-for="(addon, idx) in pathObj.addons" :key="idx"
                         class="card card-bordered bg-base-100 flex-row items-center p-2">

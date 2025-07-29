@@ -3,8 +3,9 @@ use std::path::{Path, PathBuf};
 use crate::validate;
 
 #[tauri::command]
-pub fn install_addon(repo_url: &str, addons_dir: &Path) -> Result<(), String> {
-    let manager_dir = ensure_manager_dir(addons_dir)?;
+pub fn install_addon(url: &str, dir: &str) -> Result<(), String> {
+    let dir = Path::new(dir);
+    let manager_dir = ensure_manager_dir(dir)?;
     // ... your logic ...
     Ok(())
 }
@@ -25,7 +26,7 @@ pub fn ensure_manager_dir(base_dir: &Path) -> Result<PathBuf, String> {
         return Err("Game path does not exist".to_string());
     }
 
-    if !validate::is_valid_addons_folder_tauri(&base_dir) {
+    if !validate::is_valid_addons_folder(&base_dir) {
         return Err("Please select a valid AddOns folder (it should be named 'AddOns' and be inside an 'Interface' directory).".to_string());
     }
 
