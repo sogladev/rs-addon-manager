@@ -1,12 +1,15 @@
 use std::path::{Path, PathBuf};
 
 use crate::validate;
+use crate::clone::clone_git_repo;
 
 #[tauri::command]
 pub fn install_addon(url: &str, dir: &str) -> Result<(), String> {
     let dir = Path::new(dir);
     let manager_dir = ensure_manager_dir(dir)?;
-    // ... your logic ...
+    if let Err(e) = clone_git_repo(url, manager_dir) {
+        return Err(format!("Failed to clone repository from {url}: {e}"));
+    }
     Ok(())
 }
 

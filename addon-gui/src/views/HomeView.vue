@@ -12,8 +12,11 @@ async function isValidGitUrl(url: string): Promise<boolean> {
     return await invoke<boolean>('is_valid_repo_url', { url });
 }
 
-const gitUrl = ref('');
-const isGitUrlValid = ref<boolean | null>(null);
+// @todo: Remove this
+// const gitUrl = ref('');
+const gitUrl = ref('https://github.com/sogladev/addon-335-train-all-button.git');
+const isGitUrlValid = ref<boolean | null>(true);
+// const isGitUrlValid = ref<boolean | null>(null);
 
 import { watch } from 'vue';
 
