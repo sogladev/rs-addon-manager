@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
+import { open } from '@tauri-apps/plugin-dialog';
 import { ref } from 'vue';
 import { useTimeoutFn } from '@vueuse/core';
 import { Plus, ArrowDownToLine, Ellipsis, CircleArrowDown, RefreshCcw } from 'lucide-vue-next';
 import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next';
 import AddonCollapse from '@/components/AddonCollapse.vue';
 
-const paths = [
+const paths = ref([
     {
         path: '/home/jelle/Games',
         addons: [
@@ -28,12 +29,32 @@ const paths = [
             { name: 'Addon Eleven', notes: '#.toc notes', branch: 'release', branches: ['main', 'release'] },
         ]
     }
-]
+])
+
+const addAddonDirectory = async () => {
+    try {
+        const directory = await open({
+            multiple: false,
+            directory: true,
+        });
+        if (directory) {
+            // Add the new directory to the paths list if not already present
+            if (!paths.value.some(p => p.path === directory)) {
+                paths.value.push({ path: directory, addons: [] });
+            }
+            console.debug(`Selected directory: ${directory}`);
+        } else {
+            console.debug('No directory selected');
+        }
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error('Error selecting directory:', errorMessage);
+    }
+};
 
 const showAddModal = ref(false)
 const gitUrl = ref('')
 const selectedDir = ref('')
-// Example directories for dropdown
 const availableDirs = ['/home/user/wow/addons', '/mnt/games/wow/addons']
 
 const isOpening = ref(false)
@@ -42,9 +63,9 @@ const search = ref('')
 import { computed } from 'vue'
 
 const filteredPaths = computed(() => {
-    if (!search.value.trim()) return paths
+    if (!search.value.trim()) return paths.value
     const term = search.value.trim().toLowerCase()
-    return paths
+    return paths.value
         .map(pathObj => {
             const filteredAddons = pathObj.addons.filter(addon =>
                 addon.name.toLowerCase().includes(term) ||
@@ -70,9 +91,11 @@ function handleOpenPath(path: string) {
 
 <template>
     <!-- <MainLayout> -->
-    <div class="flex flex-col h-full p-4 gap-4">
-        <!-- Top nav bar -->
-        <div class="navbar bg-base-200 rounded-box mb-2 justify-center">
+    <div class="flex flex-col h-full gap-4">
+
+    <!-- top bar: navbar + controls row -->
+    <div class="sticky top-0 z-10 bg-base-200 rounded-box mb-2 flex flex-col gap-0">
+        <div class="navbar justify-center">
             <div class="navbar-center w-full flex justify-center">
                 <div class="tabs tabs-box text-lg">
                     <button class="tab tab-active px-8 py-2">addons</button>
@@ -81,9 +104,7 @@ function handleOpenPath(path: string) {
                 </div>
             </div>
         </div>
-
-        <!-- Controls row -->
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2 bg-base-200 pb-2 pt-2 px-2">
             <button class="btn btn-primary">Update All</button>
             <button class="btn btn-primary">
                 <ArrowDownToLine />
@@ -109,6 +130,7 @@ function handleOpenPath(path: string) {
                 Add addon
             </button>
         </div>
+    </div>
 
         <!-- Add Addon Modal -->
         <dialog :open="showAddModal" class="modal">
@@ -141,7 +163,7 @@ function handleOpenPath(path: string) {
         </dialog>
 
         <!-- Paths and Addons list -->
-        <div class="flex flex-col gap-4 overflow-y-auto">
+        <div class="flex flex-col gap-4 overflow-y-auto p-4">
             <AddonCollapse v-for="(pathObj, idx) in filteredPaths" :key="idx" :path="pathObj.path"
                 :isOpening="isOpening" @open-folder="handleOpenPath">
                 <div class="flex flex-col gap-1.5 mt-2">
@@ -155,11 +177,12 @@ function handleOpenPath(path: string) {
                             <div class="w-40">
                                 <select class="select select-bordered select-sm w-full truncate" v-model="addon.branch">
                                     <option v-for="branch in addon.branches" :key="branch" :value="branch">
-                                      {{ branch }}
+                                        {{ branch }}
                                     </option>
                                 </select>
                             </div>
-                            <button class="btn btn-sm btn-primary" @click="console.log('Update clicked', addon)">Update</button>
+                            <button class="btn btn-sm btn-primary"
+                                @click="console.log('Update clicked', addon)">Update</button>
                             <button class="btn btn-sm btn-ghost btn-disabled">Update</button>
                             <button class="btn btn-sm btn-primary" @click="console.log('Download clicked', addon)">
                                 <CircleArrowDown />
@@ -173,25 +196,29 @@ function handleOpenPath(path: string) {
                                 </button>
                                 <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-44">
                                     <li>
-                                        <button class="flex items-center gap-2" @click="console.log('Readme clicked', addon)">
+                                        <button class="flex items-center gap-2"
+                                            @click="console.log('Readme clicked', addon)">
                                             <FileText class="w-4 h-4" />
                                             Readme
                                         </button>
                                     </li>
                                     <li>
-                                        <button class="flex items-center gap-2" @click="console.log('Website clicked', addon)">
+                                        <button class="flex items-center gap-2"
+                                            @click="console.log('Website clicked', addon)">
                                             <Globe class="w-4 h-4" />
                                             Website
                                         </button>
                                     </li>
                                     <li>
-                                        <button class="flex items-center gap-2" @click="console.log('Repair clicked', addon)">
+                                        <button class="flex items-center gap-2"
+                                            @click="console.log('Repair clicked', addon)">
                                             <Wrench class="w-4 h-4" />
                                             Repair
                                         </button>
                                     </li>
                                     <li>
-                                        <button class="flex items-center gap-2 text-error" @click="console.log('Delete clicked', addon)">
+                                        <button class="flex items-center gap-2 text-error"
+                                            @click="console.log('Delete clicked', addon)">
                                             <Trash2 class="w-4 h-4" />
                                             Delete
                                         </button>
@@ -202,6 +229,10 @@ function handleOpenPath(path: string) {
                     </div>
                 </div>
             </AddonCollapse>
+            <!-- Add addon directory entry -->
+            <button class="btn btn-outline btn-accent mt-2 self-start" @click="addAddonDirectory">
+                <Plus class="mr-2" /> Add addon directory
+            </button>
         </div>
     </div>
 </template>
