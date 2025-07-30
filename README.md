@@ -96,7 +96,7 @@ To set up formatting and the pre-commit hook:
     bun run prettier --write .
     ```
 
-   Make sure the hook is executable:
+    Make sure the hook is executable:
 
     ```sh
     chmod +x .git/hooks/pre-commit
