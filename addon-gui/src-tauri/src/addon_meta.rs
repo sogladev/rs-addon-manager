@@ -6,6 +6,8 @@ pub const ADDON_MANAGER_METADATA_FILE: &str = "metadata.toml";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SubAddon {
+    /// The name used for the symlink in AddOns
+    pub name: String,
     /// The relative path to the sub-addon directory inside the repo
     pub dir: String,
     /// Normalized base names after removing suffixes (from .toc).

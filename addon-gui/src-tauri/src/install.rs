@@ -18,6 +18,7 @@ where
     let dir = Path::new(dir);
 
     let manager_dir = ensure_manager_dir(dir)?;
+
     let repo = clone_git_repo(url, manager_dir.clone(), progress)
         .map_err(|e| format!("Failed to clone repository from {url}: {e}"))?;
     let path = PathBuf::from(
@@ -44,7 +45,7 @@ where
             .ok()
             .and_then(|head| head.shorthand().map(|s| s.to_string())),
         installed_at: Some(chrono::Utc::now().to_rfc3339()),
-        sub_addons
+        sub_addons,
     };
 
     // Load, upsert, and save using AddonManagerData methods

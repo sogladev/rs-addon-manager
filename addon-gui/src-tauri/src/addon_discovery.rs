@@ -87,14 +87,21 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<SubAddon>, String> {
     // Process root directory
     let toc_files = collect_toc_files(path)?;
     if !toc_files.is_empty() {
-        let names = toc_files
+        let names: Vec<String> = toc_files
             .iter()
             .map(|toc| remove_client_flavor_toc_suffixes(toc))
             .collect();
+        // This is to handle cases where multiple .toc files exist in the root with multiple base names
+        let name = names
+            .iter()
+            .max_by_key(|n| n.len())
+            .cloned()
+            .unwrap_or_else(|| "default".to_string());
         sub_addons.push(SubAddon {
             dir: ".".to_string(),
             toc_files,
             names,
+            name,
             enabled: true,
         });
     }
@@ -111,10 +118,16 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<SubAddon>, String> {
                 if toc_files.is_empty() {
                     return None;
                 }
-                let names = toc_files
+                let names: Vec<String> = toc_files
                     .iter()
                     .map(|toc| remove_client_flavor_toc_suffixes(toc))
                     .collect();
+                // This is to handle cases where multiple .toc files exist in the root with multiple base names
+                let name = names
+                    .iter()
+                    .max_by_key(|n| n.len())
+                    .cloned()
+                    .unwrap_or_else(|| "default".to_string());
                 let dir_name = sub_path
                     .file_name()
                     .unwrap_or_default()
@@ -124,6 +137,7 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<SubAddon>, String> {
                     dir: dir_name,
                     toc_files,
                     names,
+                    name,
                     enabled: true,
                 })
             }),
