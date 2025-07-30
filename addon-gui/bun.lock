@@ -4,22 +4,22 @@
     "": {
       "name": "addon-gui",
       "dependencies": {
-        "@tauri-apps/api": "^2",
+        "@tauri-apps/api": "^2.7.0",
         "@tauri-apps/plugin-dialog": "^2.3.2",
-        "@tauri-apps/plugin-opener": "^2",
+        "@tauri-apps/plugin-opener": "^2.4.0",
         "@vueuse/core": "^13.6.0",
         "lucide-vue-next": "^0.534.0",
-        "vue": "^3.5.13",
+        "vue": "^3.5.18",
       },
       "devDependencies": {
         "@tailwindcss/vite": "^4.1.11",
-        "@tauri-apps/cli": "^2",
-        "@vitejs/plugin-vue": "^5.2.1",
-        "daisyui": "^5.0.48",
+        "@tauri-apps/cli": "^2.7.1",
+        "@vitejs/plugin-vue": "^5.2.4",
+        "daisyui": "^5.0.50",
         "tailwindcss": "^4.1.11",
-        "typescript": "~5.6.2",
-        "vite": "^6.0.3",
-        "vue-tsc": "^2.1.10",
+        "typescript": "~5.6.3",
+        "vite": "^6.3.5",
+        "vue-tsc": "^2.2.12",
       },
     },
   },
@@ -246,7 +246,7 @@
 
     "csstype": ["csstype@3.1.3", "", {}, "sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw=="],
 
-    "daisyui": ["daisyui@5.0.48", "", {}, "sha512-t2nvzKENuhbjkKmxhIoDgV/nzAnNLbswK9MBlOMnEO6hxfgNLlt7jVrHYWw6ts492JdQ0Mmf6iX3aO/u+1zXAw=="],
+    "daisyui": ["daisyui@5.0.50", "", {}, "sha512-c1PweK5RI1C76q58FKvbS4jzgyNJSP6CGTQ+KkZYzADdJoERnOxFoeLfDHmQgxLpjEzlYhFMXCeodQNLCC9bow=="],
 
     "de-indent": ["de-indent@1.0.2", "", {}, "sha512-e/1zu3xH5MQryN2zdVaF0OrdNLUbvWxzMbi+iNA6Bky7l1RoP8a2fIbRocyHclXt/arDrrR6lL3TqFD9pMQTsg=="],
 
