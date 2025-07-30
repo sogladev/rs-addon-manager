@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { revealItemInDir } from '@tauri-apps/plugin-opener'
-import { open, ask } from '@tauri-apps/plugin-dialog'
+import { open } from '@tauri-apps/plugin-dialog'
 import { ref } from 'vue'
 import { useTimeoutFn } from '@vueuse/core'
 import {
     Plus,
-    ArrowDownToLine,
+    // ArrowDownToLine,
     Ellipsis,
-    CircleArrowDown,
-    RefreshCcw,
+    // CircleArrowDown,
+    // RefreshCcw,
 } from 'lucide-vue-next'
 import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next'
 import AddonCollapse from '@/components/AddonCollapse.vue'
@@ -18,7 +18,7 @@ async function isValidGitUrl(url: string): Promise<boolean> {
     return await invoke<boolean>('is_valid_repo_url', { url })
 }
 
-// @todo: Remove this
+// @todo: Uncomment auto filling
 // const gitUrl = ref('');
 const gitUrl = ref('https://github.com/sogladev/addon-335-train-all-button.git')
 const isGitUrlValid = ref<boolean | null>(true)
@@ -33,22 +33,6 @@ watch(gitUrl, async () => {
     }
     isGitUrlValid.value = await isValidGitUrl(trimmedGitUrl.value)
 })
-
-async function handleDeleteFolder(path: string) {
-    // const answer = await ask('This action cannot be reverted. Are you sure?', {
-    //   title: 'Tauri',
-    //   kind: 'warning',
-    // });
-    // if (answer) {
-    //        console.log(`Deleting folder: ${path}`);
-    //        // Here you would typically call a backend function to delete the folder
-    //        // For now, we will just remove it from the paths array
-    //        // deleteFolder(path);
-    //        paths.value = paths.value.filter(p => p.path !== path);
-    //    } else {
-    //        console.log('Deletion cancelled');
-    //    }
-}
 
 const paths = ref([
     {
