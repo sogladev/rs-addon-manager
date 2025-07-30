@@ -3,11 +3,15 @@ use std::path::{Path, PathBuf};
 use tauri::Emitter;
 
 use crate::addon_discovery::find_all_sub_addons;
-use crate::addon_meta::{AddonMeta, SubAddon};
+use crate::addon_meta::{AddonManagerData, AddonMeta};
 use crate::clone::clone_git_repo;
 use crate::validate;
 
-pub fn install_addon_with_progress<F>(url: &str, dir: &str, progress: F) -> Result<(), String>
+pub fn install_addon_with_progress<F>(
+    url: &str,
+    dir: &str,
+    progress: F,
+) -> Result<AddonManagerData, String>
 where
     F: FnMut(usize, usize) + Send + 'static,
 {
@@ -23,43 +27,48 @@ where
 
     let sub_addons = find_all_sub_addons(&path)?;
 
-    // Fill AddonMeta (basic info, you may want to extract more fields)
     let addon_meta = AddonMeta {
         repo_url: url.to_string(),
         owner: "unknown".to_string(), // TODO: parse from url if needed
-        repo: path
+        repo_name: path
             .file_name()
-            .unwrap_or_default()
-            .to_string_lossy()
-            .to_string(),
-        installed_ref: None, // TODO: fill with commit hash
+            .map(|f| f.to_string_lossy().to_string())
+            .unwrap_or_else(|| "<unknown-repo>".to_string()),
+        installed_ref: repo
+            .head()
+            .ok()
+            .and_then(|head| head.target())
+            .map(|oid| oid.to_string()),
+        branch: repo
+            .head()
+            .ok()
+            .and_then(|head| head.shorthand().map(|s| s.to_string())),
         installed_at: Some(chrono::Utc::now().to_rfc3339()),
-        sub_addons,
-        notes: None,
+        sub_addons
     };
 
-    // Mark as installed by adding to AddonManagerData (this could be loaded from file, here we just show the logic)
-    // In real use, you would load, update, and save the AddonManagerData
-    // let mut manager_data = AddonManagerData { addons: vec![] };
-    // manager_data.addons.push(addon_meta);
-    // manager_data.save_to_path(".addonmanager/addons.toml")?;
-
-    Ok(())
+    // Load, upsert, and save using AddonManagerData methods
+    let mut manager_data = AddonManagerData::load_from_manager_dir(&manager_dir)?;
+    manager_data.upsert_addon(addon_meta);
+    manager_data
+        .save_to_manager_dir(&manager_dir)
+        .map_err(|e| format!("Failed to save metadata: {e}"))?;
+    Ok(manager_data)
 }
 
 #[tauri::command]
-pub fn install_addon(app_handle: tauri::AppHandle, url: &str, dir: &str) -> Result<(), String> {
-    let app_handle_clone = app_handle.clone();
-
+pub fn install_addon(
+    app_handle: tauri::AppHandle,
+    url: &str,
+    dir: &str,
+) -> Result<AddonManagerData, String> {
     if !validate::is_valid_addons_folder_str(dir) {
         return Err("Please select a valid AddOns folder (it should be named 'AddOns' and be inside an 'Interface' directory).".to_string());
     }
 
     install_addon_with_progress(url, dir, move |progress, total| {
         println!("Cloning progress: {progress}/{total}");
-        app_handle_clone
-            .emit("git-progress", (progress, total))
-            .unwrap();
+        app_handle.emit("git-progress", (progress, total)).unwrap();
     })
 }
 
