@@ -64,10 +64,11 @@ where
 
 pub fn install_sub_addons(mut addon_meta: AddonMeta, repo_root: &Path, addons_dir: &Path) {
     let sub_addons = &addon_meta.sub_addons;
+
     // Create symlink for each sub-addon
     for sub in sub_addons {
-        if sub.enabled && sub.dir != "." {
-            continue; // Skip if not enabled or no names
+        if !sub.enabled {
+            continue; // Skip if not enabled
         }
         let symlink_name = &sub.name;
         let target_dir = if sub.dir == "." {
@@ -146,6 +147,9 @@ pub fn ensure_manager_dir(base_dir: &Path) -> Result<PathBuf, String> {
 
 #[cfg(test)]
 mod tests {
+    use crate::addon_meta::SubAddon;
+    use std::fs;
+
     use super::*;
     use tempfile::tempdir;
 
@@ -209,5 +213,64 @@ mod tests {
             repo_dir.exists() && repo_dir.is_dir(),
             "Repository was not cloned to the manager directory"
         );
+    }
+
+    #[test]
+    fn test_install_sub_addons_symlink_creation() {
+        let (_temp, addons_dir) = setup_addons_dir();
+        let manager_dir = ensure_manager_dir(&addons_dir).expect("Failed to ensure manager dir");
+
+        // Simulate a repo directory with a sub-addon directory
+        let repo_root = manager_dir.join("fakeowner").join("fakerepo");
+        let sub_dir = repo_root.join("SubAddonDir");
+        fs::create_dir_all(&sub_dir).expect("Failed to create sub-addon dir");
+
+        // Create a fake AddonMeta with one sub-addon
+        let sub_addon = SubAddon {
+            name: "TestSymlink".to_string(),
+            dir: "SubAddonDir".to_string(),
+            enabled: true,
+            names: vec!["TestSymlink".to_string()],
+            toc_files: vec![],
+        };
+        let addon_meta = AddonMeta {
+            repo_url: "https://github.com/fakeowner/fakerepo.git".to_string(),
+            owner: "fakeowner".to_string(),
+            repo_name: "fakerepo".to_string(),
+            installed_ref: None,
+            branch: None,
+            installed_at: None,
+            sub_addons: vec![sub_addon],
+        };
+
+        // Print before
+        println!("Before install_sub_addons:");
+        print_dir_tree(addons_dir.to_str().unwrap());
+
+        // Call install_sub_addons
+        install_sub_addons(addon_meta.clone(), &repo_root, &addons_dir);
+
+        // Print after
+        println!("After install_sub_addons:");
+        print_dir_tree(addons_dir.to_str().unwrap());
+
+        // Check if the symlink exists
+        let symlink_path = addons_dir.join("TestSymlink");
+        assert!(
+            symlink_path.exists(),
+            "Symlink was not created: {}",
+            symlink_path.display()
+        );
+
+        // Optionally, check if the symlink points to the correct target
+        #[cfg(unix)]
+        {
+            use std::fs;
+            let target = fs::read_link(&symlink_path).expect("Failed to read symlink");
+            assert!(
+                target.ends_with("SubAddonDir"),
+                "Symlink does not point to SubAddonDir"
+            );
+        }
     }
 }
