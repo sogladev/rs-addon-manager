@@ -5,31 +5,63 @@ use tauri::Emitter;
 use crate::addon_discovery::find_all_sub_addons;
 use crate::addon_meta::{AddonManagerData, AddonMeta};
 use crate::clone;
-use crate::symlink;
-use crate::validate;
 
-pub fn install_addon_with_progress<F>(
+pub struct InstallReporter<'a> {
+    pub progress: Box<dyn FnMut(usize, usize) + Send + 'a>,
+    pub status: Box<dyn FnMut(&str) + Send + 'a>,
+    pub warning: Box<dyn FnMut(&str) + Send + 'a>,
+    pub error: Box<dyn FnMut(&str) + Send + 'a>,
+}
+
+pub fn install_addon_with_progress<'a>(
     url: &str,
     dir: &str,
-    progress: F,
+    mut rep: InstallReporter<'a>,
 ) -> Result<AddonManagerData, String>
 where
-    F: FnMut(usize, usize) + Send + 'static,
+    'a: 'static,
 {
     let dir = Path::new(dir);
 
-    let manager_dir = ensure_manager_dir(dir)?;
+    (rep.status)("Starting addon installation...");
 
-    let repo = clone::clone_git_repo(url, manager_dir.clone(), progress)
-        .map_err(|e| format!("Failed to clone repository from {url}: {e}"))?;
+    let manager_dir = match ensure_manager_dir(dir) {
+        Ok(m) => m,
+        Err(e) => {
+            (rep.error)(&format!("Failed to ensure manager dir: {e}"));
+            return Err(e);
+        }
+    };
+
+    (rep.status)("Cloning repository...");
+    let repo = match clone::clone_git_repo(url, manager_dir.clone(), &mut rep.progress) {
+        Ok(r) => r,
+        Err(e) => {
+            (rep.error)(&format!("Failed to clone repository from {url}: {e}"));
+            return Err(format!("Failed to clone repository from {url}: {e}"));
+        }
+    };
     let path = PathBuf::from(
         repo.workdir()
             .expect("Repository has no workdir. It should not be bare"),
     );
 
-    let sub_addons = find_all_sub_addons(&path)?;
+    (rep.status)("Discovering sub-addons...");
+    let sub_addons = match find_all_sub_addons(&path) {
+        Ok(s) => s,
+        Err(e) => {
+            (rep.error)(&format!("Failed to discover sub-addons: {e}"));
+            return Err(format!("Failed to discover sub-addons: {e}"));
+        }
+    };
 
-    let (owner, _) = clone::extract_owner_repo_from_url(url)?;
+    let (owner, _) = match clone::extract_owner_repo_from_url(url) {
+        Ok(o) => o,
+        Err(e) => {
+            (rep.error)(&format!("Failed to extract owner/repo from url: {e}"));
+            return Err(format!("Failed to extract owner/repo from url: {e}"));
+        }
+    };
     let addon_meta = AddonMeta {
         repo_url: url.to_string(),
         owner,
@@ -50,25 +82,38 @@ where
         sub_addons: sub_addons.clone(),
     };
 
-    // Load, upsert, and save using AddonManagerData methods
-    let mut manager_data = AddonManagerData::load_from_manager_dir(&manager_dir)?;
+    (rep.status)("Saving addon metadata...");
+    let mut manager_data = match AddonManagerData::load_from_manager_dir(&manager_dir) {
+        Ok(m) => m,
+        Err(e) => {
+            (rep.error)(&format!("Failed to load manager data: {e}"));
+            return Err(format!("Failed to load manager data: {e}"));
+        }
+    };
     manager_data.upsert_addon(addon_meta.clone());
-    manager_data
-        .save_to_manager_dir(&manager_dir)
-        .map_err(|e| format!("Failed to save metadata: {e}"))?;
+    if let Err(e) = manager_data.save_to_manager_dir(&manager_dir) {
+        (rep.error)(&format!("Failed to save metadata: {e}"));
+        return Err(format!("Failed to save metadata: {e}"));
+    }
 
-    install_sub_addons(addon_meta, &path, dir);
+    (rep.status)("Installing sub-addons (symlinking)...");
+    install_sub_addons_with_feedback(addon_meta, &path, dir, &mut rep);
 
+    (rep.status)("Addon installation complete.");
     Ok(manager_data)
 }
 
-pub fn install_sub_addons(mut addon_meta: AddonMeta, repo_root: &Path, addons_dir: &Path) {
+pub fn install_sub_addons_with_feedback<'a>(
+    mut addon_meta: AddonMeta,
+    repo_root: &Path,
+    addons_dir: &Path,
+    rep: &mut InstallReporter<'a>,
+) {
     let sub_addons = &addon_meta.sub_addons;
 
-    // Create symlink for each sub-addon
     for sub in sub_addons {
         if !sub.enabled {
-            continue; // Skip if not enabled
+            continue;
         }
         let symlink_name = &sub.name;
         let target_dir = if sub.dir == "." {
@@ -78,46 +123,79 @@ pub fn install_sub_addons(mut addon_meta: AddonMeta, repo_root: &Path, addons_di
         };
         let symlink_path = addons_dir.join(symlink_name);
 
-        // @todo: Handle cases where an addon is already installed. For now, let's just overwrite
         if symlink_path.exists() {
+            (rep.status)(&format!(
+                "Removing existing symlink or directory: {}",
+                symlink_path.display()
+            ));
             std::fs::remove_file(&symlink_path)
                 .or_else(|_| std::fs::remove_dir_all(&symlink_path))
                 .ok();
         }
 
-        // @todo: Handle warning for multiple names better
         if sub.names.len() > 1 {
-            eprintln!(
-                "Warning: Multiple possible names for sub-addon '{}': {:?}. Using '{}'.",
+            (rep.warning)(&format!(
+                "Multiple possible names for sub-addon '{}': {:?}. Using '{}'.",
                 sub.dir, sub.names, symlink_name
-            );
+            ));
         }
 
-        if let Err(e) = symlink::create_symlink(&target_dir, &symlink_path) {
-            eprintln!(
+        (rep.status)(&format!(
+            "Creating symlink for '{}': {} -> {}",
+            symlink_name,
+            target_dir.display(),
+            symlink_path.display()
+        ));
+        if let Err(e) = crate::symlink::create_symlink(&target_dir, &symlink_path) {
+            (rep.error)(&format!(
                 "Failed to create symlink for '{symlink_name}': {} -> {} ({e})",
                 target_dir.display(),
                 symlink_path.display(),
-            );
+            ));
         }
     }
     addon_meta.installed_at = Some(chrono::Utc::now().to_rfc3339());
 }
 
 #[tauri::command]
-pub fn install_addon(
+pub async fn install_addon(
     app_handle: tauri::AppHandle,
-    url: &str,
-    dir: &str,
+    url: String,
+    dir: String,
 ) -> Result<AddonManagerData, String> {
-    if !validate::is_valid_addons_folder_str(dir) {
-        return Err("Please select a valid AddOns folder (it should be named 'AddOns' and be inside an 'Interface' directory).".to_string());
-    }
+    // No need to validate the AddOns folder here, as it is already done in the frontend.
 
-    install_addon_with_progress(url, dir, move |progress, total| {
-        println!("Cloning progress: {progress}/{total}");
-        app_handle.emit("git-progress", (progress, total)).unwrap();
+    // Move the blocking work into spawn_blocking, but keep async code outside.
+    let app_handle_clone = app_handle.clone();
+    let url_clone = url.clone();
+    let dir_clone = dir.clone();
+
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        let reporter = InstallReporter {
+            progress: Box::new({
+                let app_handle = app_handle_clone.clone();
+                move |progress, total| app_handle.emit("git-progress", (progress, total)).unwrap()
+            }),
+            status: Box::new({
+                let app_handle = app_handle_clone.clone();
+                move |msg| app_handle.emit("install-step", msg).unwrap()
+            }),
+            warning: Box::new({
+                let app_handle = app_handle_clone.clone();
+                move |msg| app_handle.emit("install-warning", msg).unwrap()
+            }),
+            error: Box::new({
+                let app_handle = app_handle_clone;
+                move |msg| app_handle.emit("install-error", msg).unwrap()
+            }),
+        };
+
+        install_addon_with_progress(&url_clone, &dir_clone, reporter)
     })
+    .await
+    .map_err(|e| format!("Task join error: {e}"))??;
+
+    Ok(result)
 }
 
 /// Ensures the `.addonmanager` directory exists in the given base directory.
@@ -224,8 +302,6 @@ mod tests {
         let repo_root = manager_dir.join("fakeowner").join("fakerepo");
         let sub_dir = repo_root.join("SubAddonDir");
         fs::create_dir_all(&sub_dir).expect("Failed to create sub-addon dir");
-
-        // Create a fake AddonMeta with one sub-addon
         let sub_addon = SubAddon {
             name: "TestSymlink".to_string(),
             dir: "SubAddonDir".to_string(),
@@ -243,18 +319,14 @@ mod tests {
             sub_addons: vec![sub_addon],
         };
 
-        // Print before
         println!("Before install_sub_addons:");
         print_dir_tree(addons_dir.to_str().unwrap());
 
-        // Call install_sub_addons
         install_sub_addons(addon_meta.clone(), &repo_root, &addons_dir);
 
-        // Print after
         println!("After install_sub_addons:");
         print_dir_tree(addons_dir.to_str().unwrap());
 
-        // Check if the symlink exists
         let symlink_path = addons_dir.join("TestSymlink");
         assert!(
             symlink_path.exists(),
@@ -262,7 +334,6 @@ mod tests {
             symlink_path.display()
         );
 
-        // Optionally, check if the symlink points to the correct target
         #[cfg(unix)]
         {
             use std::fs;
