@@ -50,7 +50,7 @@ pub fn clone_git_repo<F>(
     progress: &mut F,
 ) -> Result<Repository, String>
 where
-    F: FnMut(usize, usize) + Send + 'static,
+    F: FnMut(usize, usize) + Send,
 {
     let (owner, repo) = extract_owner_repo_from_url(url)?;
 

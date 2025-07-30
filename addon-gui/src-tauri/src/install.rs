@@ -1,43 +1,56 @@
 use std::path::{Path, PathBuf};
 
+use serde::Serialize;
 use tauri::Emitter;
 
 use crate::addon_discovery::find_all_sub_addons;
 use crate::addon_meta::{AddonManagerData, AddonMeta};
 use crate::clone;
-
-pub struct InstallReporter<'a> {
-    pub progress: Box<dyn FnMut(usize, usize) + Send + 'a>,
-    pub status: Box<dyn FnMut(&str) + Send + 'a>,
-    pub warning: Box<dyn FnMut(&str) + Send + 'a>,
-    pub error: Box<dyn FnMut(&str) + Send + 'a>,
+#[derive(Debug, Serialize, Clone)]
+pub enum InstallEvent {
+    Progress { current: usize, total: usize },
+    Status(String),
+    Warning(String),
+    Error(String),
 }
 
-pub fn install_addon_with_progress<'a>(
+pub struct InstallReporter {
+    pub event: Box<dyn FnMut(InstallEvent) + Send>,
+}
+
+pub fn install_addon_with_progress<F>(
     url: &str,
     dir: &str,
-    mut rep: InstallReporter<'a>,
+    mut reporter: F,
 ) -> Result<AddonManagerData, String>
 where
-    'a: 'static,
+    F: FnMut(InstallEvent) + Send,
 {
     let dir = Path::new(dir);
 
-    (rep.status)("Starting addon installation...");
+    reporter(InstallEvent::Status(
+        "Starting addon installation...".to_string(),
+    ));
 
     let manager_dir = match ensure_manager_dir(dir) {
         Ok(m) => m,
         Err(e) => {
-            (rep.error)(&format!("Failed to ensure manager dir: {e}"));
+            reporter(InstallEvent::Error(format!(
+                "Failed to ensure manager dir: {e}"
+            )));
             return Err(e);
         }
     };
 
-    (rep.status)("Cloning repository...");
-    let repo = match clone::clone_git_repo(url, manager_dir.clone(), &mut rep.progress) {
+    reporter(InstallEvent::Status("Cloning repository...".to_string()));
+    let repo = match clone::clone_git_repo(url, manager_dir.clone(), &mut |current, total| {
+        reporter(InstallEvent::Progress { current, total });
+    }) {
         Ok(r) => r,
         Err(e) => {
-            (rep.error)(&format!("Failed to clone repository from {url}: {e}"));
+            reporter(InstallEvent::Error(format!(
+                "Failed to clone repository from {url}: {e}"
+            )));
             return Err(format!("Failed to clone repository from {url}: {e}"));
         }
     };
@@ -46,11 +59,15 @@ where
             .expect("Repository has no workdir. It should not be bare"),
     );
 
-    (rep.status)("Discovering sub-addons...");
+    reporter(InstallEvent::Status(
+        "Discovering sub-addons...".to_string(),
+    ));
     let sub_addons = match find_all_sub_addons(&path) {
         Ok(s) => s,
         Err(e) => {
-            (rep.error)(&format!("Failed to discover sub-addons: {e}"));
+            reporter(InstallEvent::Error(format!(
+                "Failed to discover sub-addons: {e}"
+            )));
             return Err(format!("Failed to discover sub-addons: {e}"));
         }
     };
@@ -58,7 +75,9 @@ where
     let (owner, _) = match clone::extract_owner_repo_from_url(url) {
         Ok(o) => o,
         Err(e) => {
-            (rep.error)(&format!("Failed to extract owner/repo from url: {e}"));
+            reporter(InstallEvent::Error(format!(
+                "Failed to extract owner/repo from url: {e}"
+            )));
             return Err(format!("Failed to extract owner/repo from url: {e}"));
         }
     };
@@ -82,33 +101,41 @@ where
         sub_addons: sub_addons.clone(),
     };
 
-    (rep.status)("Saving addon metadata...");
+    reporter(InstallEvent::Status("Saving addon metadata...".to_string()));
     let mut manager_data = match AddonManagerData::load_from_manager_dir(&manager_dir) {
         Ok(m) => m,
         Err(e) => {
-            (rep.error)(&format!("Failed to load manager data: {e}"));
+            reporter(InstallEvent::Error(format!(
+                "Failed to load manager data: {e}"
+            )));
             return Err(format!("Failed to load manager data: {e}"));
         }
     };
     manager_data.upsert_addon(addon_meta.clone());
     if let Err(e) = manager_data.save_to_manager_dir(&manager_dir) {
-        (rep.error)(&format!("Failed to save metadata: {e}"));
+        reporter(InstallEvent::Error(format!("Failed to save metadata: {e}")));
         return Err(format!("Failed to save metadata: {e}"));
     }
 
-    (rep.status)("Installing sub-addons (symlinking)...");
-    install_sub_addons_with_feedback(addon_meta, &path, dir, &mut rep);
+    reporter(InstallEvent::Status(
+        "Installing sub-addons (symlinking)...".to_string(),
+    ));
+    install_sub_addons_with_feedback(addon_meta, &path, dir, &mut reporter);
 
-    (rep.status)("Addon installation complete.");
+    reporter(InstallEvent::Status(
+        "Addon installation complete.".to_string(),
+    ));
     Ok(manager_data)
 }
 
-pub fn install_sub_addons_with_feedback<'a>(
+pub fn install_sub_addons_with_feedback<F>(
     mut addon_meta: AddonMeta,
     repo_root: &Path,
     addons_dir: &Path,
-    rep: &mut InstallReporter<'a>,
-) {
+    mut reporter: F,
+) where
+    F: FnMut(InstallEvent) + Send,
+{
     let sub_addons = &addon_meta.sub_addons;
 
     for sub in sub_addons {
@@ -124,34 +151,35 @@ pub fn install_sub_addons_with_feedback<'a>(
         let symlink_path = addons_dir.join(symlink_name);
 
         if symlink_path.exists() {
-            (rep.status)(&format!(
+            let msg = format!(
                 "Removing existing symlink or directory: {}",
                 symlink_path.display()
-            ));
+            );
+            reporter(InstallEvent::Status(msg.clone()));
             std::fs::remove_file(&symlink_path)
                 .or_else(|_| std::fs::remove_dir_all(&symlink_path))
                 .ok();
         }
 
         if sub.names.len() > 1 {
-            (rep.warning)(&format!(
+            reporter(InstallEvent::Warning(format!(
                 "Multiple possible names for sub-addon '{}': {:?}. Using '{}'.",
                 sub.dir, sub.names, symlink_name
-            ));
+            )));
         }
 
-        (rep.status)(&format!(
+        reporter(InstallEvent::Status(format!(
             "Creating symlink for '{}': {} -> {}",
             symlink_name,
             target_dir.display(),
             symlink_path.display()
-        ));
+        )));
         if let Err(e) = crate::symlink::create_symlink(&target_dir, &symlink_path) {
-            (rep.error)(&format!(
+            reporter(InstallEvent::Error(format!(
                 "Failed to create symlink for '{symlink_name}': {} -> {} ({e})",
                 target_dir.display(),
                 symlink_path.display(),
-            ));
+            )));
         }
     }
     addon_meta.installed_at = Some(chrono::Utc::now().to_rfc3339());
@@ -166,31 +194,15 @@ pub async fn install_addon(
     // No need to validate the AddOns folder here, as it is already done in the frontend.
 
     // Move the blocking work into spawn_blocking, but keep async code outside.
-    let app_handle_clone = app_handle.clone();
     let url_clone = url.clone();
     let dir_clone = dir.clone();
 
     let result = tauri::async_runtime::spawn_blocking(move || {
-        let reporter = InstallReporter {
-            progress: Box::new({
-                let app_handle = app_handle_clone.clone();
-                move |progress, total| app_handle.emit("git-progress", (progress, total)).unwrap()
-            }),
-            status: Box::new({
-                let app_handle = app_handle_clone.clone();
-                move |msg| app_handle.emit("install-step", msg).unwrap()
-            }),
-            warning: Box::new({
-                let app_handle = app_handle_clone.clone();
-                move |msg| app_handle.emit("install-warning", msg).unwrap()
-            }),
-            error: Box::new({
-                let app_handle = app_handle_clone;
-                move |msg| app_handle.emit("install-error", msg).unwrap()
-            }),
-        };
-
-        install_addon_with_progress(&url_clone, &dir_clone, reporter)
+        install_addon_with_progress(&url_clone, &dir_clone, |event| {
+            app_handle
+                .emit("install-event", event)
+                .expect_err("Failed to emit install-event");
+        })
     })
     .await
     .map_err(|e| format!("Task join error: {e}"))??;

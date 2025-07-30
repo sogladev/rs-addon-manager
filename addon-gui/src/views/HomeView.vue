@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { revealItemInDir } from '@tauri-apps/plugin-opener'
 import { open } from '@tauri-apps/plugin-dialog'
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useTimeoutFn } from '@vueuse/core'
 import {
     Plus,
@@ -23,6 +23,35 @@ async function isValidGitUrl(url: string): Promise<boolean> {
 const gitUrl = ref('https://github.com/sogladev/addon-335-train-all-button.git')
 const isGitUrlValid = ref<boolean | null>(true)
 // const isGitUrlValid = ref<boolean | null>(null);
+
+import { listen } from '@tauri-apps/api/event'
+
+type InstallEvent =
+    | { type: 'Progress'; current: number; total: number }
+    | { type: 'Status'; Status: string }
+    | { type: 'Warning'; Warning: string }
+    | { type: 'Error'; Error: string }
+
+listen<InstallEvent>('install-event', ({ payload }) => {
+    if (payload.type === 'Progress') {
+        const { current, total } = payload
+        console.log(`Progress: ${current}/${total}`)
+    } else if (payload.type === 'Status') {
+        console.log(`Status: ${payload.Status}`)
+    } else if (payload.type === 'Warning') {
+        console.log(`Warning: ${payload.Warning}`)
+    } else if (payload.type === 'Error') {
+        console.log(`Error: ${payload.Error}`)
+    }
+})
+
+const installStatus = ref<{
+    progress?: { current: number; total: number }
+    step?: string
+    error?: string
+    warning?: string
+    active: boolean
+}>({ active: false })
 
 import { watch } from 'vue'
 
@@ -239,6 +268,32 @@ function cancelDeleteFolder() {
 <template>
     <!-- <MainLayout> -->
     <div class="flex flex-col h-full gap-4">
+        <!-- feedback bar-->
+        <div
+            v-if="installStatus.active"
+            class="w-full p-2 bg-base-300 rounded-box mb-2"
+        >
+            <div v-if="installStatus.step" class="text-base-content">
+                {{ installStatus.step }}
+            </div>
+            <div v-if="installStatus.progress">
+                <progress
+                    class="progress progress-primary w-full"
+                    :value="installStatus.progress.current"
+                    :max="installStatus.progress.total"
+                ></progress>
+                <span
+                    >{{ installStatus.progress.current }} /
+                    {{ installStatus.progress.total }}</span
+                >
+            </div>
+            <div v-if="installStatus.warning" class="alert alert-warning mt-2">
+                {{ installStatus.warning }}
+            </div>
+            <div v-if="installStatus.error" class="alert alert-error mt-2">
+                {{ installStatus.error }}
+            </div>
+        </div>
         <!-- top bar: navbar + controls row -->
         <div
             class="sticky top-0 z-10 bg-base-200 rounded-box mb-2 flex flex-col gap-0"
