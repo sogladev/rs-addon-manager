@@ -1,39 +1,38 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
-  "productName": "launcher-gui",
-  "version": "0.2.6",
-  "identifier": "com.launcher-gui.app",
-  "build": {
-    "beforeDevCommand": "bun run dev",
-    "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "bun run build",
-    "frontendDist": "../dist"
-  },
-  "app": {
-    "windows": [
-      {
-        "title": "launcher-gui",
-        "width": 800,
-        "height": 600,
-        "minWidth": 800,
-        "minHeight": 600
-      }
-    ],
-    "security": {
-      "csp": "default-src 'self'; connect-src 'self' http://localhost:8080",
-      "capabilities": [
-      ]
+    "$schema": "https://schema.tauri.app/config/2",
+    "productName": "launcher-gui",
+    "version": "0.2.6",
+    "identifier": "com.launcher-gui.app",
+    "build": {
+        "beforeDevCommand": "bun run dev",
+        "devUrl": "http://localhost:1420",
+        "beforeBuildCommand": "bun run build",
+        "frontendDist": "../dist"
+    },
+    "app": {
+        "windows": [
+            {
+                "title": "launcher-gui",
+                "width": 800,
+                "height": 600,
+                "minWidth": 800,
+                "minHeight": 600
+            }
+        ],
+        "security": {
+            "csp": "default-src 'self'; connect-src 'self' http://localhost:8080",
+            "capabilities": []
+        }
+    },
+    "bundle": {
+        "active": true,
+        "targets": "all",
+        "icon": [
+            "icons/32x32.png",
+            "icons/128x128.png",
+            "icons/128x128@2x.png",
+            "icons/icon.icns",
+            "icons/icon.ico"
+        ]
     }
-  },
-  "bundle": {
-    "active": true,
-    "targets": "all",
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ]
-  }
 }

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import MainLayout from "@/layouts/MainLayout.vue";
-import TopBar from "@/components/TopBar.vue";
-import BottomBar from "@/components/BottomBar.vue";
-import MainContent from "@/components/MainContent.vue";
+import MainLayout from '@/layouts/MainLayout.vue'
+import TopBar from '@/components/TopBar.vue'
+import BottomBar from '@/components/BottomBar.vue'
+import MainContent from '@/components/MainContent.vue'
 </script>
 
 <template>

@@ -7,5 +7,6 @@ Rust-port of [go-manifest-patcher](https://github.com/sogladev/go-manifest-patch
 For more verbose docs see https://github.com/sogladev/go-manifest-patcher
 
 Feature comparison with [go-manifest-patcher](https://github.com/sogladev/go-manifest-patcher).
+
 - Terminal colors for Windows are supported.
 - Extra file checking for local files not in the manifest is not implemented.

@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-const THEME_INTERVAL_IN_MILLISECONDS = 5000;
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+const THEME_INTERVAL_IN_MILLISECONDS = 5000
 
 const themeList = [
     'default',
@@ -39,49 +39,48 @@ const themeList = [
     'valentine',
     'winter',
     'wireframe',
-];
+]
 
-const currentThemeIndex = ref(0);
-const currentTheme = computed(() => themeList[currentThemeIndex.value]);
+const currentThemeIndex = ref(0)
+const currentTheme = computed(() => themeList[currentThemeIndex.value])
 
 function nextTheme() {
-    currentThemeIndex.value = (currentThemeIndex.value + 1) % themeList.length;
+    currentThemeIndex.value = (currentThemeIndex.value + 1) % themeList.length
 }
 
 function prevTheme() {
-    currentThemeIndex.value = (currentThemeIndex.value - 1 + themeList.length) % themeList.length;
+    currentThemeIndex.value =
+        (currentThemeIndex.value - 1 + themeList.length) % themeList.length
 }
 
 watch(currentTheme, (newTheme) => {
-    document.documentElement.setAttribute('data-theme', newTheme);
-});
+    document.documentElement.setAttribute('data-theme', newTheme)
+})
 
 // Timer to increment the theme index
-let themeTimer;
+let themeTimer
 
 onMounted(() => {
-//   themeTimer = setInterval(() => {
+    //   themeTimer = setInterval(() => {
     // nextTheme();
-//   }, THEME_INTERVAL_IN_MILLISECONDS);
-});
+    //   }, THEME_INTERVAL_IN_MILLISECONDS);
+})
 
 onUnmounted(() => {
-  clearInterval(themeTimer);
-});
+    clearInterval(themeTimer)
+})
 </script>
 
 <template>
     <div class="p-1 flex flex-col text-center font-mono text-sm">
         <div>
-            {{ currentTheme }} {{ currentThemeIndex + 1 }}/{{ themeList.length }}
+            {{ currentTheme }} {{ currentThemeIndex + 1 }}/{{
+                themeList.length
+            }}
         </div>
         <div class="flex justify-center">
-            <button class="btn mx-1 " @click="prevTheme">
-                <
-            </button>
-            <button class="btn mx-1 " @click="nextTheme">
-                >
-            </button>
+            <button class="btn mx-1" @click="prevTheme"><</button>
+            <button class="btn mx-1" @click="nextTheme">></button>
         </div>
     </div>
 </template>

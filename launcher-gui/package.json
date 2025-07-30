@@ -1,31 +1,31 @@
 {
-  "name": "launcher-gui",
-  "private": true,
-  "version": "0.1.4",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview",
-    "tauri": "tauri"
-  },
-  "dependencies": {
-    "@tailwindcss/vite": "^4.1.11",
-    "@tauri-apps/api": "^2.7.0",
-    "@tauri-apps/plugin-dialog": "~2.2.2",
-    "@tauri-apps/plugin-http": "~2.3.0",
-    "@tauri-apps/plugin-opener": "^2.4.0",
-    "@tauri-apps/plugin-store": "^2.3.0",
-    "tailwindcss": "^4.1.11",
-    "vue": "^3.5.18",
-    "vue-i18n": "^10.0.8"
-  },
-  "devDependencies": {
-    "@tauri-apps/cli": "^2.7.1",
-    "@vitejs/plugin-vue": "^5.2.4",
-    "daisyui": "^5.0.48",
-    "typescript": "~5.6.3",
-    "vite": "^6.3.5",
-    "vue-tsc": "^2.2.12"
-  }
+    "name": "launcher-gui",
+    "private": true,
+    "version": "0.1.4",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vue-tsc --noEmit && vite build",
+        "preview": "vite preview",
+        "tauri": "tauri"
+    },
+    "dependencies": {
+        "@tailwindcss/vite": "^4.1.11",
+        "@tauri-apps/api": "^2.7.0",
+        "@tauri-apps/plugin-dialog": "~2.2.2",
+        "@tauri-apps/plugin-http": "~2.3.0",
+        "@tauri-apps/plugin-opener": "^2.4.0",
+        "@tauri-apps/plugin-store": "^2.3.0",
+        "tailwindcss": "^4.1.11",
+        "vue": "^3.5.18",
+        "vue-i18n": "^10.0.8"
+    },
+    "devDependencies": {
+        "@tauri-apps/cli": "^2.7.1",
+        "@vitejs/plugin-vue": "^5.2.4",
+        "daisyui": "^5.0.48",
+        "typescript": "~5.6.3",
+        "vite": "^6.3.5",
+        "vue-tsc": "^2.2.12"
+    }
 }
