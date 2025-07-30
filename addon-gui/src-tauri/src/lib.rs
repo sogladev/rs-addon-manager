@@ -13,7 +13,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             validate::is_valid_repo_url,
             validate::is_valid_addons_folder_str,
-            install::install_addon
+            install::install_addon_cmd
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

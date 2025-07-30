@@ -19,30 +19,51 @@ async function isValidGitUrl(url: string): Promise<boolean> {
 }
 
 // @todo: Uncomment auto filling
-// const gitUrl = ref('');
-const gitUrl = ref('https://github.com/sogladev/addon-335-train-all-button.git')
-const isGitUrlValid = ref<boolean | null>(true)
-// const isGitUrlValid = ref<boolean | null>(null);
+const gitUrl = ref('')
+// const gitUrl = ref('https://github.com/sogladev/addon-335-train-all-button.git')
+// const isGitUrlValid = ref<boolean | null>(true)
+const isGitUrlValid = ref<boolean | null>(null)
+
+watch(gitUrl, async () => {
+    if (!trimmedGitUrl.value) {
+        isGitUrlValid.value = null
+        return
+    }
+    isGitUrlValid.value = await isValidGitUrl(trimmedGitUrl.value)
+})
 
 import { listen } from '@tauri-apps/api/event'
 
 type InstallEvent =
-    | { type: 'Progress'; current: number; total: number }
-    | { type: 'Status'; Status: string }
-    | { type: 'Warning'; Warning: string }
-    | { type: 'Error'; Error: string }
+    | { Progress: { current: number; total: number } }
+    | { Status: string }
+    | { Warning: string }
+    | { Error: string }
 
-listen<InstallEvent>('install-event', ({ payload }) => {
-    if (payload.type === 'Progress') {
-        const { current, total } = payload
-        console.log(`Progress: ${current}/${total}`)
-    } else if (payload.type === 'Status') {
-        console.log(`Status: ${payload.Status}`)
-    } else if (payload.type === 'Warning') {
-        console.log(`Warning: ${payload.Warning}`)
-    } else if (payload.type === 'Error') {
-        console.log(`Error: ${payload.Error}`)
-    }
+onMounted(() => {
+    listen<InstallEvent>('install-event', ({ payload }) => {
+        installStatus.value.active = true
+        if ('Progress' in payload) {
+            const { current, total } = payload.Progress
+            installStatus.value.progress = { current, total }
+            installStatus.value.step = undefined
+            installStatus.value.error = undefined
+            installStatus.value.warning = undefined
+        } else if ('Status' in payload) {
+            installStatus.value.step = payload.Status
+            installStatus.value.progress = undefined
+            installStatus.value.error = undefined
+            installStatus.value.warning = undefined
+        } else if ('Warning' in payload) {
+            installStatus.value.warning = payload.Warning
+            installStatus.value.error = undefined
+        } else if ('Error' in payload) {
+            installStatus.value.error = payload.Error
+            installStatus.value.warning = undefined
+        } else {
+            console.warn('Unknown event type:', payload)
+        }
+    })
 })
 
 const installStatus = ref<{
@@ -54,14 +75,6 @@ const installStatus = ref<{
 }>({ active: false })
 
 import { watch } from 'vue'
-
-watch(gitUrl, async () => {
-    if (!trimmedGitUrl.value) {
-        isGitUrlValid.value = null
-        return
-    }
-    isGitUrlValid.value = await isValidGitUrl(trimmedGitUrl.value)
-})
 
 const paths = ref([
     {
@@ -231,7 +244,7 @@ const handleClone = async () => {
     showAddModal.value = false
     if (!isGitUrlValid.value) return
     try {
-        await invoke('install_addon', {
+        await invoke('install_addon_cmd', {
             url: trimmedGitUrl.value,
             dir: selectedDirectory.value,
         })
@@ -268,32 +281,6 @@ function cancelDeleteFolder() {
 <template>
     <!-- <MainLayout> -->
     <div class="flex flex-col h-full gap-4">
-        <!-- feedback bar-->
-        <div
-            v-if="installStatus.active"
-            class="w-full p-2 bg-base-300 rounded-box mb-2"
-        >
-            <div v-if="installStatus.step" class="text-base-content">
-                {{ installStatus.step }}
-            </div>
-            <div v-if="installStatus.progress">
-                <progress
-                    class="progress progress-primary w-full"
-                    :value="installStatus.progress.current"
-                    :max="installStatus.progress.total"
-                ></progress>
-                <span
-                    >{{ installStatus.progress.current }} /
-                    {{ installStatus.progress.total }}</span
-                >
-            </div>
-            <div v-if="installStatus.warning" class="alert alert-warning mt-2">
-                {{ installStatus.warning }}
-            </div>
-            <div v-if="installStatus.error" class="alert alert-error mt-2">
-                {{ installStatus.error }}
-            </div>
-        </div>
         <!-- top bar: navbar + controls row -->
         <div
             class="sticky top-0 z-10 bg-base-200 rounded-box mb-2 flex flex-col gap-0"
@@ -331,6 +318,39 @@ function cancelDeleteFolder() {
                     <Plus />
                     Add addon
                 </button>
+            </div>
+        </div>
+
+        <!-- feedback bar-->
+        <div
+            v-if="
+                installStatus.active &&
+                (installStatus.step ||
+                    installStatus.progress ||
+                    installStatus.warning ||
+                    installStatus.error)
+            "
+            class="w-full p-2 bg-base-300 rounded-box mb-2"
+        >
+            <div v-if="installStatus.step" class="text-base-content mb-1">
+                {{ installStatus.step }}
+            </div>
+            <div v-if="installStatus.progress">
+                <progress
+                    class="progress progress-primary w-full"
+                    :value="installStatus.progress.current"
+                    :max="installStatus.progress.total"
+                ></progress>
+                <span>
+                    {{ installStatus.progress.current }} /
+                    {{ installStatus.progress.total }}
+                </span>
+            </div>
+            <div v-if="installStatus.warning" class="alert alert-warning mt-2">
+                {{ installStatus.warning }}
+            </div>
+            <div v-if="installStatus.error" class="alert alert-error mt-2">
+                {{ installStatus.error }}
             </div>
         </div>
 
@@ -381,7 +401,11 @@ function cancelDeleteFolder() {
                     <!-- </div> -->
                 </div>
                 <div class="modal-action">
-                    <button class="btn btn-primary" @click="handleClone">
+                    <button
+                        class="btn btn-primary"
+                        @click="handleClone"
+                        :disabled="!isGitUrlValid"
+                    >
                         Clone
                     </button>
                     <button class="btn" @click="showAddModal = false">

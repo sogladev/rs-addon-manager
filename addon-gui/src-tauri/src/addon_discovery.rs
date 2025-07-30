@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::{
     ffi::OsStr,
     path::{Path, PathBuf},
@@ -93,19 +94,29 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<SubAddon>, String> {
         Ok(let_toc_files)
     }
 
-    // Process root directory
-    let toc_files = collect_toc_files(path)?;
-    if !toc_files.is_empty() {
-        let names: Vec<String> = toc_files
+    /// This is to handle cases where multiple .toc files exist in the root with multiple base names
+    fn names_from_toc_files(toc_files: &[String]) -> Vec<String> {
+        toc_files
             .iter()
-            .map(|toc| toc_file_base_name(toc).to_string())
-            .collect();
-        // This is to handle cases where multiple .toc files exist in the root with multiple base names
-        let name = names
+            .map(|toc| toc_file_base_name(toc))
+            .unique()
+            .map(|name| name.to_string())
+            .collect()
+    }
+
+    fn longest_string(names: &[String]) -> String {
+        names
             .iter()
             .max_by_key(|n| n.len())
             .cloned()
-            .unwrap_or_else(|| "default".to_string());
+            .unwrap_or_else(|| "default".to_string())
+    }
+
+    // Process root directory
+    let toc_files = collect_toc_files(path)?;
+    if !toc_files.is_empty() {
+        let names = names_from_toc_files(&toc_files);
+        let name = longest_string(&names);
         sub_addons.push(SubAddon {
             dir: ".".to_string(),
             toc_files,
@@ -127,16 +138,8 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<SubAddon>, String> {
                 if toc_files.is_empty() {
                     return None;
                 }
-                let names: Vec<String> = toc_files
-                    .iter()
-                    .map(|toc| toc_file_base_name(toc).to_string())
-                    .collect();
-                // This is to handle cases where multiple .toc files exist in the root with multiple base names
-                let name = names
-                    .iter()
-                    .max_by_key(|n| n.len())
-                    .cloned()
-                    .unwrap_or_else(|| "default".to_string());
+                let names = names_from_toc_files(&toc_files);
+                let name = longest_string(&names);
                 let dir_name = sub_path
                     .file_name()
                     .unwrap_or_default()
@@ -312,10 +315,16 @@ mod tests {
 
         for name in &sub.names {
             assert!(
-                name == "Questie.toc" || name == "Questie-335.toc",
-                "Expected normalized name to be 'Questie.toc' or 'Questie-335.toc', found: {}",
+                name == "Questie" || name == "Questie-335",
+                "Expected normalized name to be 'Questie' or 'Questie-335', found: {}",
                 name
             );
         }
+
+        assert!(
+            sub.names.len() == 2,
+            "Expected 2 unique names, found: {:?}",
+            sub.names
+        );
     }
 }

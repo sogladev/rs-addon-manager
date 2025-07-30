@@ -18,11 +18,7 @@ pub struct InstallReporter {
     pub event: Box<dyn FnMut(InstallEvent) + Send>,
 }
 
-pub fn install_addon_with_progress<F>(
-    url: &str,
-    dir: &str,
-    mut reporter: F,
-) -> Result<AddonManagerData, String>
+pub fn install_addon<F>(url: &str, dir: &str, mut reporter: F) -> Result<AddonManagerData, String>
 where
     F: FnMut(InstallEvent) + Send,
 {
@@ -120,7 +116,7 @@ where
     reporter(InstallEvent::Status(
         "Installing sub-addons (symlinking)...".to_string(),
     ));
-    install_sub_addons_with_feedback(addon_meta, &path, dir, &mut reporter);
+    install_sub_addons(addon_meta, &path, dir, &mut reporter);
 
     reporter(InstallEvent::Status(
         "Addon installation complete.".to_string(),
@@ -128,7 +124,7 @@ where
     Ok(manager_data)
 }
 
-pub fn install_sub_addons_with_feedback<F>(
+pub fn install_sub_addons<F>(
     mut addon_meta: AddonMeta,
     repo_root: &Path,
     addons_dir: &Path,
@@ -186,7 +182,7 @@ pub fn install_sub_addons_with_feedback<F>(
 }
 
 #[tauri::command]
-pub async fn install_addon(
+pub async fn install_addon_cmd(
     app_handle: tauri::AppHandle,
     url: String,
     dir: String,
@@ -198,10 +194,10 @@ pub async fn install_addon(
     let dir_clone = dir.clone();
 
     let result = tauri::async_runtime::spawn_blocking(move || {
-        install_addon_with_progress(&url_clone, &dir_clone, |event| {
+        install_addon(&url_clone, &dir_clone, |event| {
             app_handle
                 .emit("install-event", event)
-                .expect_err("Failed to emit install-event");
+                .expect("Failed to emit install-event");
         })
     })
     .await
@@ -272,7 +268,7 @@ mod tests {
     }
 
     #[test]
-    fn test_install_addon_with_progress() {
+    fn test_install_clone() {
         let (_temp, addons_dir) = setup_addons_dir();
 
         let url = "https://github.com/sogladev/addon-335-train-all-button.git";
@@ -283,8 +279,8 @@ mod tests {
         print_dir_tree(addons_dir_str);
         assert!(result.is_ok(), "ensure_manager_dir failed: {:?}", result);
 
-        let result = install_addon_with_progress(url, addons_dir_str, move |progress, total| {
-            println!("Cloning progress: {}/{}", progress, total);
+        let result = install_addon(url, addons_dir_str, move |event| {
+            println!("Install event: {:?}", event);
         });
         println!("Directory tree under AddOns after install_addon:");
         print_dir_tree(addons_dir_str);
@@ -334,7 +330,7 @@ mod tests {
         println!("Before install_sub_addons:");
         print_dir_tree(addons_dir.to_str().unwrap());
 
-        install_sub_addons(addon_meta.clone(), &repo_root, &addons_dir);
+        install_sub_addons(addon_meta.clone(), &repo_root, &addons_dir, |_| {});
 
         println!("After install_sub_addons:");
         print_dir_tree(addons_dir.to_str().unwrap());
