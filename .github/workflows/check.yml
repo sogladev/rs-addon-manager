@@ -1,27 +1,27 @@
 name: Check
 
 on:
-  push:
-    branches: ['main']
-  pull_request:
-  workflow_dispatch:
+    push:
+        branches: ['main']
+    pull_request:
+    workflow_dispatch:
 
 jobs:
-  check:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
-      # Required for `cargo clippy`
-      - name: install dependencies (ubuntu only) # Copied from build-gui.yml
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-      - name: cargo fmt
-        run: cargo fmt --all -- --check
-      - name: cargo clippy
-        run: cargo clippy --all-features -- -D warnings
-      - name: cargo test
-        run: cargo test --all-features --verbose
+    check:
+        runs-on: ubuntu-24.04
+        steps:
+            - uses: actions/checkout@v4
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  components: clippy, rustfmt
+            # Required for `cargo clippy`
+            - name: install dependencies (ubuntu only) # Copied from build-gui.yml
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+            - name: cargo fmt
+              run: cargo fmt --all -- --check
+            - name: cargo clippy
+              run: cargo clippy --all-features -- -D warnings
+            - name: cargo test
+              run: cargo test --all-features --verbose

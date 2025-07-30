@@ -1,32 +1,38 @@
 <script setup lang="ts">
-import { revealItemInDir } from '@tauri-apps/plugin-opener';
-import { open, ask } from '@tauri-apps/plugin-dialog';
-import { ref } from 'vue';
-import { useTimeoutFn } from '@vueuse/core';
-import { Plus, ArrowDownToLine, Ellipsis, CircleArrowDown, RefreshCcw } from 'lucide-vue-next';
-import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next';
-import AddonCollapse from '@/components/AddonCollapse.vue';
-import { invoke } from '@tauri-apps/api/core';
+import { revealItemInDir } from '@tauri-apps/plugin-opener'
+import { open, ask } from '@tauri-apps/plugin-dialog'
+import { ref } from 'vue'
+import { useTimeoutFn } from '@vueuse/core'
+import {
+    Plus,
+    ArrowDownToLine,
+    Ellipsis,
+    CircleArrowDown,
+    RefreshCcw,
+} from 'lucide-vue-next'
+import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next'
+import AddonCollapse from '@/components/AddonCollapse.vue'
+import { invoke } from '@tauri-apps/api/core'
 
 async function isValidGitUrl(url: string): Promise<boolean> {
-    return await invoke<boolean>('is_valid_repo_url', { url });
+    return await invoke<boolean>('is_valid_repo_url', { url })
 }
 
 // @todo: Remove this
 // const gitUrl = ref('');
-const gitUrl = ref('https://github.com/sogladev/addon-335-train-all-button.git');
-const isGitUrlValid = ref<boolean | null>(true);
+const gitUrl = ref('https://github.com/sogladev/addon-335-train-all-button.git')
+const isGitUrlValid = ref<boolean | null>(true)
 // const isGitUrlValid = ref<boolean | null>(null);
 
-import { watch } from 'vue';
+import { watch } from 'vue'
 
 watch(gitUrl, async () => {
     if (!trimmedGitUrl.value) {
-        isGitUrlValid.value = null;
-        return;
+        isGitUrlValid.value = null
+        return
     }
-    isGitUrlValid.value = await isValidGitUrl(trimmedGitUrl.value);
-});
+    isGitUrlValid.value = await isValidGitUrl(trimmedGitUrl.value)
+})
 
 async function handleDeleteFolder(path: string) {
     // const answer = await ask('This action cannot be reverted. Are you sure?', {
@@ -34,40 +40,111 @@ async function handleDeleteFolder(path: string) {
     //   kind: 'warning',
     // });
     // if (answer) {
-//        console.log(`Deleting folder: ${path}`);
-//        // Here you would typically call a backend function to delete the folder
-//        // For now, we will just remove it from the paths array
-//        // deleteFolder(path);
-//        paths.value = paths.value.filter(p => p.path !== path);
-//    } else {
-//        console.log('Deletion cancelled');
-//    }
+    //        console.log(`Deleting folder: ${path}`);
+    //        // Here you would typically call a backend function to delete the folder
+    //        // For now, we will just remove it from the paths array
+    //        // deleteFolder(path);
+    //        paths.value = paths.value.filter(p => p.path !== path);
+    //    } else {
+    //        console.log('Deletion cancelled');
+    //    }
 }
 
 const paths = ref([
     {
         path: '/home/jelle/Games/AddOns-test/Interface/AddOns',
         addons: [
-            { name: 'Addon One', notes: '#.toc notes', branch: 'main', branches: ['main', 'dev', 'release', 'origin/HEAD/verylongbranchanemasaaa'], isUpdateAvailable: false },
-            { name: 'Addon Two', notes: '#.toc notes', branch: 'dev', branches: ['main', 'dev', 'release'], isUpdateAvailable: true },
-            { name: 'Addon Three', notes: '#.toc notes', branch: 'release', branches: ['main', 'dev', 'release'], isUpdateAvailable: false },
-            { name: 'Addon Four', notes: '#.toc notes', branch: 'dev', branches: ['main', 'dev', 'release'], isUpdateAvailable: true },
-            { name: 'Addon Five', notes: '#.toc notes', branch: 'dev', branches: ['main', 'dev', 'release'], isUpdateAvailable: false },
-            { name: 'Addon Six', notes: '#.toc notes', branch: 'main', branches: ['main', 'dev', 'release'], isUpdateAvailable: false },
-            { name: 'Addon Seven', notes: '#.toc notes', branch: 'release', branches: ['main', 'dev', 'release'], isUpdateAvailable: true },
+            {
+                name: 'Addon One',
+                notes: '#.toc notes',
+                branch: 'main',
+                branches: [
+                    'main',
+                    'dev',
+                    'release',
+                    'origin/HEAD/verylongbranchanemasaaa',
+                ],
+                isUpdateAvailable: false,
+            },
+            {
+                name: 'Addon Two',
+                notes: '#.toc notes',
+                branch: 'dev',
+                branches: ['main', 'dev', 'release'],
+                isUpdateAvailable: true,
+            },
+            {
+                name: 'Addon Three',
+                notes: '#.toc notes',
+                branch: 'release',
+                branches: ['main', 'dev', 'release'],
+                isUpdateAvailable: false,
+            },
+            {
+                name: 'Addon Four',
+                notes: '#.toc notes',
+                branch: 'dev',
+                branches: ['main', 'dev', 'release'],
+                isUpdateAvailable: true,
+            },
+            {
+                name: 'Addon Five',
+                notes: '#.toc notes',
+                branch: 'dev',
+                branches: ['main', 'dev', 'release'],
+                isUpdateAvailable: false,
+            },
+            {
+                name: 'Addon Six',
+                notes: '#.toc notes',
+                branch: 'main',
+                branches: ['main', 'dev', 'release'],
+                isUpdateAvailable: false,
+            },
+            {
+                name: 'Addon Seven',
+                notes: '#.toc notes',
+                branch: 'release',
+                branches: ['main', 'dev', 'release'],
+                isUpdateAvailable: true,
+            },
         ],
-        isValid: true
+        isValid: true,
     },
     {
         path: '/mnt/games/wow/addons',
         addons: [
-            { name: 'Addon Eight', notes: '#.toc notes', branch: 'release', branches: ['main', 'release'], isUpdateAvailable: false },
-            { name: 'Addon Nine', notes: '#.toc notes', branch: 'main', branches: ['main', 'release'], isUpdateAvailable: true },
-            { name: 'Addon Ten', notes: '#.toc notes', branch: 'main', branches: ['main', 'release'], isUpdateAvailable: false },
-            { name: 'Addon Eleven', notes: '#.toc notes', branch: 'release', branches: ['main', 'release'], isUpdateAvailable: false },
+            {
+                name: 'Addon Eight',
+                notes: '#.toc notes',
+                branch: 'release',
+                branches: ['main', 'release'],
+                isUpdateAvailable: false,
+            },
+            {
+                name: 'Addon Nine',
+                notes: '#.toc notes',
+                branch: 'main',
+                branches: ['main', 'release'],
+                isUpdateAvailable: true,
+            },
+            {
+                name: 'Addon Ten',
+                notes: '#.toc notes',
+                branch: 'main',
+                branches: ['main', 'release'],
+                isUpdateAvailable: false,
+            },
+            {
+                name: 'Addon Eleven',
+                notes: '#.toc notes',
+                branch: 'release',
+                branches: ['main', 'release'],
+                isUpdateAvailable: false,
+            },
         ],
-        isValid: false
-    }
+        isValid: false,
+    },
 ])
 
 const addAddonDirectory = async () => {
@@ -75,29 +152,35 @@ const addAddonDirectory = async () => {
         const directory = await open({
             multiple: false,
             directory: true,
-        });
+        })
         if (directory) {
-            const isAlreadyAdded = paths.value.some(p => p.path === directory);
+            const isAlreadyAdded = paths.value.some((p) => p.path === directory)
             if (isAlreadyAdded) {
-                console.warn(`Directory ${directory} is already added.`);
-                return;
+                console.warn(`Directory ${directory} is already added.`)
+                return
             }
-            const isValid = await invoke<boolean>('is_valid_addons_folder_str', { path: directory });
-            if (!paths.value.some(p => p.path === directory)) {
-                paths.value.push({ path: directory, addons: [], isValid });
+            const isValid = await invoke<boolean>(
+                'is_valid_addons_folder_str',
+                {
+                    path: directory,
+                }
+            )
+            if (!paths.value.some((p) => p.path === directory)) {
+                paths.value.push({ path: directory, addons: [], isValid })
             }
-            console.debug(`Selected directory: ${directory}, valid: ${isValid}`);
+            console.debug(`Selected directory: ${directory}, valid: ${isValid}`)
         } else {
-            console.debug('No directory selected');
+            console.debug('No directory selected')
         }
     } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error('Error selecting directory:', errorMessage);
+        const errorMessage =
+            error instanceof Error ? error.message : String(error)
+        console.error('Error selecting directory:', errorMessage)
     }
-};
+}
 
 const showAddModal = ref(false)
-const selectedDirectory = ref(paths.value[0]?.path || '');
+const selectedDirectory = ref(paths.value[0]?.path || '')
 
 const isOpening = ref(false)
 
@@ -108,19 +191,20 @@ const filteredPaths = computed(() => {
     if (!search.value.trim()) return paths.value
     const term = search.value.trim().toLowerCase()
     return paths.value
-        .map(pathObj => {
-            const filteredAddons = pathObj.addons.filter(addon =>
-                addon.name.toLowerCase().includes(term) ||
-                addon.notes.toLowerCase().includes(term)
+        .map((pathObj) => {
+            const filteredAddons = pathObj.addons.filter(
+                (addon) =>
+                    addon.name.toLowerCase().includes(term) ||
+                    addon.notes.toLowerCase().includes(term)
             )
             return filteredAddons.length
                 ? { ...pathObj, addons: filteredAddons }
                 : null
         })
-        .filter(p => p !== null)
+        .filter((p) => p !== null)
 })
 
-const FOLDER_REVEAL_TIMEOUT_IN_MS = 800;
+const FOLDER_REVEAL_TIMEOUT_IN_MS = 800
 function handleOpenPath(path: string) {
     if (isOpening.value) return
     isOpening.value = true
@@ -131,46 +215,50 @@ function handleOpenPath(path: string) {
 }
 
 const handleClone = async () => {
-    if (!isGitUrlValid.value) return;
+    if (!isGitUrlValid.value) return
     try {
-        showAddModal.value = false;
-        await invoke('install_addon', { url: trimmedGitUrl.value, dir: selectedDirectory.value });
-        console.log('Addon cloned successfully');
+        showAddModal.value = false
+        await invoke('install_addon', {
+            url: trimmedGitUrl.value,
+            dir: selectedDirectory.value,
+        })
+        console.log('Addon cloned successfully')
     } catch (err) {
-        console.error('Failed to clone addon', err);
+        console.error('Failed to clone addon', err)
     }
-};
+}
 
-const trimmedGitUrl = computed(() => gitUrl.value.trim());
+const trimmedGitUrl = computed(() => gitUrl.value.trim())
 
-const showDeleteModal = ref(false);
-const folderToDelete = ref<string | null>(null);
+const showDeleteModal = ref(false)
+const folderToDelete = ref<string | null>(null)
 
 function requestDeleteFolder(path: string) {
-    folderToDelete.value = path;
-    showDeleteModal.value = true;
+    folderToDelete.value = path
+    showDeleteModal.value = true
 }
 
 function confirmDeleteFolder() {
     if (folderToDelete.value) {
-        paths.value = paths.value.filter(p => p.path !== folderToDelete.value);
+        paths.value = paths.value.filter((p) => p.path !== folderToDelete.value)
     }
-    showDeleteModal.value = false;
-    folderToDelete.value = null;
+    showDeleteModal.value = false
+    folderToDelete.value = null
 }
 
 function cancelDeleteFolder() {
-    showDeleteModal.value = false;
-    folderToDelete.value = null;
+    showDeleteModal.value = false
+    folderToDelete.value = null
 }
 </script>
 
 <template>
     <!-- <MainLayout> -->
     <div class="flex flex-col h-full gap-4">
-
         <!-- top bar: navbar + controls row -->
-        <div class="sticky top-0 z-10 bg-base-200 rounded-box mb-2 flex flex-col gap-0">
+        <div
+            class="sticky top-0 z-10 bg-base-200 rounded-box mb-2 flex flex-col gap-0"
+        >
             <div class="navbar justify-center">
                 <div class="navbar-center w-full flex justify-center">
                     <div class="tabs tabs-box text-lg">
@@ -180,7 +268,9 @@ function cancelDeleteFolder() {
                     </div>
                 </div>
             </div>
-            <div class="flex flex-wrap items-center gap-2 bg-base-200 pb-2 pt-2 px-2">
+            <div
+                class="flex flex-wrap items-center gap-2 bg-base-200 pb-2 pt-2 px-2"
+            >
                 <button class="btn btn-primary">Update All</button>
                 <!-- <button class="btn btn-primary"> <ArrowDownToLine /> </button> -->
                 <!-- <button class="btn btn-primary"> <ArrowDownToLine /> Update All </button> -->
@@ -189,9 +279,16 @@ function cancelDeleteFolder() {
                 <!-- <button class="btn btn-secondary"> <RefreshCcw /> Refresh </button> -->
                 <!-- <button class="btn btn-secondary"> <RefreshCcw /> </button> -->
 
-                <input v-model="search" class="input input-bordered flex-1 max-w-xs ml-auto"
-                    placeholder="Search installed addons..." type="search" />
-                <button class="btn btn-accent ml-2" @click="showAddModal = true">
+                <input
+                    v-model="search"
+                    class="input input-bordered flex-1 max-w-xs ml-auto"
+                    placeholder="Search installed addons..."
+                    type="search"
+                />
+                <button
+                    class="btn btn-accent ml-2"
+                    @click="showAddModal = true"
+                >
                     <Plus />
                     Add addon
                 </button>
@@ -206,30 +303,51 @@ function cancelDeleteFolder() {
                     <label class="label">
                         <span class="label-text">Clone using the web URL</span>
                     </label>
-                    <input v-model="gitUrl" class="input input-bordered w-full"
-                        placeholder="https://github.com/user/repo.git" />
-                    <div :class="{ 'visible': isGitUrlValid === false && gitUrl, 'invisible': !gitUrl || isGitUrlValid !== false }"
-                        class="text-error text-xs mt-1">
-                        Please enter a valid HTTPS Git URL ending with <code>.git</code>
+                    <input
+                        v-model="gitUrl"
+                        class="input input-bordered w-full"
+                        placeholder="https://github.com/user/repo.git"
+                    />
+                    <div
+                        :class="{
+                            visible: isGitUrlValid === false && gitUrl,
+                            invisible: !gitUrl || isGitUrlValid !== false,
+                        }"
+                        class="text-error text-xs mt-1"
+                    >
+                        Please enter a valid HTTPS Git URL ending with
+                        <code>.git</code>
                     </div>
                 </div>
                 <div class="form-control mb-4">
                     <label class="label">
                         <span class="label-text">Install Directory</span>
                     </label>
-                    <select v-model="selectedDirectory" class="select select-bordered w-full">
+                    <select
+                        v-model="selectedDirectory"
+                        class="select select-bordered w-full"
+                    >
                         <option value="" disabled>Select directory</option>
-                        <option v-for="p in paths" :key="p.path" :value="p.path">{{ p.path }}</option>
+                        <option
+                            v-for="p in paths"
+                            :key="p.path"
+                            :value="p.path"
+                        >
+                            {{ p.path }}
+                        </option>
                     </select>
                     <!-- <div :class="{ 'visible': selectedDirectory.isValid === false && gitUrl, 'invisible': !gitUrl || selectedDirectory.isValid !== false }" -->
-                        <!-- class="text-error text-xs mt-1"> -->
-                        <!-- Please enter a valid HTTPS Git URL ending with <code>.git</code> -->
+                    <!-- class="text-error text-xs mt-1"> -->
+                    <!-- Please enter a valid HTTPS Git URL ending with <code>.git</code> -->
                     <!-- </div> -->
                 </div>
                 <div class="modal-action">
-                    <button class="btn btn-primary" @click="handleClone">Clone</button>
-                    <button class="btn" @click="showAddModal = false">Cancel</button>
-
+                    <button class="btn btn-primary" @click="handleClone">
+                        Clone
+                    </button>
+                    <button class="btn" @click="showAddModal = false">
+                        Cancel
+                    </button>
                 </div>
             </div>
             <form method="dialog" class="modal-backdrop">
@@ -242,13 +360,24 @@ function cancelDeleteFolder() {
             <div class="modal-box">
                 <h3 class="font-bold text-lg mb-4">Delete Folder</h3>
                 <p>
-                    Are you sure you want to stop managing <span class="font-mono">{{ folderToDelete }}</span>?<br>
-                    <strong>This will not delete the AddOns folder, any installed addons, or remove the <code>.addonmanager</code> folder.</strong><br>
-                    The folder will simply be removed from the list of managed directories.
+                    Are you sure you want to stop managing
+                    <span class="font-mono">{{ folderToDelete }}</span
+                    >?<br />
+                    <strong
+                        >This will not delete the AddOns folder, any installed
+                        addons, or remove the
+                        <code>.addonmanager</code> folder.</strong
+                    ><br />
+                    The folder will simply be removed from the list of managed
+                    directories.
                 </p>
                 <div class="modal-action">
-                    <button class="btn btn-error" @click="confirmDeleteFolder">Delete</button>
-                    <button class="btn" @click="cancelDeleteFolder">Cancel</button>
+                    <button class="btn btn-error" @click="confirmDeleteFolder">
+                        Delete
+                    </button>
+                    <button class="btn" @click="cancelDeleteFolder">
+                        Cancel
+                    </button>
                 </div>
             </div>
             <form method="dialog" class="modal-backdrop">
@@ -258,62 +387,127 @@ function cancelDeleteFolder() {
 
         <!-- Paths and Addons list -->
         <div class="flex flex-col gap-4 overflow-y-auto p-4">
-            <AddonCollapse v-for="(pathObj, idx) in filteredPaths" :key="idx" :path="pathObj.path"
-                :isOpening="isOpening" @open-folder="handleOpenPath" @delete-folder="requestDeleteFolder">
+            <AddonCollapse
+                v-for="(pathObj, idx) in filteredPaths"
+                :key="idx"
+                :path="pathObj.path"
+                :isOpening="isOpening"
+                @open-folder="handleOpenPath"
+                @delete-folder="requestDeleteFolder"
+            >
                 <div class="flex items-center gap-2">
-                    <span v-if="pathObj.isValid === false" class="alert alert-warning alert-soft ml-2">
+                    <span
+                        v-if="pathObj.isValid === false"
+                        class="alert alert-warning alert-soft ml-2"
+                    >
                         Warning! Not a valid AddOns directory
                     </span>
                 </div>
                 <div class="flex flex-col gap-1.5 mt-2">
-                    <div v-for="(addon, idx) in pathObj.addons" :key="idx"
-                        class="card card-bordered bg-base-100 flex-row items-center p-2">
+                    <div
+                        v-for="(addon, idx) in pathObj.addons"
+                        :key="idx"
+                        class="card card-bordered bg-base-100 flex-row items-center p-2"
+                    >
                         <div class="flex flex-1 flex-col gap-1 p-2">
                             <span class="font-semibold">{{ addon.name }}</span>
-                            <span class="text-xs text-base-content/60">{{ addon.notes }}</span>
+                            <span class="text-xs text-base-content/60">{{
+                                addon.notes
+                            }}</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <div class="w-40">
-                                <select class="select select-bordered select-sm w-full truncate" v-model="addon.branch">
-                                    <option v-for="branch in addon.branches" :key="branch" :value="branch">
+                                <select
+                                    class="select select-bordered select-sm w-full truncate"
+                                    v-model="addon.branch"
+                                >
+                                    <option
+                                        v-for="branch in addon.branches"
+                                        :key="branch"
+                                        :value="branch"
+                                    >
                                         {{ branch }}
                                     </option>
                                 </select>
                             </div>
-                            <button v-if="addon.isUpdateAvailable" class="btn btn-sm btn-primary"
-                                @click="console.log('Update clicked', addon)">Update</button>
-                            <button v-else class="btn btn-sm btn-ghost btn-disabled">Update</button>
+                            <button
+                                v-if="addon.isUpdateAvailable"
+                                class="btn btn-sm btn-primary"
+                                @click="console.log('Update clicked', addon)"
+                            >
+                                Update
+                            </button>
+                            <button
+                                v-else
+                                class="btn btn-sm btn-ghost btn-disabled"
+                            >
+                                Update
+                            </button>
                             <!-- <button class="btn btn-sm btn-primary" @click="console.log('Download clicked', addon)"> <CircleArrowDown /> </button> -->
                             <!-- <button class="btn btn-sm btn-ghost btn-disabled"> <CircleArrowDown /> </button> -->
                             <div class="dropdown dropdown-end">
-                                <button tabindex="0" class="btn btn-sm btn-ghost">
+                                <button
+                                    tabindex="0"
+                                    class="btn btn-sm btn-ghost"
+                                >
                                     <Ellipsis />
                                 </button>
-                                <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-44">
+                                <ul
+                                    tabindex="0"
+                                    class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-44"
+                                >
                                     <li>
-                                        <button class="flex items-center gap-2"
-                                            @click="console.log('Readme clicked', addon)">
+                                        <button
+                                            class="flex items-center gap-2"
+                                            @click="
+                                                console.log(
+                                                    'Readme clicked',
+                                                    addon
+                                                )
+                                            "
+                                        >
                                             <FileText class="w-4 h-4" />
                                             Readme
                                         </button>
                                     </li>
                                     <li>
-                                        <button class="flex items-center gap-2"
-                                            @click="console.log('Website clicked', addon)">
+                                        <button
+                                            class="flex items-center gap-2"
+                                            @click="
+                                                console.log(
+                                                    'Website clicked',
+                                                    addon
+                                                )
+                                            "
+                                        >
                                             <Globe class="w-4 h-4" />
                                             Website
                                         </button>
                                     </li>
                                     <li>
-                                        <button class="flex items-center gap-2"
-                                            @click="console.log('Repair clicked', addon)">
+                                        <button
+                                            class="flex items-center gap-2"
+                                            @click="
+                                                console.log(
+                                                    'Repair clicked',
+                                                    addon
+                                                )
+                                            "
+                                        >
                                             <Wrench class="w-4 h-4" />
                                             Repair
                                         </button>
                                     </li>
                                     <li>
-                                        <button class="flex items-center gap-2 text-error"
-                                            @click="console.log('Delete clicked', addon)">
+                                        <button
+                                            class="flex items-center gap-2 text-error"
+                                            @click="
+                                                console.log(
+                                                    'Delete clicked',
+                                                    addon
+                                                )
+                                            "
+                                        >
                                             <Trash2 class="w-4 h-4" />
                                             Delete
                                         </button>
@@ -325,7 +519,10 @@ function cancelDeleteFolder() {
                 </div>
             </AddonCollapse>
             <!-- Add addon directory entry -->
-            <button class="btn btn-outline btn-accent mt-2 self-start" @click="addAddonDirectory">
+            <button
+                class="btn btn-outline btn-accent mt-2 self-start"
+                @click="addAddonDirectory"
+            >
                 <!-- <Plus class="mr-2" /> -->
                 Add addon directory
             </button>

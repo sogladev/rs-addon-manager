@@ -1,5 +1,9 @@
 {
-  "dependencies": {
-    "lucide-vue-next": "^0.532.0"
-  }
+    "dependencies": {
+        "lucide-vue-next": "^0.532.0"
+    },
+    "devDependencies": {
+        "@vue/eslint-config-prettier": "^10.2.0",
+        "prettier": "^3.6.2"
+    }
 }
