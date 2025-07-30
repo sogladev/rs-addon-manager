@@ -1,5 +1,6 @@
 use git2::{FetchOptions, RemoteCallbacks, Repository};
 use std::path::PathBuf;
+use url::Url;
 
 /// Clones a git repository into the given base path.
 ///
@@ -15,7 +16,7 @@ use std::path::PathBuf;
 /// let base_path = temp.path().to_path_buf();
 /// let url = "https://github.com/sogladev/addon-335-train-all-button.git";
 /// let repo = clone_git_repo(url, base_path.clone(), |progress, total| { println!("progress: {}/{}", progress, total); }).unwrap();
-/// let repo_dir = base_path.join("addon-335-train-all-button");
+/// let repo_dir = base_path.join("sogladev").join("addon-335-train-all-button");
 /// assert!(repo_dir.exists());
 /// assert!(repo_dir.join(".git").is_dir());
 /// assert!(repo_dir.join("TrainerButton").is_dir());
@@ -28,12 +29,19 @@ pub fn clone_git_repo<F>(
 where
     F: FnMut(usize, usize) + Send + 'static,
 {
-    let repo_name = url
-        .trim_end_matches(".git")
-        .rsplit('/')
+    let parsed_url = Url::parse(url).map_err(|_| git2::Error::from_str("Invalid URL"))?;
+    let mut path_segments = parsed_url
+        .path_segments()
+        .ok_or(git2::Error::from_str("cannot be base"))?;
+    let owner = path_segments
         .next()
-        .ok_or_else(|| git2::Error::from_str("Invalid repo URL"))?;
-    let target_path = base_path.join(repo_name);
+        .ok_or(git2::Error::from_str("missing owner"))?;
+    let repo = path_segments
+        .next()
+        .ok_or(git2::Error::from_str("missing repo"))?
+        .trim_end_matches(".git");
+
+    let target_path = base_path.join(owner).join(repo);
 
     let mut callbacks = RemoteCallbacks::new();
     callbacks.transfer_progress(move |stats| {

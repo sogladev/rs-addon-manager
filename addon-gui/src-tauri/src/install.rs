@@ -116,7 +116,9 @@ mod tests {
             ".addonmanager directory was not created"
         );
 
-        let repo_dir = manager_dir.join("addon-335-train-all-button");
+        let repo_dir = manager_dir
+            .join("sogladev")
+            .join("addon-335-train-all-button");
         assert!(
             repo_dir.exists() && repo_dir.is_dir(),
             "Repository was not cloned to the manager directory"
