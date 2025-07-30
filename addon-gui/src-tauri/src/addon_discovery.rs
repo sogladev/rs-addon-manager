@@ -18,7 +18,7 @@ use crate::addon_meta::SubAddon;
 /// # Examples
 ///
 /// ```
-/// use addon_gui_lib::install::remove_client_flavor_toc_suffixes;
+/// use addon_gui_lib::addon_discovery::remove_client_flavor_toc_suffixes;
 /// assert_eq!(remove_client_flavor_toc_suffixes("AdiBags.toc"), "AdiBags.toc");
 /// assert_eq!(remove_client_flavor_toc_suffixes("AdiBags_Mainline.toc"), "AdiBags.toc");
 /// assert_eq!(remove_client_flavor_toc_suffixes("AdiBags_Cata.toc"), "AdiBags.toc");
@@ -30,6 +30,7 @@ use crate::addon_meta::SubAddon;
 /// assert_eq!(remove_client_flavor_toc_suffixes("AdiBags_BCC.toc"), "AdiBags.toc");
 /// assert_eq!(remove_client_flavor_toc_suffixes("AdiBags-Classic.toc"), "AdiBags.toc");
 /// assert_eq!(remove_client_flavor_toc_suffixes("AdiBags_wotlk.toc"), "AdiBags.toc");
+/// assert_eq!(remove_client_flavor_toc_suffixes("Questie-335.toc"), "Questie-335.toc");
 /// ```
 pub fn remove_client_flavor_toc_suffixes(name: &str) -> String {
     let suffixes = [
@@ -136,6 +137,7 @@ mod tests {
     use tempfile::tempdir;
 
     #[test]
+    /// https://github.com/Sattva-108/AdiBags
     fn test_find_all_sub_addons_single_toc_in_root() {
         let temp = tempdir().unwrap();
         let repo_dir = temp.path();
@@ -173,6 +175,7 @@ mod tests {
     }
 
     #[test]
+    /// https://github.com/Sattva-108/AdiBags-WoTLK-3.3.5-Mods
     fn test_find_all_sub_addons_multiple_subdirs_with_toc() {
         let temp = tempdir().unwrap();
         let repo_dir = temp.path();
@@ -228,6 +231,67 @@ mod tests {
                 sub.toc_files[0].ends_with(".toc"),
                 "Expected .toc file, found: {:?}",
                 sub.toc_files[0]
+            );
+        }
+    }
+
+    #[test]
+    /// https://github.com/widxwer/Questie
+    /// This Questie has multiple basename .toc files in the root directory
+    /// It is expected that the user renames the folder manually
+    /// We should discover the multiple base names
+    fn test_find_all_sub_addons_questie_multiple_tocs_in_root() {
+        let temp = tempdir().unwrap();
+        let repo_dir = temp.path();
+
+        // Create multiple .toc files in the root directory
+        let toc_files = vec![
+            "Questie-335-Classic.toc",
+            "Questie-335-TBC.toc",
+            "Questie-335.toc",
+            "Questie-BCC.toc",
+            "Questie-Classic.toc",
+            "Questie-WOTLKC.toc",
+            "Questie.toc",
+        ];
+        for toc in &toc_files {
+            std::fs::File::create(repo_dir.join(toc)).unwrap();
+        }
+
+        let sub_addons = find_all_sub_addons(&repo_dir.to_path_buf()).unwrap();
+
+        assert_eq!(
+            sub_addons.len(),
+            1,
+            "Expected 1 sub_addon, found: {:?}",
+            sub_addons
+        );
+        let sub = &sub_addons[0];
+        assert_eq!(
+            sub.dir, ".",
+            "Expected sub_addon dir to be '.', found: {}",
+            sub.dir
+        );
+        assert_eq!(
+            sub.toc_files.len(),
+            toc_files.len(),
+            "Expected all .toc files to be detected, found: {:?}",
+            sub.toc_files
+        );
+
+        for toc in &toc_files {
+            assert!(
+                sub.toc_files.contains(&toc.to_string()),
+                "Missing toc file: {}",
+                toc
+            );
+        }
+
+        for name in &sub.names {
+            assert!(
+                name == "Questie.toc" || name == "Questie-335.toc",
+                "Expected normalized name to be 'Questie.toc' or 'Questie-335.toc', found: {}",
+                name
             );
         }
     }
