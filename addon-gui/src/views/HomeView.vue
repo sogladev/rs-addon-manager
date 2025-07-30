@@ -199,9 +199,9 @@ function handleOpenPath(path: string) {
 }
 
 const handleClone = async () => {
+    showAddModal.value = false
     if (!isGitUrlValid.value) return
     try {
-        showAddModal.value = false
         await invoke('install_addon', {
             url: trimmedGitUrl.value,
             dir: selectedDirectory.value,
