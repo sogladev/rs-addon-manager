@@ -133,9 +133,9 @@ function handleOpenPath(path: string) {
 const handleClone = async () => {
     if (!isGitUrlValid.value) return;
     try {
+        showAddModal.value = false;
         await invoke('install_addon', { url: trimmedGitUrl.value, dir: selectedDirectory.value });
         console.log('Addon cloned successfully');
-        showAddModal.value = false;
     } catch (err) {
         console.error('Failed to clone addon', err);
     }
