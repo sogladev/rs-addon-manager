@@ -3,8 +3,8 @@ use std::path::{Path, PathBuf};
 use tauri::Emitter;
 
 use crate::addon_discovery::find_all_sub_addons;
-use crate::addon_meta::{AddonManagerData, AddonMeta, SubAddon};
-use crate::clone::clone_git_repo;
+use crate::addon_meta::{AddonManagerData, AddonMeta};
+use crate::clone;
 use crate::symlink;
 use crate::validate;
 
@@ -20,7 +20,7 @@ where
 
     let manager_dir = ensure_manager_dir(dir)?;
 
-    let repo = clone_git_repo(url, manager_dir.clone(), progress)
+    let repo = clone::clone_git_repo(url, manager_dir.clone(), progress)
         .map_err(|e| format!("Failed to clone repository from {url}: {e}"))?;
     let path = PathBuf::from(
         repo.workdir()
@@ -29,9 +29,10 @@ where
 
     let sub_addons = find_all_sub_addons(&path)?;
 
+    let (owner, _) = clone::extract_owner_repo_from_url(url)?;
     let addon_meta = AddonMeta {
         repo_url: url.to_string(),
-        owner: "unknown".to_string(), // TODO: parse from url if needed
+        owner,
         repo_name: path
             .file_name()
             .map(|f| f.to_string_lossy().to_string())
@@ -46,7 +47,6 @@ where
             .ok()
             .and_then(|head| head.shorthand().map(|s| s.to_string())),
         installed_at: None,
-        // installed_at: Some(chrono::Utc::now().to_rfc3339()),
         sub_addons: sub_addons.clone(),
     };
 
@@ -57,14 +57,14 @@ where
         .save_to_manager_dir(&manager_dir)
         .map_err(|e| format!("Failed to save metadata: {e}"))?;
 
-    install_sub_addons(addon_meta, &path, &dir);
+    install_sub_addons(addon_meta, &path, dir);
 
     Ok(manager_data)
 }
 
-// Create symlink for each sub-addon
-pub fn install_sub_addons(addon_meta: AddonMeta, repo_root: &Path, addons_dir: &Path) {
+pub fn install_sub_addons(mut addon_meta: AddonMeta, repo_root: &Path, addons_dir: &Path) {
     let sub_addons = &addon_meta.sub_addons;
+    // Create symlink for each sub-addon
     for sub in sub_addons {
         if sub.enabled && sub.dir != "." {
             continue; // Skip if not enabled or no names
@@ -100,6 +100,7 @@ pub fn install_sub_addons(addon_meta: AddonMeta, repo_root: &Path, addons_dir: &
             );
         }
     }
+    addon_meta.installed_at = Some(chrono::Utc::now().to_rfc3339());
 }
 
 #[tauri::command]

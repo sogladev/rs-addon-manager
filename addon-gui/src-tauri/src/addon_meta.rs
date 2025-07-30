@@ -26,10 +26,10 @@ pub struct AddonMeta {
     pub owner: String,
     /// The repository name
     pub repo_name: String,
-    /// Commit hash or tag
-    pub installed_ref: Option<String>,
     /// Branch
     pub branch: Option<String>,
+    /// Commit hash or tag
+    pub installed_ref: Option<String>,
     /// Date/time of installation (ISO 8601)
     pub installed_at: Option<String>,
     /// All discovered sub-addons in this repo

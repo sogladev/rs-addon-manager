@@ -10,17 +10,17 @@ use url::Url;
 /// assert!(owner == "owner");
 /// assert!(repo == "repo");
 /// ```
-pub fn extract_owner_repo_from_url(url: &str) -> Result<(String, String), git2::Error> {
-    let parsed_url = Url::parse(url).map_err(|_| git2::Error::from_str("Invalid URL"))?;
+pub fn extract_owner_repo_from_url(url: &str) -> Result<(String, String), String> {
+    let parsed_url = Url::parse(url).map_err(|e| e.to_string())?;
     let mut path_segments = parsed_url
         .path_segments()
-        .ok_or(git2::Error::from_str("cannot be base"))?;
+        .ok_or_else(|| "cannot be base".to_string())?;
     let owner = path_segments
         .next()
-        .ok_or(git2::Error::from_str("missing owner"))?;
+        .ok_or_else(|| "missing owner".to_string())?;
     let repo = path_segments
         .next()
-        .ok_or(git2::Error::from_str("missing repo"))?
+        .ok_or_else(|| "missing repo".to_string())?
         .trim_end_matches(".git");
     Ok((owner.to_string(), repo.to_string()))
 }
@@ -48,13 +48,13 @@ pub fn clone_git_repo<F>(
     url: &str,
     base_path: PathBuf,
     mut progress: F,
-) -> Result<Repository, git2::Error>
+) -> Result<Repository, String>
 where
     F: FnMut(usize, usize) + Send + 'static,
 {
     let (owner, repo) = extract_owner_repo_from_url(url)?;
 
-    let target_path = base_path.join(owner).join(repo);
+    let target_path = base_path.join(&owner).join(&repo);
 
     let mut callbacks = RemoteCallbacks::new();
     callbacks.transfer_progress(move |stats| {
@@ -68,5 +68,7 @@ where
     let mut builder = git2::build::RepoBuilder::new();
     builder.fetch_options(fetch_options);
 
-    builder.clone(url, &target_path)
+    builder
+        .clone(url, &target_path)
+        .map_err(|e| e.message().to_string())
 }
