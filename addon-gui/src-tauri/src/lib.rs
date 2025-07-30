@@ -1,3 +1,5 @@
+pub mod addon_discovery;
+pub mod addon_meta;
 pub mod clone;
 pub mod install;
 pub mod validate;
