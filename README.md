@@ -77,18 +77,30 @@ https://github.com/user-attachments/assets/7c642947-a57c-46b0-aab9-eeb456b6e115
 - Install Rust from the https://www.rust-lang.org/
 - Install Bun package manager from https://bun.sh/docs/installation
 
-`.git/hooks/pre-commit`
+### Formatting & Pre-commit
 
-```bash
-#!/bin/sh
+To set up formatting and the pre-commit hook:
 
-cargo fmt --all
-bun run prettier --write .
-```
+1. Install Prettier and the Vue Prettier config:
 
-```
-bun add -D prettier @vue/eslint-config-prettier
-```
+    ```sh
+    bun add -D prettier @vue/eslint-config-prettier
+    ```
+
+2. Set up the pre-commit hook by creating `.git/hooks/pre-commit` with:
+
+    ```bash
+    #!/bin/sh
+
+    cargo fmt --all
+    bun run prettier --write .
+    ```
+
+   Make sure the hook is executable:
+
+    ```sh
+    chmod +x .git/hooks/pre-commit
+    ```
 
 ### Local CDN
 
