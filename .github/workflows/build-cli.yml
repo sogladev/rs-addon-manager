@@ -1,35 +1,35 @@
 name: Build CLI
 
 on:
-  pull_request:
-    paths:
-      - 'downloader-cli/**'
-      - 'downloader-core/**'
-      - '.github/workflows/build-cli.yml'
-  push:
-    branches: ['main']
-    paths:
-      - 'downloader-cli/**'
-      - 'downloader-core/**'
-      - '.github/workflows/build-cli.yml'
+    pull_request:
+        paths:
+            - 'downloader-cli/**'
+            - 'downloader-core/**'
+            - '.github/workflows/build-cli.yml'
+    push:
+        branches: ['main']
+        paths:
+            - 'downloader-cli/**'
+            - 'downloader-core/**'
+            - '.github/workflows/build-cli.yml'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
 
 jobs:
-  build-cli-linux:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-unknown-linux-gnu
-      - name: Prepare dist directory
-        run: mkdir -p dist/cli
-      # - name: Copy LICENSE to dist
-        # run: cp LICENSE dist/
-      - name: Build Linux (Demo)
-        run: |
-          cd downloader-cli
-          cargo build --locked --release --target x86_64-unknown-linux-gnu
+    build-cli-linux:
+        runs-on: ubuntu-24.04
+        steps:
+            - uses: actions/checkout@v4
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  targets: x86_64-unknown-linux-gnu
+            - name: Prepare dist directory
+              run: mkdir -p dist/cli
+            # - name: Copy LICENSE to dist
+            # run: cp LICENSE dist/
+            - name: Build Linux (Demo)
+              run: |
+                  cd downloader-cli
+                  cargo build --locked --release --target x86_64-unknown-linux-gnu
