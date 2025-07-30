@@ -3,8 +3,9 @@ use std::path::{Path, PathBuf};
 use tauri::Emitter;
 
 use crate::addon_discovery::find_all_sub_addons;
-use crate::addon_meta::{AddonManagerData, AddonMeta};
+use crate::addon_meta::{AddonManagerData, AddonMeta, SubAddon};
 use crate::clone::clone_git_repo;
+use crate::symlink;
 use crate::validate;
 
 pub fn install_addon_with_progress<F>(
@@ -44,17 +45,61 @@ where
             .head()
             .ok()
             .and_then(|head| head.shorthand().map(|s| s.to_string())),
-        installed_at: Some(chrono::Utc::now().to_rfc3339()),
-        sub_addons,
+        installed_at: None,
+        // installed_at: Some(chrono::Utc::now().to_rfc3339()),
+        sub_addons: sub_addons.clone(),
     };
 
     // Load, upsert, and save using AddonManagerData methods
     let mut manager_data = AddonManagerData::load_from_manager_dir(&manager_dir)?;
-    manager_data.upsert_addon(addon_meta);
+    manager_data.upsert_addon(addon_meta.clone());
     manager_data
         .save_to_manager_dir(&manager_dir)
         .map_err(|e| format!("Failed to save metadata: {e}"))?;
+
+    install_sub_addons(addon_meta, &path, &dir);
+
     Ok(manager_data)
+}
+
+// Create symlink for each sub-addon
+pub fn install_sub_addons(addon_meta: AddonMeta, repo_root: &Path, addons_dir: &Path) {
+    let sub_addons = &addon_meta.sub_addons;
+    for sub in sub_addons {
+        if sub.enabled && sub.dir != "." {
+            continue; // Skip if not enabled or no names
+        }
+        let symlink_name = &sub.name;
+        let target_dir = if sub.dir == "." {
+            repo_root.to_path_buf()
+        } else {
+            repo_root.join(&sub.dir)
+        };
+        let symlink_path = addons_dir.join(symlink_name);
+
+        // @todo: Handle cases where an addon is already installed. For now, let's just overwrite
+        if symlink_path.exists() {
+            std::fs::remove_file(&symlink_path)
+                .or_else(|_| std::fs::remove_dir_all(&symlink_path))
+                .ok();
+        }
+
+        // @todo: Handle warning for multiple names better
+        if sub.names.len() > 1 {
+            eprintln!(
+                "Warning: Multiple possible names for sub-addon '{}': {:?}. Using '{}'.",
+                sub.dir, sub.names, symlink_name
+            );
+        }
+
+        if let Err(e) = symlink::create_symlink(&target_dir, &symlink_path) {
+            eprintln!(
+                "Failed to create symlink for '{symlink_name}': {} -> {} ({e})",
+                target_dir.display(),
+                symlink_path.display(),
+            );
+        }
+    }
 }
 
 #[tauri::command]

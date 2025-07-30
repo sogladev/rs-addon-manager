@@ -5,7 +5,7 @@ use std::{
 
 use crate::addon_meta::SubAddon;
 
-/// Removes known WoW version suffixes from .toc filenames, normalizing to "Name.toc".
+/// Returns the canonical base name for a .toc file
 ///
 /// https://wowpedia.fandom.com/wiki/TOC_format
 /// Classic and retail versions of the game can be properly supported by including multiple TOC files in the same addon.
@@ -18,47 +18,56 @@ use crate::addon_meta::SubAddon;
 /// # Examples
 ///
 /// ```
-/// use addon_gui_lib::addon_discovery::remove_client_flavor_toc_suffixes;
-/// assert_eq!(remove_client_flavor_toc_suffixes("AdiBags.toc"), "AdiBags.toc");
-/// assert_eq!(remove_client_flavor_toc_suffixes("AdiBags_Mainline.toc"), "AdiBags.toc");
-/// assert_eq!(remove_client_flavor_toc_suffixes("AdiBags_Cata.toc"), "AdiBags.toc");
-/// assert_eq!(remove_client_flavor_toc_suffixes("AdiBags_Wrath.toc"), "AdiBags.toc");
-/// assert_eq!(remove_client_flavor_toc_suffixes("AdiBags_TBC.toc"), "AdiBags.toc");
-/// assert_eq!(remove_client_flavor_toc_suffixes("AdiBags_Vanilla.toc"), "AdiBags.toc");
-/// assert_eq!(remove_client_flavor_toc_suffixes("AdiBags_Cata.toc"), "AdiBags.toc");
-/// assert_eq!(remove_client_flavor_toc_suffixes("AdiBags-WOTLKC.toc"), "AdiBags.toc");
-/// assert_eq!(remove_client_flavor_toc_suffixes("AdiBags_BCC.toc"), "AdiBags.toc");
-/// assert_eq!(remove_client_flavor_toc_suffixes("AdiBags-Classic.toc"), "AdiBags.toc");
-/// assert_eq!(remove_client_flavor_toc_suffixes("AdiBags_wotlk.toc"), "AdiBags.toc");
-/// assert_eq!(remove_client_flavor_toc_suffixes("Questie-335.toc"), "Questie-335.toc");
+/// use addon_gui_lib::addon_discovery::toc_file_base_name;
+/// assert_eq!(toc_file_base_name("AdiBags.toc"), "AdiBags");
+/// assert_eq!(toc_file_base_name("AdiBags_Mainline.toc"), "AdiBags");
+/// assert_eq!(toc_file_base_name("AdiBags_Cata.toc"), "AdiBags");
+/// assert_eq!(toc_file_base_name("AdiBags_Wrath.toc"), "AdiBags");
+/// assert_eq!(toc_file_base_name("AdiBags_TBC.toc"), "AdiBags");
+/// assert_eq!(toc_file_base_name("AdiBags_Vanilla.toc"), "AdiBags");
+/// assert_eq!(toc_file_base_name("AdiBags_Cata.toc"), "AdiBags");
+/// assert_eq!(toc_file_base_name("AdiBags-WOTLKC.toc"), "AdiBags");
+/// assert_eq!(toc_file_base_name("AdiBags_BCC.toc"), "AdiBags");
+/// assert_eq!(toc_file_base_name("AdiBags-Classic.toc"), "AdiBags");
+/// assert_eq!(toc_file_base_name("AdiBags_wotlk.toc"), "AdiBags");
+/// assert_eq!(toc_file_base_name("Questie-335.toc"), "Questie-335");
+/// assert_eq!(toc_file_base_name("TrainerButton.toc"), "TrainerButton");
+/// assert_eq!(toc_file_base_name("!!TrainerButton.toc"), "!!TrainerButton");
 /// ```
-pub fn remove_client_flavor_toc_suffixes(name: &str) -> String {
-    let suffixes = [
-        "mainline.toc",
-        "cataclysm.toc",
-        "cata.toc",
-        "wrath.toc",
-        "tbc.toc",
-        "vanilla.toc",
-        "classic.toc",
-        "bcc.toc",
-        "wotlkc.toc",
-        "wotlk.toc",
+pub fn toc_file_base_name(toc_file: &str) -> &str {
+    const SUFFIXES_TO_STRIP: &[&str] = &[
+        "-mainline.toc",
+        "-cataclysm.toc",
+        "-cata.toc",
+        "-wrath.toc",
+        "-tbc.toc",
+        "-vanilla.toc",
+        "-classic.toc",
+        "-bcc.toc",
+        "-wotlkc.toc",
+        "-wotlk.toc",
+        "_mainline.toc",
+        "_cataclysm.toc",
+        "_cata.toc",
+        "_wrath.toc",
+        "_tbc.toc",
+        "_vanilla.toc",
+        "_classic.toc",
+        "_bcc.toc",
+        "_wotlkc.toc",
+        "_wotlk.toc",
+        ".toc",
     ];
-    let name_lower = name.to_ascii_lowercase();
-    for suf in &suffixes {
-        let dash_pattern = format!("-{suf}");
-        let underscore_pattern = format!("_{suf}");
-        if name_lower.ends_with(&dash_pattern) {
-            let idx = name_lower.rfind(&dash_pattern).unwrap();
-            return name[..idx].to_string() + ".toc";
-        }
-        if name_lower.ends_with(&underscore_pattern) {
-            let idx = name_lower.rfind(&underscore_pattern).unwrap();
-            return name[..idx].to_string() + ".toc";
+
+    let toc_file_lower = toc_file.to_lowercase();
+    for suf in SUFFIXES_TO_STRIP {
+        if toc_file_lower.ends_with(suf) {
+            // Find the start index of the suffix in the original string
+            let idx = toc_file.len() - suf.len();
+            return &toc_file[..idx];
         }
     }
-    name.to_string()
+    toc_file
 }
 
 /// Finds all sub-addons by searching for .toc files in the root directory and immediate subdirectories only.
@@ -89,7 +98,7 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<SubAddon>, String> {
     if !toc_files.is_empty() {
         let names: Vec<String> = toc_files
             .iter()
-            .map(|toc| remove_client_flavor_toc_suffixes(toc))
+            .map(|toc| toc_file_base_name(toc).to_string())
             .collect();
         // This is to handle cases where multiple .toc files exist in the root with multiple base names
         let name = names
@@ -120,7 +129,7 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<SubAddon>, String> {
                 }
                 let names: Vec<String> = toc_files
                     .iter()
-                    .map(|toc| remove_client_flavor_toc_suffixes(toc))
+                    .map(|toc| toc_file_base_name(toc).to_string())
                     .collect();
                 // This is to handle cases where multiple .toc files exist in the root with multiple base names
                 let name = names

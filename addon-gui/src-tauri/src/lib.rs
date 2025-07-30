@@ -2,6 +2,7 @@ pub mod addon_discovery;
 pub mod addon_meta;
 pub mod clone;
 pub mod install;
+pub mod symlink;
 pub mod validate;
 
 use install::install_addon;

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 pub const ADDON_MANAGER_METADATA_FILE: &str = "metadata.toml";
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SubAddon {
     /// The name used for the symlink in AddOns
     pub name: String,
@@ -18,7 +18,7 @@ pub struct SubAddon {
     pub enabled: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AddonMeta {
     /// The git repository URL
     pub repo_url: String,

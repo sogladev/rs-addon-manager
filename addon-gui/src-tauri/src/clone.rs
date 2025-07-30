@@ -2,6 +2,29 @@ use git2::{FetchOptions, RemoteCallbacks, Repository};
 use std::path::PathBuf;
 use url::Url;
 
+/// Extracts the owner and repository name from a Git URL.
+// This assumes the URL is in the format: https://github.com/owner/repo.git
+/// ```
+/// use addon_gui_lib::clone::extract_owner_repo_from_url;
+/// let (owner, repo) = extract_owner_repo_from_url("https://github.com/owner/repo.git").unwrap();
+/// assert!(owner == "owner");
+/// assert!(repo == "repo");
+/// ```
+pub fn extract_owner_repo_from_url(url: &str) -> Result<(String, String), git2::Error> {
+    let parsed_url = Url::parse(url).map_err(|_| git2::Error::from_str("Invalid URL"))?;
+    let mut path_segments = parsed_url
+        .path_segments()
+        .ok_or(git2::Error::from_str("cannot be base"))?;
+    let owner = path_segments
+        .next()
+        .ok_or(git2::Error::from_str("missing owner"))?;
+    let repo = path_segments
+        .next()
+        .ok_or(git2::Error::from_str("missing repo"))?
+        .trim_end_matches(".git");
+    Ok((owner.to_string(), repo.to_string()))
+}
+
 /// Clones a git repository into the given base path.
 ///
 /// # Example
@@ -29,17 +52,7 @@ pub fn clone_git_repo<F>(
 where
     F: FnMut(usize, usize) + Send + 'static,
 {
-    let parsed_url = Url::parse(url).map_err(|_| git2::Error::from_str("Invalid URL"))?;
-    let mut path_segments = parsed_url
-        .path_segments()
-        .ok_or(git2::Error::from_str("cannot be base"))?;
-    let owner = path_segments
-        .next()
-        .ok_or(git2::Error::from_str("missing owner"))?;
-    let repo = path_segments
-        .next()
-        .ok_or(git2::Error::from_str("missing repo"))?
-        .trim_end_matches(".git");
+    let (owner, repo) = extract_owner_repo_from_url(url)?;
 
     let target_path = base_path.join(owner).join(repo);
 
