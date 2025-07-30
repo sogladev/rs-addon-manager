@@ -11,5 +11,8 @@ fn test_clone_git_repo() {
     assert!(result.is_ok(), "Failed to clone repo: {:?}", result.err());
 
     // Check that .git exists
-    assert!(repo_path.join(".git").exists(), ".git directory missing after clone");
+    assert!(
+        repo_path.join(".git").exists(),
+        ".git directory missing after clone"
+    );
 }

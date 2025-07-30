@@ -14,8 +14,7 @@ use regex::Regex;
 /// ```
 #[tauri::command]
 pub fn is_valid_repo_url(url: &str) -> bool {
-    let re = Regex::new(r"^https?://.+\.git$")
-        .expect("Regex pattern should always compile");
+    let re = Regex::new(r"^https?://.+\.git$").expect("Regex pattern should always compile");
     re.is_match(url)
 }
 
@@ -40,7 +39,10 @@ pub fn is_valid_repo_url(url: &str) -> bool {
 /// ```
 pub fn is_valid_addons_folder(path: &Path) -> bool {
     let dir_name = path.file_name().and_then(|n| n.to_str());
-    let parent_name = path.parent().and_then(|p| p.file_name()).and_then(|n| n.to_str());
+    let parent_name = path
+        .parent()
+        .and_then(|p| p.file_name())
+        .and_then(|n| n.to_str());
     dir_name == Some("AddOns") && parent_name == Some("Interface")
 }
 
