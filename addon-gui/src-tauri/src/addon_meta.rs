@@ -36,6 +36,35 @@ pub struct AddonRepository {
     pub addons: Vec<Addon>,
 }
 
+impl AddonRepository {
+    pub fn build_addon_repository(
+        url: &str,
+        path: &Path,
+        repo: &git2::Repository,
+        owner: String,
+        sub_addons: Vec<Addon>,
+    ) -> AddonRepository {
+        AddonRepository {
+            repo_url: url.to_string(),
+            owner,
+            repo_name: path
+                .file_name()
+                .map(|f| f.to_string_lossy().to_string())
+                .unwrap_or_else(|| "<unknown-repo>".to_string()),
+            repo_ref: repo
+                .head()
+                .ok()
+                .and_then(|head| head.target())
+                .map(|oid| oid.to_string()),
+            branch: repo
+                .head()
+                .ok()
+                .and_then(|head| head.shorthand().map(|s| s.to_string())),
+            addons: sub_addons,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AddOnsFolder {

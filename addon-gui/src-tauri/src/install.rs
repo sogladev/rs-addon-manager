@@ -90,29 +90,14 @@ where
             return Err(format!("Failed to extract owner/repo from url: {e}"));
         }
     };
-    let addon_repo = AddonRepository {
-        repo_url: url.to_string(),
-        owner,
-        repo_name: path
-            .file_name()
-            .map(|f| f.to_string_lossy().to_string())
-            .unwrap_or_else(|| "<unknown-repo>".to_string()),
-        repo_ref: repo
-            .head()
-            .ok()
-            .and_then(|head| head.target())
-            .map(|oid| oid.to_string()),
-        branch: repo
-            .head()
-            .ok()
-            .and_then(|head| head.shorthand().map(|s| s.to_string())),
-        addons: sub_addons.clone(),
-    };
+
+    let addon_repo =
+        AddonRepository::build_addon_repository(&url, &path, &repo, owner, sub_addons.clone());
 
     reporter(InstallEvent::Status("Saving addon metadata...".to_string()));
     let mut addons_folder = match AddOnsFolder::load_from_manager_dir(&manager_dir) {
         Ok(folder) => folder,
-        Err(_) => AddOnsFolder::default_with_path(&dir),
+        Err(_) => AddOnsFolder::default_with_path(dir),
     };
 
     addons_folder.upsert_addon(addon_repo.clone());
@@ -165,14 +150,13 @@ pub fn install_sub_addons<F>(
 
         if addon.names.len() > 1 {
             reporter(InstallEvent::Warning(format!(
-                "Multiple possible names for sub-addon '{}': {:?}. Using '{}'.",
-                addon.dir, addon.names, symlink_name
+                "Multiple possible names for sub-addon '{}': {:?}. Using '{symlink_name}'.",
+                addon.dir, addon.names
             )));
         }
 
         reporter(InstallEvent::Status(format!(
-            "Creating symlink for '{}': {} -> {}",
-            symlink_name,
+            "Creating symlink for '{symlink_name}': {} -> {}",
             target_dir.display(),
             symlink_path.display()
         )));
