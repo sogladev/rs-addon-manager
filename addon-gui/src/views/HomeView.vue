@@ -12,10 +12,17 @@ import { load } from '@tauri-apps/plugin-store'
 const STORE_FILE = 'addon-manager.json'
 const STORE_KEY = 'addon-directories'
 
-async function loadAddonDirectoriesFromStore(): Promise<string[]> {
+type StoredAddonDirectory = {
+    path: string
+    isValid: boolean
+}
+
+async function loadAddonDirectoriesFromStore(): Promise<
+    StoredAddonDirectory[]
+> {
     try {
         const store = await load(STORE_FILE)
-        const dirs = await store.get<string[]>(STORE_KEY)
+        const dirs = await store.get<StoredAddonDirectory[]>(STORE_KEY)
         return Array.isArray(dirs) ? dirs : []
     } catch (error: any) {
         console.error('Failed to load addon directories from store:', error)
@@ -23,7 +30,7 @@ async function loadAddonDirectoriesFromStore(): Promise<string[]> {
     }
 }
 
-async function saveAddonDirectoriesToStore(dirs: string[]) {
+async function saveAddonDirectoriesToStore(dirs: StoredAddonDirectory[]) {
     try {
         const store = await load(STORE_FILE)
         await store.set(STORE_KEY, dirs)
@@ -71,8 +78,7 @@ type AddonMeta = {
     owner: string // repository owner
     repo_name: string // repository name
     branch?: string | null // branch
-    installed_ref?: string | null // commit hash or tag
-    installed_at?: string | null // ISO 8601 date/time
+    repo_ref?: string | null // commit hash or tag
     sub_addons: SubAddon[]
     // --- UI-only fields for install state ---
     installStatus?: InstallStatus
@@ -85,10 +91,6 @@ type AddonFolder = {
     path: string // absolute path to AddOns folder
     isValid: boolean
     addons: AddonMeta[]
-}
-
-type AddonManagerData = {
-    folders: AddonFolder[]
 }
 
 import { listen } from '@tauri-apps/api/event'
@@ -128,17 +130,35 @@ onMounted(async () => {
         }
     })
 
-    listen<AddonManagerData>('addon-manager-data-updated', ({ payload }) => {
-        console.debug('[addon-manager-data-updated]', payload)
-        addonManagerData.value = payload
+    listen<AddonFolder>('addon-manager-data-updated', ({ payload }) => {
+        const idx = addonFolders.value.findIndex((f) => f.path === payload.path)
+        if (idx !== -1) {
+            addonFolders.value[idx] = {
+                ...addonFolders.value[idx],
+                ...payload,
+                isValid: addonFolders.value[idx].isValid,
+            }
+        } else {
+            addonFolders.value.push(payload)
+        }
     })
 
     // On startup, load managed directories from store and request backend to load them
     const dirs = await loadAddonDirectoriesFromStore()
     console.debug('[startup] loaded addon directories:', dirs)
-    for (const dir of dirs) {
-        console.debug('[startup] requesting get_addon_manager_data for', dir)
-        await invoke('get_addon_manager_data', { path: dir })
+    for (const entry of dirs) {
+        if (!entry || !entry.path) {
+            console.warn(
+                '[startup] Skipping invalid entry in addon directories:',
+                entry
+            )
+            continue
+        }
+        console.debug(
+            '[startup] requesting get_addon_manager_data for',
+            entry.path
+        )
+        await invoke('get_addon_manager_data', { path: entry.path })
     }
 })
 
@@ -152,27 +172,36 @@ const installStatus = ref<{
 
 import { watch } from 'vue'
 
-const addonManagerData = ref<{ folders: AddonFolder[] }>({ folders: [] })
-const folderPaths = computed(
-    () => addonManagerData.value?.folders?.map((f) => f.path) ?? []
-)
+const addonFolders = ref<AddonFolder[]>([])
+const folderPaths = computed(() => addonFolders.value.map((f) => f.path))
 
 const addAddonDirectory = async () => {
     try {
-        const directory = await open({
+        const path = await open({
             multiple: false,
             directory: true,
         })
-        if (directory) {
+        if (path) {
             // Load current from store, add new, save
             let dirs = await loadAddonDirectoriesFromStore()
-            if (!dirs.includes(directory)) {
-                dirs.push(directory)
+            // Check if already present
+            if (!dirs.some((d) => d.path === path)) {
+                const isValid: boolean = await invoke(
+                    'is_valid_addons_folder_str',
+                    { path }
+                )
+                dirs.push({ path, isValid })
                 await saveAddonDirectoriesToStore(dirs)
+                if (!Array.isArray(addonFolders)) {
+                    addonFolders = []
+                }
+                // Only add folder if not present
+                if (!addonFolders.some((f) => f.path === path)) {
+                    addonFolders.push({ path, isValid, addons: [] })
+                }
             }
-            managedDirectories.value = dirs
             // Request backend to load metadata for this directory
-            await invoke('get_addon_manager_data', { path: directory })
+            await invoke('get_addon_manager_data', { path })
         } else {
             console.debug('No directory selected')
         }
@@ -194,23 +223,34 @@ import { computed } from 'vue'
 
 // Compute filtered folders and their addons based on search
 const filteredFolders = computed(() => {
-    if (!search.value.trim()) return addonManagerData.value.folders || []
+    // Defensive: always return an array of AddonFolder objects
+    const folders = Array.isArray(addonManagerData.value?.folders)
+        ? addonFolders.filter(
+              (f) => f && typeof f.path === 'string' && Array.isArray(f.addons)
+          )
+        : []
+    if (!search.value.trim()) {
+        // Show all folders, even if they have no addons
+        return folders
+    }
     const term = search.value.trim().toLowerCase()
     // Filter folders by whether any of their addons match
-    return (addonManagerData.value.folders || [])
+    return folders
         .map((folder) => {
-            const filteredAddons = folder.addons.filter(
-                (addon) =>
-                    addon.repo_name.toLowerCase().includes(term) ||
-                    addon.owner.toLowerCase().includes(term) ||
-                    (addon.sub_addons &&
-                        addon.sub_addons.some((sub) =>
-                            sub.name.toLowerCase().includes(term)
-                        ))
-            )
+            const filteredAddons = Array.isArray(folder.addons)
+                ? folder.addons.filter(
+                      (addon) =>
+                          addon.repo_name?.toLowerCase().includes(term) ||
+                          addon.owner?.toLowerCase().includes(term) ||
+                          (Array.isArray(addon.sub_addons) &&
+                              addon.sub_addons.some((sub) =>
+                                  sub.name?.toLowerCase().includes(term)
+                              ))
+                  )
+                : []
             return { ...folder, addons: filteredAddons }
         })
-        .filter((folder) => folder.addons.length > 0 || !search.value.trim())
+        .filter((folder) => folder.addons.length > 0)
 })
 
 const FOLDER_REVEAL_TIMEOUT_IN_MS = 800
@@ -251,7 +291,7 @@ function requestDeleteFolder(path: string) {
 async function confirmDeleteFolder() {
     if (folderToDelete.value) {
         let dirs = await loadAddonDirectoriesFromStore()
-        dirs = dirs.filter((d) => d !== folderToDelete.value)
+        dirs = dirs.filter((d) => d.path !== folderToDelete.value)
         await saveAddonDirectoriesToStore(dirs)
         // @todo: Add a purge option to remove the .addonmanager folder and cleanup symbolic links in the AddOns folder
         // await invoke('remove_addon_directory', { path: folderToDelete.value })
@@ -468,14 +508,9 @@ function cancelDeleteFolder() {
                                 addon.owner
                             }}</span>
                             <span
-                                v-if="addon.installed_ref"
+                                v-if="addon.repo_ref"
                                 class="text-xs text-base-content/40"
-                                >Installed: {{ addon.installed_ref }}</span
-                            >
-                            <span
-                                v-if="addon.installed_at"
-                                class="text-xs text-base-content/40"
-                                >At: {{ addon.installed_at }}</span
+                                >Installed: {{ addon.repo_ref }}</span
                             >
                             <div
                                 v-if="

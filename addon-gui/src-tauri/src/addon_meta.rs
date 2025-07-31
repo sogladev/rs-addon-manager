@@ -2,10 +2,10 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
-pub const ADDON_MANAGER_METADATA_FILE: &str = "metadata.toml";
+pub const ADDONS_FOLDER_METADATA_FILE: &str = "metadata.toml";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SubAddon {
+pub struct Addon {
     /// The name used for the symlink in AddOns
     pub name: String,
     /// The relative path to the sub-addon directory inside the repo
@@ -19,7 +19,7 @@ pub struct SubAddon {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct AddonMeta {
+pub struct AddonRepository {
     /// The git repository URL
     pub repo_url: String,
     /// The owner of the repository (e.g., GitHub username)
@@ -29,46 +29,65 @@ pub struct AddonMeta {
     /// Branch
     pub branch: Option<String>,
     /// Commit hash or tag
-    pub installed_ref: Option<String>,
-    /// Date/time of installation (ISO 8601)
-    pub installed_at: Option<String>,
+    pub repo_ref: Option<String>,
     /// All discovered sub-addons in this repo
-    pub sub_addons: Vec<SubAddon>,
+    pub addons: Vec<Addon>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AddonManagerData {
-    pub addons: Vec<AddonMeta>,
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AddOnsFolder {
+    /// Absolute path to AddOns folder
+    pub path: String,
+    /// Whether this is a valid AddOns folder
+    pub is_valid: bool,
+    /// All discovered addons in this folder
+    pub addons: Vec<AddonRepository>,
 }
 
-impl AddonManagerData {
-    fn load_from_path<P: AsRef<Path>>(path: P) -> Result<Self, String> {
+impl AddOnsFolder {
+    pub fn load_from_path<P: AsRef<Path>>(path: P) -> Result<Self, String> {
         if path.as_ref().exists() {
             let toml_str = std::fs::read_to_string(&path)
                 .map_err(|e| format!("Failed to read metadata: {e}"))?;
-            toml::from_str(&toml_str).map_err(|e| format!("Failed to parse metadata: {e}"))
+            let meta =
+                toml::from_str(&toml_str).map_err(|e| format!("Failed to parse metadata: {e}"))?;
+            Ok(meta)
         } else {
-            Ok(Self { addons: vec![] })
+            Err(format!(
+                "Metadata file does not exist: {}",
+                path.as_ref().display()
+            ))
+        }
+    }
+
+    /// Create a default AddOnsFolder for the given folder path
+    pub fn default_with_path<P: AsRef<Path>>(folder_path: P) -> Self {
+        let path = folder_path.as_ref().to_string_lossy().to_string();
+        let is_valid = crate::validate::is_valid_addons_folder_str(&path);
+        Self {
+            path,
+            is_valid,
+            addons: vec![],
         }
     }
 
     pub fn load_from_manager_dir<P: AsRef<Path>>(path: P) -> Result<Self, String> {
-        let meta_path = path.as_ref().join(ADDON_MANAGER_METADATA_FILE);
+        let meta_path = path.as_ref().join(ADDONS_FOLDER_METADATA_FILE);
         Self::load_from_path(meta_path)
     }
 
     fn save_to_path<P: AsRef<Path>>(&self, path: P) -> Result<(), std::io::Error> {
-        let toml_str = toml::to_string_pretty(self).expect("Serialization failed");
+        let toml_str = toml::to_string_pretty(&self).expect("Serialization failed");
         std::fs::write(path, toml_str)
     }
 
     pub fn save_to_manager_dir<P: AsRef<Path>>(&self, manager_dir: P) -> Result<(), String> {
-        let meta_path = manager_dir.as_ref().join(ADDON_MANAGER_METADATA_FILE);
+        let meta_path = manager_dir.as_ref().join(ADDONS_FOLDER_METADATA_FILE);
         self.save_to_path(meta_path)
             .map_err(|e| format!("Failed to save metadata: {e}"))
     }
 
-    pub fn upsert_addon(&mut self, addon: AddonMeta) {
+    pub fn upsert_addon(&mut self, addon: AddonRepository) {
         if let Some(existing) = self
             .addons
             .iter_mut()

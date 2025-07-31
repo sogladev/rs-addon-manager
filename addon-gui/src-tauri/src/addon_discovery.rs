@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::addon_meta::SubAddon;
+use crate::addon_meta::Addon;
 
 /// Returns the canonical base name for a .toc file
 ///
@@ -75,7 +75,7 @@ pub fn toc_file_base_name(toc_file: &str) -> &str {
 ///
 /// This function does NOT recursively walk all subdirectories to find .toc files.
 /// It checks for .toc files in the root of the given path and in each immediate subdirectory (one level deep).
-pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<SubAddon>, String> {
+pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<Addon>, String> {
     let mut sub_addons = Vec::new();
 
     // Helper to process a directory and collect .toc files
@@ -117,7 +117,7 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<SubAddon>, String> {
     if !toc_files.is_empty() {
         let names = names_from_toc_files(&toc_files);
         let name = longest_string(&names);
-        sub_addons.push(SubAddon {
+        sub_addons.push(Addon {
             dir: ".".to_string(),
             toc_files,
             names,
@@ -145,7 +145,7 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<SubAddon>, String> {
                     .unwrap_or_default()
                     .to_string_lossy()
                     .to_string();
-                Some(SubAddon {
+                Some(Addon {
                     dir: dir_name,
                     toc_files,
                     names,

@@ -4,7 +4,7 @@ use serde::Serialize;
 use tauri::Emitter;
 
 use crate::addon_discovery::find_all_sub_addons;
-use crate::addon_meta::{AddonManagerData, AddonMeta};
+use crate::addon_meta::{AddOnsFolder, Addon, AddonRepository};
 use crate::clone;
 
 #[derive(Serialize, Clone)]
@@ -31,11 +31,7 @@ pub struct InstallReporter {
     pub event: Box<dyn FnMut(InstallEvent) + Send>,
 }
 
-pub fn install_addon<F>(
-    url: String,
-    dir: String,
-    mut reporter: F,
-) -> Result<AddonManagerData, String>
+pub fn install_addon<F>(url: String, dir: String, mut reporter: F) -> Result<AddOnsFolder, String>
 where
     F: FnMut(InstallEvent) + Send,
 {
@@ -94,14 +90,14 @@ where
             return Err(format!("Failed to extract owner/repo from url: {e}"));
         }
     };
-    let addon_meta = AddonMeta {
+    let addon_repo = AddonRepository {
         repo_url: url.to_string(),
         owner,
         repo_name: path
             .file_name()
             .map(|f| f.to_string_lossy().to_string())
             .unwrap_or_else(|| "<unknown-repo>".to_string()),
-        installed_ref: repo
+        repo_ref: repo
             .head()
             .ok()
             .and_then(|head| head.target())
@@ -110,22 +106,17 @@ where
             .head()
             .ok()
             .and_then(|head| head.shorthand().map(|s| s.to_string())),
-        installed_at: None,
-        sub_addons: sub_addons.clone(),
+        addons: sub_addons.clone(),
     };
 
     reporter(InstallEvent::Status("Saving addon metadata...".to_string()));
-    let mut manager_data = match AddonManagerData::load_from_manager_dir(&manager_dir) {
-        Ok(m) => m,
-        Err(e) => {
-            reporter(InstallEvent::Error(format!(
-                "Failed to load manager data: {e}"
-            )));
-            return Err(format!("Failed to load manager data: {e}"));
-        }
+    let mut addons_folder = match AddOnsFolder::load_from_manager_dir(&manager_dir) {
+        Ok(folder) => folder,
+        Err(_) => AddOnsFolder::default_with_path(&dir),
     };
-    manager_data.upsert_addon(addon_meta.clone());
-    if let Err(e) = manager_data.save_to_manager_dir(&manager_dir) {
+
+    addons_folder.upsert_addon(addon_repo.clone());
+    if let Err(e) = addons_folder.save_to_manager_dir(&manager_dir) {
         reporter(InstallEvent::Error(format!("Failed to save metadata: {e}")));
         return Err(format!("Failed to save metadata: {e}"));
     }
@@ -133,33 +124,31 @@ where
     reporter(InstallEvent::Status(
         "Installing sub-addons (symlinking)...".to_string(),
     ));
-    install_sub_addons(addon_meta, &path, dir, &mut reporter);
+    install_sub_addons(addon_repo.addons, &path, dir, &mut reporter);
 
     reporter(InstallEvent::Status(
         "Addon installation complete.".to_string(),
     ));
-    Ok(manager_data)
+    Ok(addons_folder)
 }
 
 pub fn install_sub_addons<F>(
-    mut addon_meta: AddonMeta,
+    addons: Vec<Addon>,
     repo_root: &Path,
     addons_dir: &Path,
     mut reporter: F,
 ) where
     F: FnMut(InstallEvent) + Send,
 {
-    let sub_addons = &addon_meta.sub_addons;
-
-    for sub in sub_addons {
-        if !sub.enabled {
+    for addon in addons {
+        if !addon.enabled {
             continue;
         }
-        let symlink_name = &sub.name;
-        let target_dir = if sub.dir == "." {
+        let symlink_name = &addon.name;
+        let target_dir = if addon.dir == "." {
             repo_root.to_path_buf()
         } else {
-            repo_root.join(&sub.dir)
+            repo_root.join(&addon.dir)
         };
         let symlink_path = addons_dir.join(symlink_name);
 
@@ -174,10 +163,10 @@ pub fn install_sub_addons<F>(
                 .ok();
         }
 
-        if sub.names.len() > 1 {
+        if addon.names.len() > 1 {
             reporter(InstallEvent::Warning(format!(
                 "Multiple possible names for sub-addon '{}': {:?}. Using '{}'.",
-                sub.dir, sub.names, symlink_name
+                addon.dir, addon.names, symlink_name
             )));
         }
 
@@ -195,7 +184,6 @@ pub fn install_sub_addons<F>(
             )));
         }
     }
-    addon_meta.installed_at = Some(chrono::Utc::now().to_rfc3339());
 }
 
 #[tauri::command]
@@ -203,7 +191,7 @@ pub async fn install_addon_cmd(
     app_handle: tauri::AppHandle,
     url: String,
     path: String,
-) -> Result<AddonManagerData, String> {
+) -> Result<AddOnsFolder, String> {
     // No need to validate the AddOns folder here, as it is already done in the frontend.
 
     let key = InstallKey {
@@ -238,7 +226,7 @@ pub async fn install_addon_cmd(
 
 #[tauri::command]
 pub async fn get_addon_manager_data(app_handle: tauri::AppHandle, path: String) {
-    if let Ok(data) = AddonManagerData::load_from_manager_dir(&path) {
+    if let Ok(data) = AddOnsFolder::load_from_manager_dir(&path) {
         if let Err(e) = app_handle.emit("addon-manager-data-updated", &data) {
             eprintln!("Failed to emit addon-manager-data: {e}");
         }
@@ -274,7 +262,7 @@ pub fn ensure_manager_dir(base_dir: &Path) -> Result<PathBuf, String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::addon_meta::SubAddon;
+    use crate::addon_meta::Addon;
     use std::fs;
 
     use super::*;
@@ -312,7 +300,7 @@ mod tests {
     fn test_install_clone() {
         let (_temp, addons_dir) = setup_addons_dir();
 
-        let url = "https://github.com/sogladev/addon-335-train-all-button.git".into();
+        let url: String = "https://github.com/sogladev/addon-335-train-all-button.git".into();
         let addons_dir_str = addons_dir.to_str().unwrap();
 
         let result = ensure_manager_dir(&addons_dir);
@@ -320,7 +308,7 @@ mod tests {
         print_dir_tree(addons_dir_str);
         assert!(result.is_ok(), "ensure_manager_dir failed: {:?}", result);
 
-        let result = install_addon(url, addons_dir_str.to_string(), move |event| {
+        let result = install_addon(url.clone(), addons_dir_str.to_string(), move |event| {
             println!("Install event: {:?}", event);
         });
         println!("Directory tree under AddOns after install_addon:");
@@ -340,6 +328,39 @@ mod tests {
             repo_dir.exists() && repo_dir.is_dir(),
             "Repository was not cloned to the manager directory"
         );
+
+        let folder = result.unwrap();
+        assert_eq!(
+            folder.path,
+            addons_dir.to_string_lossy(),
+            "Returned AddOnsFolder path does not match AddOns folder"
+        );
+
+        assert!(
+            folder.is_valid,
+            "Returned AddOnsFolder is_valid should be true"
+        );
+
+        assert!(
+            !folder.addons.is_empty(),
+            "Returned AddOnsFolder.addons should not be empty"
+        );
+
+        let repo = folder.addons.iter().find(|r| r.repo_url == url);
+        assert!(
+            repo.is_some(),
+            "Returned AddOnsFolder.addons should contain the installed repo"
+        );
+        let repo = repo.unwrap();
+        assert_eq!(repo.owner, "sogladev", "Repo owner mismatch");
+        assert_eq!(
+            repo.repo_name, "addon-335-train-all-button",
+            "Repo name mismatch"
+        );
+        assert!(
+            !repo.addons.is_empty(),
+            "Repo should contain at least one sub-addon"
+        );
     }
 
     #[test]
@@ -351,27 +372,26 @@ mod tests {
         let repo_root = manager_dir.join("fakeowner").join("fakerepo");
         let sub_dir = repo_root.join("SubAddonDir");
         fs::create_dir_all(&sub_dir).expect("Failed to create sub-addon dir");
-        let sub_addon = SubAddon {
+        let sub_addon = Addon {
             name: "TestSymlink".to_string(),
             dir: "SubAddonDir".to_string(),
             enabled: true,
             names: vec!["TestSymlink".to_string()],
             toc_files: vec![],
         };
-        let addon_meta = AddonMeta {
+        let addon_meta = AddonRepository {
             repo_url: "https://github.com/fakeowner/fakerepo.git".to_string(),
             owner: "fakeowner".to_string(),
             repo_name: "fakerepo".to_string(),
-            installed_ref: None,
+            repo_ref: None,
             branch: None,
-            installed_at: None,
-            sub_addons: vec![sub_addon],
+            addons: vec![sub_addon],
         };
 
         println!("Before install_sub_addons:");
         print_dir_tree(addons_dir.to_str().unwrap());
 
-        install_sub_addons(addon_meta.clone(), &repo_root, &addons_dir, |_| {});
+        install_sub_addons(addon_meta.addons, &repo_root, &addons_dir, |_| {});
 
         println!("After install_sub_addons:");
         print_dir_tree(addons_dir.to_str().unwrap());
