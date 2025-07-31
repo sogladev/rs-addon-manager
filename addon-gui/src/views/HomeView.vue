@@ -5,12 +5,16 @@ import { onMounted, ref } from 'vue'
 import { useTimeoutFn } from '@vueuse/core'
 import { Plus, Ellipsis } from 'lucide-vue-next'
 import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next'
-import AddonCollapse from '@/components/AddonCollapse.vue'
 import { invoke } from '@tauri-apps/api/core'
 import { load } from '@tauri-apps/plugin-store'
 
+import AddonCollapse from '@/components/AddonCollapse.vue'
+import AddonCloneModal from '@/components/AddonCloneModal.vue'
+
 const STORE_FILE = 'addon-manager.json'
 const STORE_KEY = 'addon-directories'
+
+const showAddModal = ref(false)
 
 type StoredAddonDirectory = {
     path: string
@@ -54,24 +58,6 @@ async function saveAddonDirectoriesToStore(dirs: StoredAddonDirectory[]) {
         console.error('Failed to save addon directories to store:', error)
     }
 }
-
-async function isValidGitUrl(url: string): Promise<boolean> {
-    return await invoke<boolean>('is_valid_repo_url', { url })
-}
-
-// @todo: Uncomment auto filling
-// const gitUrl = ref('')
-const gitUrl = ref('https://github.com/sogladev/addon-335-train-all-button.git')
-const isGitUrlValid = ref<boolean | null>(true)
-// const isGitUrlValid = ref<boolean | null>(null)
-
-watch(gitUrl, async () => {
-    if (!trimmedGitUrl.value) {
-        isGitUrlValid.value = null
-        return
-    }
-    isGitUrlValid.value = await isValidGitUrl(trimmedGitUrl.value)
-})
 
 type Addon = {
     name: string // symlink name in AddOns
@@ -191,8 +177,6 @@ const installStatus = ref<{
     active: boolean
 }>({ active: false })
 
-import { watch } from 'vue'
-
 const addonFolders = ref<AddOnsFolder[]>([])
 const folderPaths = computed(() => addonFolders.value.map((f) => f.path))
 
@@ -226,26 +210,6 @@ const addAddonDirectory = async () => {
     }
 }
 
-const showAddModal = ref(false)
-// For the select, we want the path string of the selected folder
-const selectedDirectory = ref<string>('')
-
-// Select the first directory if available when the modal opens
-watch(showAddModal, (open) => {
-    if (open) {
-        if (folderPaths.value.length > 0) {
-            if (
-                !selectedDirectory.value ||
-                !folderPaths.value.includes(selectedDirectory.value)
-            ) {
-                selectedDirectory.value = folderPaths.value[0]
-            }
-        } else {
-            selectedDirectory.value = ''
-        }
-    }
-})
-
 const isOpening = ref(false)
 
 const search = ref('')
@@ -263,9 +227,9 @@ const filteredFolders = computed(() => {
             (addon) =>
                 addon.repoName?.toLowerCase().includes(term) ||
                 addon.owner?.toLowerCase().includes(term) ||
-                (Array.isArray(addon.subAddons) &&
-                    addon.subAddons.some((sub) =>
-                        sub.name?.toLowerCase().includes(term)
+                (Array.isArray(addon.addons) &&
+                    addon.addons.some((a) =>
+                        a.name?.toLowerCase().includes(term)
                     ))
         )
         return filteredAddons.length > 0
@@ -282,26 +246,10 @@ function handleOpenPath(path: string) {
     }, FOLDER_REVEAL_TIMEOUT_IN_MS)
 }
 
-const handleClone = async () => {
-    showAddModal.value = false
-    if (!isGitUrlValid.value) return
-    try {
-        await invoke('install_addon_cmd', {
-            url: trimmedGitUrl.value,
-            path: selectedDirectory.value,
-        })
-        console.log('Addon cloned successfully')
-    } catch (err) {
-        console.error('Failed to clone addon', err)
-    }
-}
-
 function requestDeleteFolder(path: string) {
     folderToDelete.value = path
     showDeleteModal.value = true
 }
-
-const trimmedGitUrl = computed(() => gitUrl.value.trim())
 
 const showDeleteModal = ref(false)
 const folderToDelete = ref<string | null>(null)
@@ -442,69 +390,10 @@ function cancelAddonDelete() {
             </div>
         </div>
 
-        <!-- Add Addon Modal -->
-        <dialog :open="showAddModal" class="modal">
-            <div class="modal-box">
-                <h3 class="font-bold text-lg mb-4">Clone Repository</h3>
-                <div class="form-control mb-2">
-                    <label class="label">
-                        <span class="label-text">Clone using the web URL</span>
-                    </label>
-                    <input
-                        v-model="gitUrl"
-                        class="input input-bordered w-full"
-                        placeholder="https://github.com/user/repo.git"
-                    />
-                    <div
-                        :class="{
-                            visible: isGitUrlValid === false && gitUrl,
-                            invisible: !gitUrl || isGitUrlValid !== false,
-                        }"
-                        class="text-error text-xs mt-1"
-                    >
-                        Please enter a valid HTTPS Git URL ending with
-                        <code>.git</code>
-                    </div>
-                </div>
-                <div class="form-control mb-4">
-                    <label class="label">
-                        <span class="label-text">Install Directory</span>
-                    </label>
-                    <select
-                        v-model="selectedDirectory"
-                        class="select select-bordered w-full"
-                    >
-                        <option value="" disabled>Select directory</option>
-                        <option
-                            v-for="path in folderPaths"
-                            :key="path"
-                            :value="path"
-                        >
-                            {{ path }}
-                        </option>
-                    </select>
-                    <!-- <div :class="{ 'visible': selectedDirectory.isValid === false && gitUrl, 'invisible': !gitUrl || selectedDirectory.isValid !== false }" -->
-                    <!-- class="text-error text-xs mt-1"> -->
-                    <!-- Please enter a valid HTTPS Git URL ending with <code>.git</code> -->
-                    <!-- </div> -->
-                </div>
-                <div class="modal-action">
-                    <button
-                        class="btn btn-primary"
-                        @click="handleClone"
-                        :disabled="!isGitUrlValid"
-                    >
-                        Clone
-                    </button>
-                    <button class="btn" @click="showAddModal = false">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-            <form method="dialog" class="modal-backdrop">
-                <button @click="showAddModal = false">close</button>
-            </form>
-        </dialog>
+        <AddonCloneModal
+            v-model:open="showAddModal"
+            :folderPaths="folderPaths"
+        />
 
         <!-- Delete Folder Confirmation Modal -->
         <dialog :open="showDeleteModal" class="modal">

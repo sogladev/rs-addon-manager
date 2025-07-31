@@ -250,7 +250,12 @@ pub async fn delete_addon(
     };
 
     // Remove the addon repository by URL
-    addons_folder.remove_addon_by_url(&url);
+    if let Err(e) = addons_folder.remove_addon_by_url(&url) {
+        handler(InstallEvent::Error(format!(
+            "Failed to remove addon with URL: {url} ({e})"
+        )));
+        return Err(format!("Failed to remove addon with URL: {url} ({e})"));
+    }
 
     Ok(())
 }
