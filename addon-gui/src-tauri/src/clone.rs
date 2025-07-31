@@ -31,14 +31,12 @@ pub fn extract_owner_repo_from_url(url: &str) -> Result<(String, String), String
 ///
 /// ```
 /// use tempfile::tempdir;
-/// use std::fs;
-/// use std::path::Path;
 /// use addon_gui_lib::clone::clone_git_repo;
 ///
 /// let temp = tempdir().unwrap();
 /// let base_path = temp.path().to_path_buf();
 /// let url = "https://github.com/sogladev/addon-335-train-all-button.git";
-/// let repo = clone_git_repo(url, base_path.clone(), |progress, total| { println!("progress: {}/{}", progress, total); }).unwrap();
+/// let repo = clone_git_repo(url, base_path.clone(), &mut |progress, total| { println!("progress: {progress}/{total}"); }).unwrap();
 /// let repo_dir = base_path.join("sogladev").join("addon-335-train-all-button");
 /// assert!(repo_dir.exists());
 /// assert!(repo_dir.join(".git").is_dir());
