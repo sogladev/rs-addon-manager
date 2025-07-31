@@ -226,7 +226,7 @@ pub async fn install_addon_cmd(
 
 #[tauri::command]
 pub async fn get_addon_manager_data(app_handle: tauri::AppHandle, path: String) {
-    if let Ok(data) = AddOnsFolder::load_from_manager_dir(&path) {
+    if let Ok(data) = AddOnsFolder::load_from_addons_dir(&path) {
         if let Err(e) = app_handle.emit("addon-manager-data-updated", &data) {
             eprintln!("Failed to emit addon-manager-data: {e}");
         }

@@ -79,7 +79,7 @@ type AddonRepository = {
     repoName: string // repository name
     branch?: string | null // branch
     repoRef?: string | null // commit hash or tag
-    sub_addons: Addon[]
+    subAddons: Addon[]
     // --- UI-only fields for install state ---
     installStatus?: InstallStatus
     installProgress?: { current: number; total: number }
@@ -87,7 +87,7 @@ type AddonRepository = {
     installStep?: string
 }
 
-type AddonFolder = {
+type AddOnsFolder = {
     path: string // absolute path to AddOns folder
     isValid: boolean
     addonRepos: AddonRepository[]
@@ -95,19 +95,22 @@ type AddonFolder = {
 
 import { listen } from '@tauri-apps/api/event'
 
-type InstallKey = { path: string; repo_url: string }
-type InstallEventPayload = { key: InstallKey } & (
-    | { Progress: { current: number; total: number } }
-    | { Status: string }
-    | { Warning: string }
-    | { Error: string }
-)
+type InstallKey = { path: string; url: string }
+type InstallEventPayload = {
+    key: InstallKey
+    event:
+        | { Progress: { current: number; total: number } }
+        | { Status: string }
+        | { Warning: string }
+        | { Error: string }
+}
 
 onMounted(async () => {
     listen<InstallEventPayload>('install-event', ({ payload }) => {
-        const { key, ...event } = payload
         console.debug('[install-event]', payload)
         installStatus.value.active = true
+
+        const event = payload.event
         if ('Progress' in event) {
             const { current, total } = event.Progress
             installStatus.value.progress = { current, total }
@@ -126,27 +129,17 @@ onMounted(async () => {
             installStatus.value.error = event.Error
             installStatus.value.warning = undefined
         } else {
-            console.warn('Unknown event type:', event)
+            console.warn('[install-event] Unknown event type:', payload)
         }
     })
 
-    listen<AddonFolder>('addon-manager-data-updated', ({ payload }) => {
+    listen<AddOnsFolder>('addon-manager-data-updated', ({ payload }) => {
+        console.debug('[addon-manager-data-updated]', payload)
         const idx = addonFolders.value.findIndex((f) => f.path === payload.path)
         if (idx !== -1) {
-            // Merge metadata into existing folder, keep isValid from UI state
-            addonFolders.value[idx] = {
-                ...addonFolders.value[idx],
-                ...payload,
-                isValid: addonFolders.value[idx].isValid,
-            }
+            addonFolders.value[idx] = payload
         } else {
-            // Only add if the folder is still in our managed list
-            const stillManaged = addonFolders.value.some(
-                (f) => f.path === payload.path
-            )
-            if (stillManaged) {
-                addonFolders.value.push(payload)
-            }
+            addonFolders.value.push(payload)
         }
     })
 
@@ -157,7 +150,7 @@ onMounted(async () => {
     addonFolders.value = dirs.map((d) => ({
         path: d.path,
         isValid: d.isValid,
-        addons: [],
+        addonRepos: [],
     }))
     // Fetch metadata for each
     for (const entry of dirs) {
@@ -168,6 +161,7 @@ onMounted(async () => {
             )
             continue
         }
+        console.log('[startup] Fetching metadata for:', entry.path)
         await invoke('get_addon_manager_data', { path: entry.path })
     }
 })
@@ -182,7 +176,7 @@ const installStatus = ref<{
 
 import { watch } from 'vue'
 
-const addonFolders = ref<AddonFolder[]>([])
+const addonFolders = ref<AddOnsFolder[]>([])
 const folderPaths = computed(() => addonFolders.value.map((f) => f.path))
 
 const addAddonDirectory = async () => {
@@ -201,7 +195,7 @@ const addAddonDirectory = async () => {
                 dirs.push({ path, isValid })
                 await saveAddonDirectoriesToStore(dirs)
                 // Add minimal AddonFolder to UI state
-                addonFolders.value.push({ path, isValid, addons: [] })
+                addonFolders.value.push({ path, isValid, addonRepos: [] })
             }
             // Always fetch metadata (even if already present, to refresh)
             await invoke('get_addon_manager_data', { path })
@@ -232,12 +226,12 @@ const filteredFolders = computed(() => {
     }
     // Filter folders by whether any of their addons match
     return addonFolders.value.filter((folder) => {
-        const filteredAddons = folder.addons.filter(
+        const filteredAddons = folder.addonRepos.filter(
             (addon) =>
-                addon.repo_name?.toLowerCase().includes(term) ||
+                addon.repoName?.toLowerCase().includes(term) ||
                 addon.owner?.toLowerCase().includes(term) ||
-                (Array.isArray(addon.sub_addons) &&
-                    addon.sub_addons.some((sub) =>
+                (Array.isArray(addon.subAddons) &&
+                    addon.subAddons.some((sub) =>
                         sub.name?.toLowerCase().includes(term)
                     ))
         )
@@ -491,26 +485,24 @@ function cancelDeleteFolder() {
                 </div>
                 <div class="flex flex-col gap-1.5 mt-2">
                     <div
-                        v-for="addon in folder.addons"
-                        :key="addon.repo_url + (addon.branch || '')"
+                        v-for="addon in folder.addonRepos"
+                        :key="addon.repoUrl + (addon.branch || '')"
                         class="card card-bordered bg-base-100 flex-row items-center p-2"
                     >
                         <div class="flex flex-1 flex-col gap-1 p-2">
                             <span class="font-semibold">{{
-                                addon.repo_name
+                                addon.repoName
                             }}</span>
                             <span class="text-xs text-base-content/60">{{
                                 addon.owner
                             }}</span>
                             <span
-                                v-if="addon.repo_ref"
+                                v-if="addon.repoRef"
                                 class="text-xs text-base-content/40"
-                                >Installed: {{ addon.repo_ref }}</span
+                                >Installed: {{ addon.repoRef }}</span
                             >
                             <div
-                                v-if="
-                                    addon.sub_addons && addon.sub_addons.length
-                                "
+                                v-if="addon.subAddons && addon.subAddons.length"
                                 class="mt-1"
                             >
                                 <span class="text-xs font-semibold"
@@ -518,7 +510,7 @@ function cancelDeleteFolder() {
                                 >
                                 <ul class="ml-2 list-disc text-xs">
                                     <li
-                                        v-for="sub in addon.sub_addons"
+                                        v-for="sub in addon.subAddons"
                                         :key="sub.name"
                                     >
                                         <span class="font-mono">{{

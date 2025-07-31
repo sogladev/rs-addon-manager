@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 pub const ADDONS_FOLDER_METADATA_FILE: &str = "metadata.toml";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Addon {
     /// The name used for the symlink in AddOns
     pub name: String,
@@ -19,6 +20,7 @@ pub struct Addon {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct AddonRepository {
     /// The git repository URL
     pub repo_url: String,
@@ -35,6 +37,7 @@ pub struct AddonRepository {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct AddOnsFolder {
     /// Absolute path to AddOns folder
     pub path: String,
@@ -73,6 +76,14 @@ impl AddOnsFolder {
 
     pub fn load_from_manager_dir<P: AsRef<Path>>(path: P) -> Result<Self, String> {
         let meta_path = path.as_ref().join(ADDONS_FOLDER_METADATA_FILE);
+        Self::load_from_path(meta_path)
+    }
+
+    pub fn load_from_addons_dir<P: AsRef<Path>>(path: P) -> Result<Self, String> {
+        let meta_path = path
+            .as_ref()
+            .join(".addonmanager")
+            .join(ADDONS_FOLDER_METADATA_FILE);
         Self::load_from_path(meta_path)
     }
 
