@@ -8,6 +8,7 @@
         "opener:default",
         "opener:allow-open-path",
         "dialog:default",
-        "dialog:allow-open"
+        "dialog:allow-open",
+        "store:default"
     ]
 }

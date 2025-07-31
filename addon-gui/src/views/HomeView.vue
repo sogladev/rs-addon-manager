@@ -3,26 +3,45 @@ import { revealItemInDir } from '@tauri-apps/plugin-opener'
 import { open } from '@tauri-apps/plugin-dialog'
 import { onMounted, ref } from 'vue'
 import { useTimeoutFn } from '@vueuse/core'
-import {
-    Plus,
-    // ArrowDownToLine,
-    Ellipsis,
-    // CircleArrowDown,
-    // RefreshCcw,
-} from 'lucide-vue-next'
+import { Plus, Ellipsis } from 'lucide-vue-next'
 import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next'
 import AddonCollapse from '@/components/AddonCollapse.vue'
 import { invoke } from '@tauri-apps/api/core'
+import { load } from '@tauri-apps/plugin-store'
+
+const STORE_FILE = 'addon-manager.json'
+const STORE_KEY = 'addon-directories'
+
+async function loadAddonDirectoriesFromStore(): Promise<string[]> {
+    try {
+        const store = await load(STORE_FILE)
+        const dirs = await store.get<string[]>(STORE_KEY)
+        return Array.isArray(dirs) ? dirs : []
+    } catch (error: any) {
+        console.error('Failed to load addon directories from store:', error)
+        return []
+    }
+}
+
+async function saveAddonDirectoriesToStore(dirs: string[]) {
+    try {
+        const store = await load(STORE_FILE)
+        await store.set(STORE_KEY, dirs)
+        await store.save()
+    } catch (error) {
+        console.error('Failed to save addon directories to store:', error)
+    }
+}
 
 async function isValidGitUrl(url: string): Promise<boolean> {
     return await invoke<boolean>('is_valid_repo_url', { url })
 }
 
 // @todo: Uncomment auto filling
-const gitUrl = ref('')
-// const gitUrl = ref('https://github.com/sogladev/addon-335-train-all-button.git')
-// const isGitUrlValid = ref<boolean | null>(true)
-const isGitUrlValid = ref<boolean | null>(null)
+// const gitUrl = ref('')
+const gitUrl = ref('https://github.com/sogladev/addon-335-train-all-button.git')
+const isGitUrlValid = ref<boolean | null>(true)
+// const isGitUrlValid = ref<boolean | null>(null)
 
 watch(gitUrl, async () => {
     if (!trimmedGitUrl.value) {
@@ -32,38 +51,91 @@ watch(gitUrl, async () => {
     isGitUrlValid.value = await isValidGitUrl(trimmedGitUrl.value)
 })
 
+type SubAddon = {
+    name: string // symlink name in AddOns
+    dir: string // relative path inside repo
+    names: string[] // normalized base names from .toc
+    toc_files: string[] // .toc file names
+    enabled: boolean
+}
+
+enum InstallStatus {
+    Pending = 'pending',
+    Installing = 'installing',
+    Success = 'success',
+    Error = 'error',
+}
+
+type AddonMeta = {
+    repo_url: string // git repository URL
+    owner: string // repository owner
+    repo_name: string // repository name
+    branch?: string | null // branch
+    installed_ref?: string | null // commit hash or tag
+    installed_at?: string | null // ISO 8601 date/time
+    sub_addons: SubAddon[]
+    // --- UI-only fields for install state ---
+    installStatus?: InstallStatus
+    installProgress?: { current: number; total: number }
+    installError?: string
+    installStep?: string
+}
+
+type AddonFolder = {
+    path: string // absolute path to AddOns folder
+    isValid: boolean
+    addons: AddonMeta[]
+}
+
+type AddonManagerData = {
+    folders: AddonFolder[]
+}
+
 import { listen } from '@tauri-apps/api/event'
 
-type InstallEvent =
+type InstallKey = { path: string; repo_url: string }
+type InstallEventPayload = { key: InstallKey } & (
     | { Progress: { current: number; total: number } }
     | { Status: string }
     | { Warning: string }
     | { Error: string }
+)
 
-onMounted(() => {
-    listen<InstallEvent>('install-event', ({ payload }) => {
+onMounted(async () => {
+    listen<InstallEventPayload>('install-event', ({ payload }) => {
+        const { key, ...event } = payload
         installStatus.value.active = true
-        if ('Progress' in payload) {
-            const { current, total } = payload.Progress
+        if ('Progress' in event) {
+            const { current, total } = event.Progress
             installStatus.value.progress = { current, total }
             installStatus.value.step = undefined
             installStatus.value.error = undefined
             installStatus.value.warning = undefined
-        } else if ('Status' in payload) {
-            installStatus.value.step = payload.Status
+        } else if ('Status' in event) {
+            installStatus.value.step = event.Status
             installStatus.value.progress = undefined
             installStatus.value.error = undefined
             installStatus.value.warning = undefined
-        } else if ('Warning' in payload) {
-            installStatus.value.warning = payload.Warning
+        } else if ('Warning' in event) {
+            installStatus.value.warning = event.Warning
             installStatus.value.error = undefined
-        } else if ('Error' in payload) {
-            installStatus.value.error = payload.Error
+        } else if ('Error' in event) {
+            installStatus.value.error = event.Error
             installStatus.value.warning = undefined
         } else {
-            console.warn('Unknown event type:', payload)
+            console.warn('Unknown event type:', event)
         }
     })
+
+    listen<AddonManagerData>('addon-manager-data-updated', ({ payload }) => {
+        addonManagerData.value = payload
+    })
+
+    // On startup, load managed directories from store and request backend to load them
+    const dirs = await loadAddonDirectoriesFromStore()
+    for (const dir of dirs) {
+        await invoke('get_addon_manager_data', { path: dir })
+    }
 })
 
 const installStatus = ref<{
@@ -76,102 +148,10 @@ const installStatus = ref<{
 
 import { watch } from 'vue'
 
-const paths = ref([
-    {
-        path: '/home/jelle/Games/AddOns-test/Interface/AddOns',
-        addons: [
-            {
-                name: 'Addon One',
-                notes: '#.toc notes',
-                branch: 'main',
-                branches: [
-                    'main',
-                    'dev',
-                    'release',
-                    'origin/HEAD/verylongbranchanemasaaa',
-                ],
-                isUpdateAvailable: false,
-            },
-            {
-                name: 'Addon Two',
-                notes: '#.toc notes',
-                branch: 'dev',
-                branches: ['main', 'dev', 'release'],
-                isUpdateAvailable: true,
-            },
-            {
-                name: 'Addon Three',
-                notes: '#.toc notes',
-                branch: 'release',
-                branches: ['main', 'dev', 'release'],
-                isUpdateAvailable: false,
-            },
-            {
-                name: 'Addon Four',
-                notes: '#.toc notes',
-                branch: 'dev',
-                branches: ['main', 'dev', 'release'],
-                isUpdateAvailable: true,
-            },
-            {
-                name: 'Addon Five',
-                notes: '#.toc notes',
-                branch: 'dev',
-                branches: ['main', 'dev', 'release'],
-                isUpdateAvailable: false,
-            },
-            {
-                name: 'Addon Six',
-                notes: '#.toc notes',
-                branch: 'main',
-                branches: ['main', 'dev', 'release'],
-                isUpdateAvailable: false,
-            },
-            {
-                name: 'Addon Seven',
-                notes: '#.toc notes',
-                branch: 'release',
-                branches: ['main', 'dev', 'release'],
-                isUpdateAvailable: true,
-            },
-        ],
-        isValid: true,
-    },
-    {
-        path: '/mnt/games/wow/addons',
-        addons: [
-            {
-                name: 'Addon Eight',
-                notes: '#.toc notes',
-                branch: 'release',
-                branches: ['main', 'release'],
-                isUpdateAvailable: false,
-            },
-            {
-                name: 'Addon Nine',
-                notes: '#.toc notes',
-                branch: 'main',
-                branches: ['main', 'release'],
-                isUpdateAvailable: true,
-            },
-            {
-                name: 'Addon Ten',
-                notes: '#.toc notes',
-                branch: 'main',
-                branches: ['main', 'release'],
-                isUpdateAvailable: false,
-            },
-            {
-                name: 'Addon Eleven',
-                notes: '#.toc notes',
-                branch: 'release',
-                branches: ['main', 'release'],
-                isUpdateAvailable: false,
-            },
-        ],
-        isValid: false,
-    },
-])
+const addonManagerData = ref<{ folders: AddonFolder[] }>({ folders: [] })
+const folderPaths = computed(
+    () => addonManagerData.value?.folders?.map((f) => f.path) ?? []
+)
 
 const addAddonDirectory = async () => {
     try {
@@ -180,21 +160,14 @@ const addAddonDirectory = async () => {
             directory: true,
         })
         if (directory) {
-            const isAlreadyAdded = paths.value.some((p) => p.path === directory)
-            if (isAlreadyAdded) {
-                console.warn(`Directory ${directory} is already added.`)
-                return
+            // Load current from store, add new, save
+            let dirs = await loadAddonDirectoriesFromStore()
+            if (!dirs.includes(directory)) {
+                dirs.push(directory)
+                await saveAddonDirectoriesToStore(dirs)
             }
-            const isValid = await invoke<boolean>(
-                'is_valid_addons_folder_str',
-                {
-                    path: directory,
-                }
-            )
-            if (!paths.value.some((p) => p.path === directory)) {
-                paths.value.push({ path: directory, addons: [], isValid })
-            }
-            console.debug(`Selected directory: ${directory}, valid: ${isValid}`)
+            await invoke('get_addon_manager_data', { path: directory })
+            // The backend emits 'addon-manager-data-updated' and we update the UI
         } else {
             console.debug('No directory selected')
         }
@@ -206,28 +179,33 @@ const addAddonDirectory = async () => {
 }
 
 const showAddModal = ref(false)
-const selectedDirectory = ref(paths.value[0]?.path || '')
+// For the select, we want the path string of the selected folder
+const selectedDirectory = ref<string>('')
 
 const isOpening = ref(false)
 
 const search = ref('')
 import { computed } from 'vue'
 
-const filteredPaths = computed(() => {
-    if (!search.value.trim()) return paths.value
+// Compute filtered folders and their addons based on search
+const filteredFolders = computed(() => {
+    if (!search.value.trim()) return addonManagerData.value.folders || []
     const term = search.value.trim().toLowerCase()
-    return paths.value
-        .map((pathObj) => {
-            const filteredAddons = pathObj.addons.filter(
+    // Filter folders by whether any of their addons match
+    return (addonManagerData.value.folders || [])
+        .map((folder) => {
+            const filteredAddons = folder.addons.filter(
                 (addon) =>
-                    addon.name.toLowerCase().includes(term) ||
-                    addon.notes.toLowerCase().includes(term)
+                    addon.repo_name.toLowerCase().includes(term) ||
+                    addon.owner.toLowerCase().includes(term) ||
+                    (addon.sub_addons &&
+                        addon.sub_addons.some((sub) =>
+                            sub.name.toLowerCase().includes(term)
+                        ))
             )
-            return filteredAddons.length
-                ? { ...pathObj, addons: filteredAddons }
-                : null
+            return { ...folder, addons: filteredAddons }
         })
-        .filter((p) => p !== null)
+        .filter((folder) => folder.addons.length > 0 || !search.value.trim())
 })
 
 const FOLDER_REVEAL_TIMEOUT_IN_MS = 800
@@ -264,9 +242,14 @@ function requestDeleteFolder(path: string) {
     showDeleteModal.value = true
 }
 
-function confirmDeleteFolder() {
+// Request backend to remove folder, update store, backend will emit updated data
+async function confirmDeleteFolder() {
     if (folderToDelete.value) {
-        paths.value = paths.value.filter((p) => p.path !== folderToDelete.value)
+        // Remove from store
+        let dirs = await loadAddonDirectoriesFromStore()
+        dirs = dirs.filter((d) => d !== folderToDelete.value)
+        await saveAddonDirectoriesToStore(dirs)
+        await invoke('remove_addon_directory', { path: folderToDelete.value })
     }
     showDeleteModal.value = false
     folderToDelete.value = null
@@ -388,11 +371,11 @@ function cancelDeleteFolder() {
                     >
                         <option value="" disabled>Select directory</option>
                         <option
-                            v-for="p in paths"
-                            :key="p.path"
-                            :value="p.path"
+                            v-for="path in folderPaths"
+                            :key="path"
+                            :value="path"
                         >
-                            {{ p.path }}
+                            {{ path }}
                         </option>
                     </select>
                     <!-- <div :class="{ 'visible': selectedDirectory.isValid === false && gitUrl, 'invisible': !gitUrl || selectedDirectory.isValid !== false }" -->
@@ -451,16 +434,16 @@ function cancelDeleteFolder() {
         <!-- Paths and Addons list -->
         <div class="flex flex-col gap-4 overflow-y-auto p-4">
             <AddonCollapse
-                v-for="(pathObj, idx) in filteredPaths"
-                :key="idx"
-                :path="pathObj.path"
+                v-for="folder in filteredFolders"
+                :key="folder.path"
+                :path="folder.path"
                 :isOpening="isOpening"
                 @open-folder="handleOpenPath"
                 @delete-folder="requestDeleteFolder"
             >
                 <div class="flex items-center gap-2">
                     <span
-                        v-if="pathObj.isValid === false"
+                        v-if="folder.isValid === false"
                         class="alert alert-warning alert-soft ml-2"
                     >
                         Warning! Not a valid AddOns directory
@@ -468,15 +451,52 @@ function cancelDeleteFolder() {
                 </div>
                 <div class="flex flex-col gap-1.5 mt-2">
                     <div
-                        v-for="(addon, idx) in pathObj.addons"
-                        :key="idx"
+                        v-for="addon in folder.addons"
+                        :key="addon.repo_url + (addon.branch || '')"
                         class="card card-bordered bg-base-100 flex-row items-center p-2"
                     >
                         <div class="flex flex-1 flex-col gap-1 p-2">
-                            <span class="font-semibold">{{ addon.name }}</span>
-                            <span class="text-xs text-base-content/60">{{
-                                addon.notes
+                            <span class="font-semibold">{{
+                                addon.repo_name
                             }}</span>
+                            <span class="text-xs text-base-content/60">{{
+                                addon.owner
+                            }}</span>
+                            <span
+                                v-if="addon.installed_ref"
+                                class="text-xs text-base-content/40"
+                                >Installed: {{ addon.installed_ref }}</span
+                            >
+                            <span
+                                v-if="addon.installed_at"
+                                class="text-xs text-base-content/40"
+                                >At: {{ addon.installed_at }}</span
+                            >
+                            <div
+                                v-if="
+                                    addon.sub_addons && addon.sub_addons.length
+                                "
+                                class="mt-1"
+                            >
+                                <span class="text-xs font-semibold"
+                                    >Sub-addons:</span
+                                >
+                                <ul class="ml-2 list-disc text-xs">
+                                    <li
+                                        v-for="sub in addon.sub_addons"
+                                        :key="sub.name"
+                                    >
+                                        <span class="font-mono">{{
+                                            sub.name
+                                        }}</span>
+                                        <span
+                                            v-if="!sub.enabled"
+                                            class="text-error"
+                                            >(disabled)</span
+                                        >
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                         <div class="flex items-center gap-2">
                             <div class="w-40">
@@ -485,16 +505,20 @@ function cancelDeleteFolder() {
                                     v-model="addon.branch"
                                 >
                                     <option
-                                        v-for="branch in addon.branches"
-                                        :key="branch"
-                                        :value="branch"
+                                        v-if="addon.branch"
+                                        :value="addon.branch"
                                     >
-                                        {{ branch }}
+                                        {{ addon.branch }}
                                     </option>
+                                    <!-- Optionally, you can add more branch options here if available -->
                                 </select>
                             </div>
                             <button
-                                v-if="addon.isUpdateAvailable"
+                                v-if="
+                                    addon.installStatus ===
+                                        InstallStatus.Pending ||
+                                    addon.installStatus === InstallStatus.Error
+                                "
                                 class="btn btn-sm btn-primary"
                                 @click="console.log('Update clicked', addon)"
                             >
@@ -506,8 +530,6 @@ function cancelDeleteFolder() {
                             >
                                 Update
                             </button>
-                            <!-- <button class="btn btn-sm btn-primary" @click="console.log('Download clicked', addon)"> <CircleArrowDown /> </button> -->
-                            <!-- <button class="btn btn-sm btn-ghost btn-disabled"> <CircleArrowDown /> </button> -->
                             <div class="dropdown dropdown-end">
                                 <button
                                     tabindex="0"
@@ -586,7 +608,6 @@ function cancelDeleteFolder() {
                 class="btn btn-outline btn-accent mt-2 self-start"
                 @click="addAddonDirectory"
             >
-                <!-- <Plus class="mr-2" /> -->
                 Add addon directory
             </button>
         </div>

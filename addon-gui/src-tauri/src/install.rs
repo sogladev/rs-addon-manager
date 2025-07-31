@@ -6,6 +6,13 @@ use tauri::Emitter;
 use crate::addon_discovery::find_all_sub_addons;
 use crate::addon_meta::{AddonManagerData, AddonMeta};
 use crate::clone;
+
+#[derive(Serialize, Clone)]
+pub struct InstallKey {
+    pub path: String,
+    pub url: String,
+}
+
 #[derive(Debug, Serialize, Clone)]
 pub enum InstallEvent {
     Progress { current: usize, total: usize },
@@ -14,15 +21,25 @@ pub enum InstallEvent {
     Error(String),
 }
 
+#[derive(Serialize, Clone)]
+pub struct InstallEventPayload {
+    pub key: InstallKey,
+    pub event: InstallEvent,
+}
+
 pub struct InstallReporter {
     pub event: Box<dyn FnMut(InstallEvent) + Send>,
 }
 
-pub fn install_addon<F>(url: &str, dir: &str, mut reporter: F) -> Result<AddonManagerData, String>
+pub fn install_addon<F>(
+    url: String,
+    dir: String,
+    mut reporter: F,
+) -> Result<AddonManagerData, String>
 where
     F: FnMut(InstallEvent) + Send,
 {
-    let dir = Path::new(dir);
+    let dir = Path::new(&dir);
 
     reporter(InstallEvent::Status(
         "Starting addon installation...".to_string(),
@@ -39,7 +56,7 @@ where
     };
 
     reporter(InstallEvent::Status("Cloning repository...".to_string()));
-    let repo = match clone::clone_git_repo(url, manager_dir.clone(), &mut |current, total| {
+    let repo = match clone::clone_git_repo(&url, manager_dir.clone(), &mut |current, total| {
         reporter(InstallEvent::Progress { current, total });
     }) {
         Ok(r) => r,
@@ -68,7 +85,7 @@ where
         }
     };
 
-    let (owner, _) = match clone::extract_owner_repo_from_url(url) {
+    let (owner, _) = match clone::extract_owner_repo_from_url(&url) {
         Ok(o) => o,
         Err(e) => {
             reporter(InstallEvent::Error(format!(
@@ -185,25 +202,49 @@ pub fn install_sub_addons<F>(
 pub async fn install_addon_cmd(
     app_handle: tauri::AppHandle,
     url: String,
-    dir: String,
+    path: String,
 ) -> Result<AddonManagerData, String> {
     // No need to validate the AddOns folder here, as it is already done in the frontend.
 
-    // Move the blocking work into spawn_blocking, but keep async code outside.
-    let url_clone = url.clone();
-    let dir_clone = dir.clone();
+    let key = InstallKey {
+        url: url.clone(),
+        path: path.clone(),
+    };
 
+    let app_handle_clone = app_handle.clone();
+
+    // Move the blocking work into spawn_blocking, but keep async code outside.
     let result = tauri::async_runtime::spawn_blocking(move || {
-        install_addon(&url_clone, &dir_clone, |event| {
-            app_handle
-                .emit("install-event", event)
-                .expect("Failed to emit install-event");
+        install_addon(url, path, |event| {
+            if let Err(e) = app_handle.emit(
+                "install-event",
+                InstallEventPayload {
+                    key: key.clone(),
+                    event,
+                },
+            ) {
+                eprintln!("Failed to emit install-event: {e}");
+            }
         })
     })
     .await
     .map_err(|e| format!("Task join error: {e}"))??;
 
+    app_handle_clone
+        .emit("addon-manager-data-updated", &result)
+        .map_err(|e| format!("Failed to emit addon-manager-data-updated: {e}"))?;
     Ok(result)
+}
+
+#[tauri::command]
+pub async fn get_addon_manager_data(app_handle: tauri::AppHandle, path: String) {
+    if let Ok(data) = AddonManagerData::load_from_manager_dir(&path) {
+        if let Err(e) = app_handle.emit("addon-manager-data-updated", &data) {
+            eprintln!("Failed to emit addon-manager-data: {e}");
+        }
+    } else {
+        eprintln!("Failed to load addon manager data from path: {path}");
+    }
 }
 
 /// Ensures the `.addonmanager` directory exists in the given base directory.
@@ -271,7 +312,7 @@ mod tests {
     fn test_install_clone() {
         let (_temp, addons_dir) = setup_addons_dir();
 
-        let url = "https://github.com/sogladev/addon-335-train-all-button.git";
+        let url = "https://github.com/sogladev/addon-335-train-all-button.git".into();
         let addons_dir_str = addons_dir.to_str().unwrap();
 
         let result = ensure_manager_dir(&addons_dir);
@@ -279,7 +320,7 @@ mod tests {
         print_dir_tree(addons_dir_str);
         assert!(result.is_ok(), "ensure_manager_dir failed: {:?}", result);
 
-        let result = install_addon(url, addons_dir_str, move |event| {
+        let result = install_addon(url, addons_dir_str.to_string(), move |event| {
             println!("Install event: {:?}", event);
         });
         println!("Directory tree under AddOns after install_addon:");

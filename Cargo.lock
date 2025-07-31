@@ -16,6 +16,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-dialog",
  "tauri-plugin-opener",
+ "tauri-plugin-store",
  "tempfile",
  "toml 0.9.4",
  "url",
