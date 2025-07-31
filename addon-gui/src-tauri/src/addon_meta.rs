@@ -30,6 +30,8 @@ pub struct AddonRepository {
     pub repo_name: String,
     /// Branch
     pub branch: Option<String>,
+    /// List of available branches
+    pub available_branches: Vec<String>,
     /// Commit hash or tag
     pub repo_ref: Option<String>,
     /// All discovered sub-addons in this repo
@@ -37,6 +39,26 @@ pub struct AddonRepository {
 }
 
 impl AddonRepository {
+    fn get_branch_names(repo: &git2::Repository) -> Vec<String> {
+        let get_branch_names = |branch_type| {
+            repo.branches(Some(branch_type))
+                .map(|branches| {
+                    branches
+                        .filter_map(|b| {
+                            b.ok().and_then(|(branch, _)| {
+                                branch.name().ok().flatten().map(String::from)
+                            })
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default()
+        };
+
+        let mut branch_names = get_branch_names(git2::BranchType::Local);
+        branch_names.extend(get_branch_names(git2::BranchType::Remote));
+        branch_names
+    }
+
     pub fn build_addon_repository(
         url: &str,
         path: &Path,
@@ -44,6 +66,7 @@ impl AddonRepository {
         owner: String,
         sub_addons: Vec<Addon>,
     ) -> AddonRepository {
+        let available_branches = Self::get_branch_names(repo);
         AddonRepository {
             repo_url: url.to_string(),
             owner,
@@ -60,6 +83,7 @@ impl AddonRepository {
                 .head()
                 .ok()
                 .and_then(|head| head.shorthand().map(|s| s.to_string())),
+            available_branches,
             addons: sub_addons,
         }
     }

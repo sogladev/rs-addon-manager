@@ -92,14 +92,16 @@ type AddonRepository = {
     repoUrl: string // git repository URL
     owner: string // repository owner
     repoName: string // repository name
-    branch?: string | null // branch
     repoRef?: string | null // commit hash or tag
+    branch?: string | null // branch
+    availableBranches?: string[] // List of available branches
     addons: Addon[]
     // --- UI-only fields for install state ---
     installStatus?: InstallStatus
     installProgress?: { current: number; total: number }
     installError?: string
     installStep?: string
+    selectedBranch?: string
 }
 
 type AddOnsFolder = {
@@ -522,16 +524,16 @@ function cancelDeleteFolder() {
                             }}</span>
                             <span
                                 v-if="addon.repoRef"
-                                class="text-xs text-base-content/40"
+                                class="text-xs text-base-content/50"
                                 >Installed: {{ addon.repoRef }}</span
                             >
                             <div
                                 v-if="addon.addons && addon.addons.length"
                                 class="mt-1"
                             >
-                                <span class="text-xs font-semibold mb-1 block"
-                                    >Sub-addons:</span
-                                >
+                                <!-- <span class="text-xs font-semibold mb-1 block" -->
+                                <!-- >Sub-addons:</span -->
+                                <!-- > -->
                                 <ul class="ml-2 flex flex-col gap-1">
                                     <li
                                         v-for="sub in addon.addons"
@@ -562,15 +564,35 @@ function cancelDeleteFolder() {
                             <div class="w-40">
                                 <select
                                     class="select select-bordered select-sm w-full truncate"
-                                    v-model="addon.branch"
+                                    :value="
+                                        addon.selectedBranch ?? addon.branch
+                                    "
+                                    @change="
+                                        (e) => {
+                                            const target =
+                                                e.target as HTMLSelectElement | null
+                                            if (!target) return
+                                            const newBranch = target.value
+                                            if (newBranch !== addon.branch) {
+                                                addon.selectedBranch = newBranch
+                                                addon.installStatus =
+                                                    InstallStatus.Pending
+                                            } else {
+                                                addon.selectedBranch = undefined
+                                                addon.installStatus = undefined
+                                            }
+                                        }
+                                    "
                                 >
                                     <option
-                                        v-if="addon.branch"
-                                        :value="addon.branch"
+                                        v-for="branch in addon.availableBranches || [
+                                            addon.branch,
+                                        ]"
+                                        :key="branch ?? ''"
+                                        :value="branch"
                                     >
-                                        {{ addon.branch }}
+                                        {{ branch }}
                                     </option>
-                                    <!-- Optionally, you can add more branch options here if available -->
                                 </select>
                             </div>
                             <button
