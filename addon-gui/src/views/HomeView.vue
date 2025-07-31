@@ -104,6 +104,7 @@ type InstallEventPayload = { key: InstallKey } & (
 onMounted(async () => {
     listen<InstallEventPayload>('install-event', ({ payload }) => {
         const { key, ...event } = payload
+        console.debug('[install-event]', payload)
         installStatus.value.active = true
         if ('Progress' in event) {
             const { current, total } = event.Progress
@@ -128,12 +129,15 @@ onMounted(async () => {
     })
 
     listen<AddonManagerData>('addon-manager-data-updated', ({ payload }) => {
+        console.debug('[addon-manager-data-updated]', payload)
         addonManagerData.value = payload
     })
 
     // On startup, load managed directories from store and request backend to load them
     const dirs = await loadAddonDirectoriesFromStore()
+    console.debug('[startup] loaded addon directories:', dirs)
     for (const dir of dirs) {
+        console.debug('[startup] requesting get_addon_manager_data for', dir)
         await invoke('get_addon_manager_data', { path: dir })
     }
 })
@@ -166,8 +170,9 @@ const addAddonDirectory = async () => {
                 dirs.push(directory)
                 await saveAddonDirectoriesToStore(dirs)
             }
+            managedDirectories.value = dirs
+            // Request backend to load metadata for this directory
             await invoke('get_addon_manager_data', { path: directory })
-            // The backend emits 'addon-manager-data-updated' and we update the UI
         } else {
             console.debug('No directory selected')
         }
@@ -245,11 +250,11 @@ function requestDeleteFolder(path: string) {
 // Request backend to remove folder, update store, backend will emit updated data
 async function confirmDeleteFolder() {
     if (folderToDelete.value) {
-        // Remove from store
         let dirs = await loadAddonDirectoriesFromStore()
         dirs = dirs.filter((d) => d !== folderToDelete.value)
         await saveAddonDirectoriesToStore(dirs)
-        await invoke('remove_addon_directory', { path: folderToDelete.value })
+        // @todo: Add a purge option to remove the .addonmanager folder and cleanup symbolic links in the AddOns folder
+        // await invoke('remove_addon_directory', { path: folderToDelete.value })
     }
     showDeleteModal.value = false
     folderToDelete.value = null
