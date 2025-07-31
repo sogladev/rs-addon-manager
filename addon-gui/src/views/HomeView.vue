@@ -58,11 +58,11 @@ watch(gitUrl, async () => {
     isGitUrlValid.value = await isValidGitUrl(trimmedGitUrl.value)
 })
 
-type SubAddon = {
+type Addon = {
     name: string // symlink name in AddOns
     dir: string // relative path inside repo
     names: string[] // normalized base names from .toc
-    toc_files: string[] // .toc file names
+    tocFiles: string[] // .toc file names
     enabled: boolean
 }
 
@@ -73,13 +73,13 @@ enum InstallStatus {
     Error = 'error',
 }
 
-type AddonMeta = {
-    repo_url: string // git repository URL
+type AddonRepository = {
+    repoUrl: string // git repository URL
     owner: string // repository owner
-    repo_name: string // repository name
+    repoName: string // repository name
     branch?: string | null // branch
-    repo_ref?: string | null // commit hash or tag
-    sub_addons: SubAddon[]
+    repoRef?: string | null // commit hash or tag
+    sub_addons: Addon[]
     // --- UI-only fields for install state ---
     installStatus?: InstallStatus
     installProgress?: { current: number; total: number }
@@ -90,7 +90,7 @@ type AddonMeta = {
 type AddonFolder = {
     path: string // absolute path to AddOns folder
     isValid: boolean
-    addons: AddonMeta[]
+    addonRepos: AddonRepository[]
 }
 
 import { listen } from '@tauri-apps/api/event'

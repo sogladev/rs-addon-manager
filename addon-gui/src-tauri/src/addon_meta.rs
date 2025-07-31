@@ -41,7 +41,7 @@ pub struct AddOnsFolder {
     /// Whether this is a valid AddOns folder
     pub is_valid: bool,
     /// All discovered addons in this folder
-    pub addons: Vec<AddonRepository>,
+    pub addon_repos: Vec<AddonRepository>,
 }
 
 impl AddOnsFolder {
@@ -67,7 +67,7 @@ impl AddOnsFolder {
         Self {
             path,
             is_valid,
-            addons: vec![],
+            addon_repos: vec![],
         }
     }
 
@@ -89,13 +89,13 @@ impl AddOnsFolder {
 
     pub fn upsert_addon(&mut self, addon: AddonRepository) {
         if let Some(existing) = self
-            .addons
+            .addon_repos
             .iter_mut()
             .find(|a| a.repo_url == addon.repo_url)
         {
             *existing = addon;
         } else {
-            self.addons.push(addon);
+            self.addon_repos.push(addon);
         }
     }
 }

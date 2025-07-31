@@ -342,11 +342,11 @@ mod tests {
         );
 
         assert!(
-            !folder.addons.is_empty(),
+            !folder.addon_repos.is_empty(),
             "Returned AddOnsFolder.addons should not be empty"
         );
 
-        let repo = folder.addons.iter().find(|r| r.repo_url == url);
+        let repo = folder.addon_repos.iter().find(|r| r.repo_url == url);
         assert!(
             repo.is_some(),
             "Returned AddOnsFolder.addons should contain the installed repo"
