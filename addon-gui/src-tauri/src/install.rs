@@ -5,7 +5,7 @@ use tauri::Emitter;
 
 use crate::addon_discovery::find_all_sub_addons;
 use crate::addon_meta::{AddOnsFolder, Addon, AddonRepository};
-use crate::clone;
+use crate::{clone, validate};
 
 #[derive(Serialize, Clone)]
 pub struct InstallKey {
@@ -41,7 +41,7 @@ where
         "Starting addon installation...".to_string(),
     ));
 
-    let manager_dir = match ensure_manager_dir(dir) {
+    let manager_dir = match validate::ensure_manager_dir(dir) {
         Ok(m) => m,
         Err(e) => {
             reporter(InstallEvent::Error(format!(
@@ -235,34 +235,10 @@ pub async fn get_addon_manager_data(app_handle: tauri::AppHandle, path: String) 
     }
 }
 
-/// Ensures the `.addonmanager` directory exists in the given base directory.
-/// Returns the path to the manager directory.
-///
-/// # Examples
-///
-/// ```
-/// let temp = tempfile::tempdir().unwrap();
-/// let path = addon_gui_lib::install::ensure_manager_dir(temp.path()).unwrap();
-/// assert!(path.exists());
-/// assert!(path.ends_with(".addonmanager"));
-/// ```
-pub fn ensure_manager_dir(base_dir: &Path) -> Result<PathBuf, String> {
-    if !base_dir.is_dir() {
-        return Err("Game path does not exist".to_string());
-    }
-
-    let manager_dir = base_dir.join(".addonmanager");
-    if !manager_dir.exists() {
-        std::fs::create_dir(&manager_dir)
-            .map_err(|e| format!("Failed to create manager dir: {e}"))?;
-    }
-
-    Ok(manager_dir)
-}
-
 #[cfg(test)]
 mod tests {
     use crate::addon_meta::Addon;
+    use crate::validate;
     use std::fs;
 
     use super::*;
@@ -303,7 +279,7 @@ mod tests {
         let url: String = "https://github.com/sogladev/addon-335-train-all-button.git".into();
         let addons_dir_str = addons_dir.to_str().unwrap();
 
-        let result = ensure_manager_dir(&addons_dir);
+        let result = validate::ensure_manager_dir(&addons_dir);
         println!("Directory tree under AddOns after ensure_manager_dir:");
         print_dir_tree(addons_dir_str);
         assert!(result.is_ok(), "ensure_manager_dir failed: {:?}", result);
@@ -366,7 +342,8 @@ mod tests {
     #[test]
     fn test_install_sub_addons_symlink_creation() {
         let (_temp, addons_dir) = setup_addons_dir();
-        let manager_dir = ensure_manager_dir(&addons_dir).expect("Failed to ensure manager dir");
+        let manager_dir =
+            validate::ensure_manager_dir(&addons_dir).expect("Failed to ensure manager dir");
 
         // Simulate a repo directory with a sub-addon directory
         let repo_root = manager_dir.join("fakeowner").join("fakerepo");
