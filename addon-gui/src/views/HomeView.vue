@@ -133,19 +133,33 @@ onMounted(async () => {
     listen<AddonFolder>('addon-manager-data-updated', ({ payload }) => {
         const idx = addonFolders.value.findIndex((f) => f.path === payload.path)
         if (idx !== -1) {
+            // Merge metadata into existing folder, keep isValid from UI state
             addonFolders.value[idx] = {
                 ...addonFolders.value[idx],
                 ...payload,
                 isValid: addonFolders.value[idx].isValid,
             }
         } else {
-            addonFolders.value.push(payload)
+            // Only add if the folder is still in our managed list
+            const stillManaged = addonFolders.value.some(
+                (f) => f.path === payload.path
+            )
+            if (stillManaged) {
+                addonFolders.value.push(payload)
+            }
         }
     })
 
-    // On startup, load managed directories from store and request backend to load them
+    // On startup, load managed directories from store, set up UI state, and fetch metadata
     const dirs = await loadAddonDirectoriesFromStore()
     console.debug('[startup] loaded addon directories:', dirs)
+    // Set up minimal AddonFolder entries for UI
+    addonFolders.value = dirs.map((d) => ({
+        path: d.path,
+        isValid: d.isValid,
+        addons: [],
+    }))
+    // Fetch metadata for each
     for (const entry of dirs) {
         if (!entry || !entry.path) {
             console.warn(
@@ -154,10 +168,6 @@ onMounted(async () => {
             )
             continue
         }
-        console.debug(
-            '[startup] requesting get_addon_manager_data for',
-            entry.path
-        )
         await invoke('get_addon_manager_data', { path: entry.path })
     }
 })
@@ -182,9 +192,7 @@ const addAddonDirectory = async () => {
             directory: true,
         })
         if (path) {
-            // Load current from store, add new, save
             let dirs = await loadAddonDirectoriesFromStore()
-            // Check if already present
             if (!dirs.some((d) => d.path === path)) {
                 const isValid: boolean = await invoke(
                     'is_valid_addons_folder_str',
@@ -192,15 +200,10 @@ const addAddonDirectory = async () => {
                 )
                 dirs.push({ path, isValid })
                 await saveAddonDirectoriesToStore(dirs)
-                if (!Array.isArray(addonFolders)) {
-                    addonFolders = []
-                }
-                // Only add folder if not present
-                if (!addonFolders.some((f) => f.path === path)) {
-                    addonFolders.push({ path, isValid, addons: [] })
-                }
+                // Add minimal AddonFolder to UI state
+                addonFolders.value.push({ path, isValid, addons: [] })
             }
-            // Request backend to load metadata for this directory
+            // Always fetch metadata (even if already present, to refresh)
             await invoke('get_addon_manager_data', { path })
         } else {
             console.debug('No directory selected')
@@ -223,34 +226,23 @@ import { computed } from 'vue'
 
 // Compute filtered folders and their addons based on search
 const filteredFolders = computed(() => {
-    // Defensive: always return an array of AddonFolder objects
-    const folders = Array.isArray(addonManagerData.value?.folders)
-        ? addonFolders.filter(
-              (f) => f && typeof f.path === 'string' && Array.isArray(f.addons)
-          )
-        : []
-    if (!search.value.trim()) {
-        // Show all folders, even if they have no addons
-        return folders
-    }
     const term = search.value.trim().toLowerCase()
+    if (!term) {
+        return addonFolders.value
+    }
     // Filter folders by whether any of their addons match
-    return folders
-        .map((folder) => {
-            const filteredAddons = Array.isArray(folder.addons)
-                ? folder.addons.filter(
-                      (addon) =>
-                          addon.repo_name?.toLowerCase().includes(term) ||
-                          addon.owner?.toLowerCase().includes(term) ||
-                          (Array.isArray(addon.sub_addons) &&
-                              addon.sub_addons.some((sub) =>
-                                  sub.name?.toLowerCase().includes(term)
-                              ))
-                  )
-                : []
-            return { ...folder, addons: filteredAddons }
-        })
-        .filter((folder) => folder.addons.length > 0)
+    return addonFolders.value.filter((folder) => {
+        const filteredAddons = folder.addons.filter(
+            (addon) =>
+                addon.repo_name?.toLowerCase().includes(term) ||
+                addon.owner?.toLowerCase().includes(term) ||
+                (Array.isArray(addon.sub_addons) &&
+                    addon.sub_addons.some((sub) =>
+                        sub.name?.toLowerCase().includes(term)
+                    ))
+        )
+        return filteredAddons.length > 0
+    })
 })
 
 const FOLDER_REVEAL_TIMEOUT_IN_MS = 800
@@ -269,7 +261,7 @@ const handleClone = async () => {
     try {
         await invoke('install_addon_cmd', {
             url: trimmedGitUrl.value,
-            dir: selectedDirectory.value,
+            path: selectedDirectory.value,
         })
         console.log('Addon cloned successfully')
     } catch (err) {
@@ -287,13 +279,16 @@ function requestDeleteFolder(path: string) {
     showDeleteModal.value = true
 }
 
-// Request backend to remove folder, update store, backend will emit updated data
+// Remove folder from store and UI, and optionally notify backend
 async function confirmDeleteFolder() {
     if (folderToDelete.value) {
         let dirs = await loadAddonDirectoriesFromStore()
         dirs = dirs.filter((d) => d.path !== folderToDelete.value)
         await saveAddonDirectoriesToStore(dirs)
         // @todo: Add a purge option to remove the .addonmanager folder and cleanup symbolic links in the AddOns folder
+        addonFolders.value = addonFolders.value.filter(
+            (f) => f.path !== folderToDelete.value
+        )
         // await invoke('remove_addon_directory', { path: folderToDelete.value })
     }
     showDeleteModal.value = false
