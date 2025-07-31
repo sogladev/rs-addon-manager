@@ -116,7 +116,6 @@ impl AddOnsFolder {
         }
     }
 
-    /// Create a default AddOnsFolder for the given folder path
     pub fn default_with_path<P: AsRef<Path>>(folder_path: P) -> Self {
         let path = folder_path.as_ref().to_string_lossy().to_string();
         let is_valid = crate::validate::is_valid_addons_folder_str(&path);
@@ -161,5 +160,44 @@ impl AddOnsFolder {
         } else {
             self.addon_repos.push(addon);
         }
+    }
+
+    pub fn remove_addon_by_url<P: AsRef<Path>>(
+        &mut self,
+        url: &str,
+        addons_dir: P,
+        manager_dir: P,
+    ) -> Result<(), String> {
+        // Find the addon repository to remove
+        let repo_opt = self.addon_repos.iter().find(|repo| repo.repo_url == url);
+        if let Some(repo) = repo_opt {
+            // For each sub-addon, try to remove its symlink from the AddOns folder
+            for addon in &repo.addons {
+                let symlink_path = addons_dir.as_ref().join(&addon.name);
+                if symlink_path.exists() {
+                    if let Err(e) = std::fs::remove_file(&symlink_path) {
+                        // We sometimes expect the symlink to not exist
+                        if e.kind() != std::io::ErrorKind::NotFound {
+                            eprintln!("Failed to remove symlink {}: {e}", symlink_path.display());
+                        }
+                    }
+                }
+            }
+            // Remove the cloned repository
+            let repo_path = addons_dir.as_ref().join(&repo.repo_name);
+            if repo_path.exists() {
+                if let Err(e) = std::fs::remove_dir_all(&repo_path) {
+                    eprintln!(
+                        "Failed to remove repository directory {}: {e}",
+                        repo_path.display()
+                    );
+                }
+            }
+        }
+
+        self.addon_repos.retain(|a| a.repo_url != url);
+
+        self.save_to_manager_dir(manager_dir)
+            .map_err(|e| format!("Failed to save metadata: {e}"))
     }
 }

@@ -219,6 +219,42 @@ pub async fn get_addon_manager_data(app_handle: tauri::AppHandle, path: String) 
     }
 }
 
+#[tauri::command]
+pub async fn delete_addon(
+    app_handle: tauri::AppHandle,
+    url: String,
+    path: String,
+) -> Result<(), String> {
+    let key = InstallKey {
+        url: url.clone(),
+        path: path.clone(),
+    };
+
+    let handler = |event: InstallEvent| {
+        if let Err(e) = app_handle.emit(
+            "install-event",
+            InstallEventPayload {
+                key: key.clone(),
+                event,
+            },
+        ) {
+            eprintln!("Failed to emit install-event: {e}");
+        }
+    };
+    handler(InstallEvent::Status("Saving addon metadata...".to_string()));
+
+    // Load the existing AddOnsFolder metadata
+    let mut addons_folder = match AddOnsFolder::load_from_addons_dir(&path) {
+        Ok(folder) => folder,
+        Err(_) => AddOnsFolder::default_with_path(&path),
+    };
+
+    // Remove the addon repository by URL
+    addons_folder.remove_addon_by_url(&url);
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use crate::addon_meta::Addon;

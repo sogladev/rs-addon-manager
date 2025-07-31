@@ -296,14 +296,24 @@ const handleClone = async () => {
     }
 }
 
+function requestDeleteFolder(path: string) {
+    folderToDelete.value = path
+    showDeleteModal.value = true
+}
+
 const trimmedGitUrl = computed(() => gitUrl.value.trim())
 
 const showDeleteModal = ref(false)
 const folderToDelete = ref<string | null>(null)
+// --- Addon deletion modal state and logic ---
+const showAddonDeleteModal = ref(false)
+const addonToDelete = ref<AddonRepository | null>(null)
+const folderOfAddonToDelete = ref<string | null>(null)
 
-function requestDeleteFolder(path: string) {
-    folderToDelete.value = path
-    showDeleteModal.value = true
+function requestAddonDeletion(folderPath: string, addon: AddonRepository) {
+    folderOfAddonToDelete.value = folderPath
+    addonToDelete.value = addon
+    showAddonDeleteModal.value = true
 }
 
 // Remove folder from store and UI, and optionally notify backend
@@ -317,14 +327,42 @@ async function confirmDeleteFolder() {
             (f) => f.path !== folderToDelete.value
         )
         // await invoke('remove_addon_directory', { path: folderToDelete.value })
+        showDeleteModal.value = false
+        folderToDelete.value = null
     }
-    showDeleteModal.value = false
-    folderToDelete.value = null
+}
+
+async function confirmAddonDelete() {
+    if (folderOfAddonToDelete.value && addonToDelete.value) {
+        try {
+            await invoke('delete_addon', {
+                path: folderOfAddonToDelete.value,
+                repo_url: addonToDelete.value.repoUrl,
+            })
+            // @todo: Backend will send an event to update the UI
+            // // Remove from UI
+            // const folder = addonFolders.value.find(f => f.path === folderOfAddonToDelete.value)
+            // if (folder) {
+            //     folder.addonRepos = folder.addonRepos.filter(a => a.repoUrl !== addonToDelete.value!.repoUrl)
+            // }
+        } catch (err) {
+            console.error('Failed to delete addon', err)
+        }
+    }
+    showAddonDeleteModal.value = false
+    addonToDelete.value = null
+    folderOfAddonToDelete.value = null
 }
 
 function cancelDeleteFolder() {
     showDeleteModal.value = false
     folderToDelete.value = null
+}
+
+function cancelAddonDelete() {
+    showAddonDeleteModal.value = false
+    addonToDelete.value = null
+    folderOfAddonToDelete.value = null
 }
 </script>
 
@@ -669,8 +707,8 @@ function cancelDeleteFolder() {
                                         <button
                                             class="flex items-center gap-2 text-error"
                                             @click="
-                                                console.log(
-                                                    'Delete clicked',
+                                                requestAddonDeletion(
+                                                    folder.path,
                                                     addon
                                                 )
                                             "
@@ -680,6 +718,51 @@ function cancelDeleteFolder() {
                                         </button>
                                     </li>
                                 </ul>
+                                <!-- Addon Delete Confirmation Modal -->
+                                <dialog
+                                    :open="showAddonDeleteModal"
+                                    class="modal"
+                                >
+                                    <div class="modal-box">
+                                        <h3 class="font-bold text-lg mb-4">
+                                            Delete Addon
+                                        </h3>
+                                        <p>
+                                            Are you sure you want to delete
+                                            addon
+                                            <span class="font-mono">{{
+                                                addonToDelete?.repoName
+                                            }}</span>
+                                            from directory
+                                            <span class="font-mono">{{
+                                                folderOfAddonToDelete
+                                            }}</span
+                                            >?
+                                        </p>
+                                        <div class="modal-action">
+                                            <button
+                                                class="btn btn-error"
+                                                @click="confirmAddonDelete"
+                                            >
+                                                Delete
+                                            </button>
+                                            <button
+                                                class="btn"
+                                                @click="cancelAddonDelete"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <form
+                                        method="dialog"
+                                        class="modal-backdrop"
+                                    >
+                                        <button @click="cancelAddonDelete">
+                                            close
+                                        </button>
+                                    </form>
+                                </dialog>
                             </div>
                         </div>
                     </div>
