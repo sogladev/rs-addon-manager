@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ChevronRight, FolderOpen, Trash2 } from 'lucide-vue-next'
+import {
+    ChevronRight,
+    FolderOpen,
+    Trash2,
+    MessageSquareWarning,
+} from 'lucide-vue-next'
 
 const props = defineProps({
     path: { type: String, required: true },
     isOpening: { type: Boolean, default: false },
+    isValid: { type: Boolean, default: true },
 })
 const emit = defineEmits(['open-folder', 'delete-folder'])
 
@@ -28,7 +34,16 @@ function onOpenFolder() {
     >
         <div class="flex items-center px-4 py-2 gap-4" tabindex="0">
             <!-- select-none -->
-            <span class="font-mono text-sm flex-1">{{ path }}</span>
+            <span class="flex items-center gap-1 flex-1">
+                <span
+                    v-if="isValid === false"
+                    class="text-warning cursor-pointer tooltip tooltip-warning tooltip-right"
+                    data-tip="This is not a valid AddOns directory. Please select the AddOns folder found under Interface/AddOns in your WoW directory."
+                >
+                    <MessageSquareWarning />
+                </span>
+                {{ path }}
+            </span>
             <button
                 class="btn btn-ghost btn-sm"
                 :disabled="isOpening"

@@ -213,6 +213,22 @@ const showAddModal = ref(false)
 // For the select, we want the path string of the selected folder
 const selectedDirectory = ref<string>('')
 
+// Select the first directory if available when the modal opens
+watch(showAddModal, (open) => {
+    if (open) {
+        if (folderPaths.value.length > 0) {
+            if (
+                !selectedDirectory.value ||
+                !folderPaths.value.includes(selectedDirectory.value)
+            ) {
+                selectedDirectory.value = folderPaths.value[0]
+            }
+        } else {
+            selectedDirectory.value = ''
+        }
+    }
+})
+
 const isOpening = ref(false)
 
 const search = ref('')
@@ -472,17 +488,10 @@ function cancelDeleteFolder() {
                 :key="folder.path"
                 :path="folder.path"
                 :isOpening="isOpening"
+                :isValid="folder.isValid"
                 @open-folder="handleOpenPath"
                 @delete-folder="requestDeleteFolder"
             >
-                <div class="flex items-center gap-2">
-                    <span
-                        v-if="folder.isValid === false"
-                        class="alert alert-warning alert-soft ml-2"
-                    >
-                        Warning! Not a valid AddOns directory
-                    </span>
-                </div>
                 <div class="flex flex-col gap-1.5 mt-2">
                     <div
                         v-for="addon in folder.addonRepos"
