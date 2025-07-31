@@ -285,7 +285,7 @@ async function confirmAddonDelete() {
         try {
             await invoke('delete_addon', {
                 path: folderOfAddonToDelete.value,
-                repo_url: addonToDelete.value.repoUrl,
+                url: addonToDelete.value.repoUrl,
             })
             // @todo: Backend will send an event to update the UI
             // // Remove from UI

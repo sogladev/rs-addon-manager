@@ -161,41 +161,4 @@ impl AddOnsFolder {
             self.addon_repos.push(addon);
         }
     }
-
-    pub fn remove_addon_by_url(&mut self, url: &str) -> Result<(), String> {
-        let addons_dir = self.path.clone();
-        let addons_dir = Path::new(&addons_dir);
-        let manager_dir = addons_dir.join(".addonmanager");
-        // Find the addon repository to remove
-        let repo_opt = self.addon_repos.iter().find(|repo| repo.repo_url == url);
-        if let Some(repo) = repo_opt {
-            // For each sub-addon, try to remove its symlink from the AddOns folder
-            for addon in &repo.addons {
-                let symlink_path = addons_dir.join(&addon.name);
-                if symlink_path.exists() {
-                    if let Err(e) = std::fs::remove_file(&symlink_path) {
-                        // We sometimes expect the symlink to not exist
-                        if e.kind() != std::io::ErrorKind::NotFound {
-                            eprintln!("Failed to remove symlink {}: {e}", symlink_path.display());
-                        }
-                    }
-                }
-            }
-            // Remove the cloned repository
-            let repo_path = addons_dir.join(&repo.repo_name);
-            if repo_path.exists() {
-                if let Err(e) = std::fs::remove_dir_all(&repo_path) {
-                    eprintln!(
-                        "Failed to remove repository directory {}: {e}",
-                        repo_path.display()
-                    );
-                }
-            }
-        }
-
-        self.addon_repos.retain(|a| a.repo_url != url);
-
-        self.save_to_manager_dir(manager_dir)
-            .map_err(|e| format!("Failed to save metadata: {e}"))
-    }
 }

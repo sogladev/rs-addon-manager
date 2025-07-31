@@ -49,8 +49,11 @@ async function isValidGitUrl(url: string): Promise<boolean> {
 
 const trimmedGitUrl = computed(() => gitUrl.value.trim())
 
+const directoryTouched = ref(false)
+
 const handleClone = async () => {
-    if (!isGitUrlValid.value) return
+    directoryTouched.value = true
+    if (!isGitUrlValid.value || !selectedDirectory.value) return
     emit('update:open', false)
     try {
         await invoke('install_addon_cmd', {
@@ -105,16 +108,21 @@ const handleClone = async () => {
                         {{ path }}
                     </option>
                 </select>
-                <!-- <div :class="{ 'visible': selectedDirectory.isValid === false && gitUrl, 'invisible': !gitUrl || selectedDirectory.isValid !== false }" -->
-                <!-- class="text-error text-xs mt-1"> -->
-                <!-- Please enter a valid HTTPS Git URL ending with <code>.git</code> -->
-                <!-- </div> -->
+                <div
+                    :class="{
+                        visible: directoryTouched && !selectedDirectory,
+                        invisible: selectedDirectory || !directoryTouched,
+                    }"
+                    class="text-error text-xs mt-1"
+                >
+                    Please select an install directory.
+                </div>
             </div>
             <div class="modal-action">
                 <button
                     class="btn btn-primary"
                     @click="handleClone"
-                    :disabled="!isGitUrlValid"
+                    :disabled="!isGitUrlValid || !selectedDirectory"
                 >
                     Clone
                 </button>
