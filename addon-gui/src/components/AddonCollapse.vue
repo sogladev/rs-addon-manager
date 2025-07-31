@@ -32,7 +32,11 @@ function onOpenFolder() {
             { shadow: open },
         ]"
     >
-        <div class="flex items-center px-4 py-2 gap-4" tabindex="0">
+        <!-- border-l-4 border-primary/30 -->
+        <div
+            class="flex items-center px-4 py-2 gap-4 font-mono bg-base-200/80"
+            tabindex="0"
+        >
             <!-- select-none -->
             <span class="flex items-center gap-1 flex-1">
                 <span

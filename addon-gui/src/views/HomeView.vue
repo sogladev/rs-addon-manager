@@ -17,6 +17,21 @@ type StoredAddonDirectory = {
     isValid: boolean
 }
 
+// Handle toggling a subAddon (enable/disable)
+function handleToggleSubAddon(addon: AddonRepository, sub: Addon) {
+    // Here you can call an API or update state as needed
+    // For now, just log the change
+    console.log(
+        'Toggled subAddon',
+        sub.name,
+        'enabled:',
+        sub.enabled,
+        'in repo',
+        addon.repoName
+    )
+    // TODO: Implement backend call or state update if needed
+}
+
 async function loadAddonDirectoriesFromStore(): Promise<
     StoredAddonDirectory[]
 > {
@@ -79,7 +94,7 @@ type AddonRepository = {
     repoName: string // repository name
     branch?: string | null // branch
     repoRef?: string | null // commit hash or tag
-    subAddons: Addon[]
+    addons: Addon[]
     // --- UI-only fields for install state ---
     installStatus?: InstallStatus
     installProgress?: { current: number; total: number }
@@ -511,24 +526,33 @@ function cancelDeleteFolder() {
                                 >Installed: {{ addon.repoRef }}</span
                             >
                             <div
-                                v-if="addon.subAddons && addon.subAddons.length"
+                                v-if="addon.addons && addon.addons.length"
                                 class="mt-1"
                             >
-                                <span class="text-xs font-semibold"
+                                <span class="text-xs font-semibold mb-1 block"
                                     >Sub-addons:</span
                                 >
-                                <ul class="ml-2 list-disc text-xs">
+                                <ul class="ml-2 flex flex-col gap-1">
                                     <li
-                                        v-for="sub in addon.subAddons"
+                                        v-for="sub in addon.addons"
                                         :key="sub.name"
+                                        class="flex items-center gap-2"
                                     >
-                                        <span class="font-mono">{{
+                                        <input
+                                            type="checkbox"
+                                            class="checkbox checkbox-sm"
+                                            v-model="sub.enabled"
+                                            @change="
+                                                handleToggleSubAddon(addon, sub)
+                                            "
+                                        />
+                                        <span class="font-mono text-xs">{{
                                             sub.name
                                         }}</span>
                                         <span
                                             v-if="!sub.enabled"
-                                            class="text-error"
-                                            >(disabled)</span
+                                            class="badge badge-xs badge-error"
+                                            >disabled</span
                                         >
                                     </li>
                                 </ul>
