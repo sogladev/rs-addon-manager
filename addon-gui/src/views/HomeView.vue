@@ -16,11 +16,6 @@ const STORE_KEY = 'addon-directories'
 
 const showAddModal = ref(false)
 
-type StoredAddonDirectory = {
-    path: string
-    isValid: boolean
-}
-
 // Handle toggling a subAddon (enable/disable)
 function handleToggleSubAddon(addon: AddonRepository, sub: Addon) {
     // Here you can call an API or update state as needed
@@ -36,28 +31,28 @@ function handleToggleSubAddon(addon: AddonRepository, sub: Addon) {
     // TODO: Implement backend call or state update if needed
 }
 
-async function loadAddonDirectoriesFromStore(): Promise<
-    StoredAddonDirectory[]
-> {
-    try {
-        const store = await load(STORE_FILE)
-        const dirs = await store.get<StoredAddonDirectory[]>(STORE_KEY)
-        return Array.isArray(dirs) ? dirs : []
-    } catch (error: any) {
-        console.error('Failed to load addon directories from store:', error)
-        return []
-    }
-}
-
-async function saveAddonDirectoriesToStore(dirs: StoredAddonDirectory[]) {
-    try {
-        const store = await load(STORE_FILE)
-        await store.set(STORE_KEY, dirs)
-        await store.save()
-    } catch (error) {
-        console.error('Failed to save addon directories to store:', error)
-    }
-}
+// async function loadAddonDirectoriesFromStore(): Promise<
+//     StoredAddonDirectory[]
+// > {
+//     try {
+//         const store = await load(STORE_FILE)
+//         const dirs = await store.get<StoredAddonDirectory[]>(STORE_KEY)
+//         return Array.isArray(dirs) ? dirs : []
+//     } catch (error: any) {
+//         console.error('Failed to load addon directories from store:', error)
+//         return []
+//     }
+// }
+//
+// async function saveAddonDirectoriesToStore(dirs: StoredAddonDirectory[]) {
+//     try {
+//         const store = await load(STORE_FILE)
+//         await store.set(STORE_KEY, dirs)
+//         await store.save()
+//     } catch (error) {
+//         console.error('Failed to save addon directories to store:', error)
+//     }
+// }
 
 type Addon = {
     name: string // symlink name in AddOns
@@ -145,28 +140,6 @@ onMounted(async () => {
             addonFolders.value.push(payload)
         }
     })
-
-    // On startup, load managed directories from store, set up UI state, and fetch metadata
-    const dirs = await loadAddonDirectoriesFromStore()
-    console.debug('[startup] loaded addon directories:', dirs)
-    // Set up minimal AddonFolder entries for UI
-    addonFolders.value = dirs.map((d) => ({
-        path: d.path,
-        isValid: d.isValid,
-        addonRepos: [],
-    }))
-    // Fetch metadata for each
-    for (const entry of dirs) {
-        if (!entry || !entry.path) {
-            console.warn(
-                '[startup] Skipping invalid entry in addon directories:',
-                entry
-            )
-            continue
-        }
-        console.log('[startup] Fetching metadata for:', entry.path)
-        await invoke('get_addon_manager_data', { path: entry.path })
-    }
 })
 
 const installStatus = ref<{
