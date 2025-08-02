@@ -17,19 +17,12 @@ import AddonCloneModal from '@/components/AddonCloneModal.vue'
 const showAddModal = ref(false)
 
 // Handle toggling a subAddon (enable/disable)
-function handleToggleSubAddon(addon: AddonRepository, sub: Addon) {
+function handleToggleSubAddon(repo: AddonRepository, addon: Addon) {
     // @todo: fix toggle sub addon
     console.log(
-        `Toggled subAddon ${sub.name} enabled: ${sub.enabled} in repo ${addon.repoName}`
+        `Toggled subAddon ${addon.name} enabled: ${addon.enabled} in repo ${repo.repoName}`
     )
     // TODO: Implement backend call or state update if needed
-}
-
-enum InstallStatus {
-    Pending = 'pending',
-    Installing = 'installing',
-    Success = 'success',
-    Error = 'error',
 }
 
 type InstallKey = { path: string; url: string }
@@ -70,15 +63,13 @@ onMounted(async () => {
         }
     })
 
-    listen<FolderWithMeta>('addon-manager-data-updated', ({ payload }) => {
-        console.debug('[addon-manager-data-updated]', payload)
-        const idx = addonFolders.value.findIndex((f) => f.path === payload.path)
-        if (idx !== -1) {
-            addonFolders.value[idx] = payload
-        } else {
-            addonFolders.value.push(payload)
-        }
-    })
+    // Load initial addon data from backend
+    try {
+        const folders = await invoke<AddOnsFolder[]>('refresh_addon_data')
+        addonFolders.value = folders
+    } catch (err) {
+        console.error('Failed to load addon data:', err)
+    }
 })
 
 const installStatus = ref<{
@@ -99,19 +90,7 @@ const addAddonDirectory = async () => {
             directory: true,
         })
         if (path) {
-            let dirs = await loadAddonDirectoriesFromStore()
-            if (!dirs.some((d) => d.path === path)) {
-                const isValid: boolean = await invoke(
-                    'is_valid_addons_folder_str',
-                    { path }
-                )
-                dirs.push({ path, isValid })
-                await saveAddonDirectoriesToStore(dirs)
-                // Add minimal AddonFolder to UI state
-                addonFolders.value.push({ path, isValid, addonRepos: [] })
-            }
-            // Always fetch metadata (even if already present, to refresh)
-            await invoke('get_addon_manager_data', { path })
+            console.debug('Adding path:', path)
         } else {
             console.debug('No directory selected')
         }
@@ -136,16 +115,15 @@ const filteredFolders = computed(() => {
     }
     // Filter folders by whether any of their addons match
     return addonFolders.value.filter((folder) => {
-        const filteredAddons = folder.addonRepos.filter(
-            (addon) =>
-                addon.repoName?.toLowerCase().includes(term) ||
-                addon.owner?.toLowerCase().includes(term) ||
-                (Array.isArray(addon.addons) &&
-                    addon.addons.some((a) =>
-                        a.name?.toLowerCase().includes(term)
-                    ))
+        const filteredRepos = folder.repositories.filter(
+            (repo) =>
+                repo.repoName.toLowerCase().includes(term) ||
+                repo.owner.toLowerCase().includes(term) ||
+                repo.addons.some((addon) =>
+                    addon.name.toLowerCase().includes(term)
+                )
         )
-        return filteredAddons.length > 0
+        return filteredRepos.length > 0
     })
 })
 
@@ -180,14 +158,11 @@ function requestAddonDeletion(folderPath: string, addon: AddonRepository) {
 // Remove folder from store and UI, and optionally notify backend
 async function confirmDeleteFolder() {
     if (folderToDelete.value) {
-        let dirs = await loadAddonDirectoriesFromStore()
-        dirs = dirs.filter((d) => d.path !== folderToDelete.value)
-        await saveAddonDirectoriesToStore(dirs)
         // @todo: Add a purge option to remove the .addonmanager folder and cleanup symbolic links in the AddOns folder
         addonFolders.value = addonFolders.value.filter(
             (f) => f.path !== folderToDelete.value
         )
-        // await invoke('remove_addon_directory', { path: folderToDelete.value })
+        // @todo: Persist the removal of this folder path to storage
         showDeleteModal.value = false
         folderToDelete.value = null
     }
@@ -201,11 +176,7 @@ async function confirmAddonDelete() {
                 url: addonToDelete.value.repoUrl,
             })
             // @todo: Backend will send an event to update the UI
-            // // Remove from UI
-            // const folder = addonFolders.value.find(f => f.path === folderOfAddonToDelete.value)
-            // if (folder) {
-            //     folder.addonRepos = folder.addonRepos.filter(a => a.repoUrl !== addonToDelete.value!.repoUrl)
-            // }
+            // The backend should emit an event to refresh the data
         } catch (err) {
             console.error('Failed to delete addon', err)
         }
@@ -351,24 +322,24 @@ function cancelAddonDelete() {
             >
                 <div class="flex flex-col gap-1.5 mt-2">
                     <div
-                        v-for="addon in folder.addonRepos"
-                        :key="addon.repoUrl + (addon.branch || '')"
+                        v-for="repo in folder.repositories"
+                        :key="repo.repoUrl + (repo.currentBranch || '')"
                         class="card card-bordered bg-base-100 flex-row items-center p-2"
                     >
                         <div class="flex flex-1 flex-col gap-1 p-2">
                             <span class="font-semibold">{{
-                                addon.repoName
+                                repo.repoName
                             }}</span>
                             <span class="text-xs text-base-content/60">{{
-                                addon.owner
+                                repo.owner
                             }}</span>
                             <span
-                                v-if="addon.repoRef"
+                                v-if="repo.repoRef"
                                 class="text-xs text-base-content/50"
-                                >Installed: {{ addon.repoRef }}</span
+                                >Installed: {{ repo.repoRef }}</span
                             >
                             <div
-                                v-if="addon.addons && addon.addons.length"
+                                v-if="repo.addons && repo.addons.length"
                                 class="mt-1"
                             >
                                 <!-- <span class="text-xs font-semibold mb-1 block" -->
@@ -376,23 +347,26 @@ function cancelAddonDelete() {
                                 <!-- > -->
                                 <ul class="ml-2 flex flex-col gap-1">
                                     <li
-                                        v-for="sub in addon.addons"
-                                        :key="sub.name"
+                                        v-for="addon in repo.addons"
+                                        :key="addon.name"
                                         class="flex items-center gap-2"
                                     >
                                         <input
                                             type="checkbox"
                                             class="checkbox checkbox-sm"
-                                            v-model="sub.enabled"
+                                            v-model="addon.enabled"
                                             @change="
-                                                handleToggleSubAddon(addon, sub)
+                                                handleToggleSubAddon(
+                                                    repo,
+                                                    addon
+                                                )
                                             "
                                         />
                                         <span class="font-mono text-xs">{{
-                                            sub.name
+                                            addon.name
                                         }}</span>
                                         <span
-                                            v-if="!sub.enabled"
+                                            v-if="!addon.enabled"
                                             class="badge badge-xs badge-error"
                                             >disabled</span
                                         >
@@ -404,31 +378,25 @@ function cancelAddonDelete() {
                             <div class="w-40">
                                 <select
                                     class="select select-bordered select-sm w-full truncate"
-                                    :value="
-                                        addon.selectedBranch ?? addon.branch
-                                    "
+                                    :value="repo.currentBranch"
                                     @change="
                                         (e) => {
                                             const target =
                                                 e.target as HTMLSelectElement | null
                                             if (!target) return
                                             const newBranch = target.value
-                                            if (newBranch !== addon.branch) {
-                                                addon.selectedBranch = newBranch
-                                                addon.installStatus =
-                                                    InstallStatus.Pending
-                                            } else {
-                                                addon.selectedBranch = undefined
-                                                addon.installStatus = undefined
-                                            }
+                                            console.log(
+                                                'Branch change requested:',
+                                                newBranch,
+                                                'for repo:',
+                                                repo.repoUrl
+                                            )
                                         }
                                     "
                                 >
                                     <option
-                                        v-for="branch in addon.availableBranches || [
-                                            addon.branch,
-                                        ]"
-                                        :key="branch ?? ''"
+                                        v-for="branch in repo.availableBranches"
+                                        :key="branch"
                                         :value="branch"
                                     >
                                         {{ branch }}
@@ -436,19 +404,8 @@ function cancelAddonDelete() {
                                 </select>
                             </div>
                             <button
-                                v-if="
-                                    addon.installStatus ===
-                                        InstallStatus.Pending ||
-                                    addon.installStatus === InstallStatus.Error
-                                "
                                 class="btn btn-sm btn-primary"
-                                @click="console.log('Update clicked', addon)"
-                            >
-                                Update
-                            </button>
-                            <button
-                                v-else
-                                class="btn btn-sm btn-ghost btn-disabled"
+                                @click="console.log('Update clicked', repo)"
                             >
                                 Update
                             </button>
@@ -469,7 +426,7 @@ function cancelAddonDelete() {
                                             @click="
                                                 console.log(
                                                     'Readme clicked',
-                                                    addon
+                                                    repo
                                                 )
                                             "
                                         >
@@ -483,7 +440,7 @@ function cancelAddonDelete() {
                                             @click="
                                                 console.log(
                                                     'Website clicked',
-                                                    addon
+                                                    repo
                                                 )
                                             "
                                         >
@@ -497,7 +454,7 @@ function cancelAddonDelete() {
                                             @click="
                                                 console.log(
                                                     'Repair clicked',
-                                                    addon
+                                                    repo
                                                 )
                                             "
                                         >
@@ -511,7 +468,7 @@ function cancelAddonDelete() {
                                             @click="
                                                 requestAddonDeletion(
                                                     folder.path,
-                                                    addon
+                                                    repo
                                                 )
                                             "
                                         >
