@@ -22,7 +22,6 @@ function handleToggleSubAddon(repo: AddonRepository, addon: Addon) {
     console.log(
         `Toggled subAddon ${addon.name} enabled: ${addon.enabled} in repo ${repo.repoName}`
     )
-    // TODO: Implement backend call or state update if needed
 }
 
 type InstallKey = { path: string; url: string }
@@ -63,13 +62,19 @@ onMounted(async () => {
         }
     })
 
-    // Load initial addon data from backend
-    try {
-        const folders = await invoke<AddOnsFolder[]>('refresh_addon_data')
-        addonFolders.value = folders
-    } catch (err) {
-        console.error('Failed to load addon data:', err)
+    async function refreshAddonData() {
+        try {
+            const folders = await invoke<AddOnsFolder[]>('refresh_addon_data')
+            addonFolders.value = folders
+        } catch (err) {
+            console.error('Failed to refresh addon data:', err)
+        }
     }
+
+    listen('addon-data-updated', refreshAddonData)
+
+    // Load initial addon data from backend
+    await refreshAddonData()
 })
 
 const installStatus = ref<{
@@ -91,6 +96,7 @@ const addAddonDirectory = async () => {
         })
         if (path) {
             console.debug('Adding path:', path)
+            await invoke('add_addon_directory', { path })
         } else {
             console.debug('No directory selected')
         }
@@ -137,7 +143,7 @@ function handleOpenPath(path: string) {
     }, FOLDER_REVEAL_TIMEOUT_IN_MS)
 }
 
-function requestDeleteFolder(path: string) {
+function requestDeleteAddonDirectory(path: string) {
     folderToDelete.value = path
     showDeleteModal.value = true
 }
@@ -156,13 +162,9 @@ function requestAddonDeletion(folderPath: string, addon: AddonRepository) {
 }
 
 // Remove folder from store and UI, and optionally notify backend
-async function confirmDeleteFolder() {
+async function confirmDeleteAddonDirectory() {
     if (folderToDelete.value) {
-        // @todo: Add a purge option to remove the .addonmanager folder and cleanup symbolic links in the AddOns folder
-        addonFolders.value = addonFolders.value.filter(
-            (f) => f.path !== folderToDelete.value
-        )
-        // @todo: Persist the removal of this folder path to storage
+        await invoke('delete_addon_directory', { path: folderToDelete.value })
         showDeleteModal.value = false
         folderToDelete.value = null
     }
@@ -296,7 +298,10 @@ function cancelAddonDelete() {
                     directories.
                 </p>
                 <div class="modal-action">
-                    <button class="btn btn-error" @click="confirmDeleteFolder">
+                    <button
+                        class="btn btn-error"
+                        @click="confirmDeleteAddonDirectory"
+                    >
                         Delete
                     </button>
                     <button class="btn" @click="cancelDeleteFolder">
@@ -318,7 +323,7 @@ function cancelAddonDelete() {
                 :isOpening="isOpening"
                 :isValid="folder.isValid"
                 @open-folder="handleOpenPath"
-                @delete-folder="requestDeleteFolder"
+                @delete-folder="requestDeleteAddonDirectory"
             >
                 <div class="flex flex-col gap-1.5 mt-2">
                     <div

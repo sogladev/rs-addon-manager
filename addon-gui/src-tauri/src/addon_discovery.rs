@@ -1,16 +1,10 @@
 use std::sync::RwLockReadGuard;
 
 use crate::addon_disk::DiskAddOnsFolder;
-use crate::addon_store::AddOnsUserConfig;
 use crate::view_models;
-use serde_json;
 use tauri::AppHandle;
-use tauri_plugin_store::StoreExt;
 
 use std::{collections::HashMap, sync::RwLock};
-
-const STORE_FILE: &str = "addon-manager.json";
-const STORE_KEY: &str = "addon-directories";
 
 // This is never persisted; just holds our latest disk scan data
 pub struct AppState {
@@ -31,10 +25,8 @@ pub fn refresh_addon_data(
     app: AppHandle,
     state: tauri::State<AppState>,
 ) -> Result<Vec<view_models::AddOnsFolder>, String> {
-    // Read configured addon directories from store
-    let store = app.store(STORE_FILE).map_err(|e| e.to_string())?;
-    let raw = store.get(STORE_KEY).unwrap_or_default();
-    let config: AddOnsUserConfig = serde_json::from_value(raw).unwrap_or_default();
+    // Read configured addon directories
+    let config = crate::addon_store::load_user_config(&app)?;
 
     // Scan folders and stash in‐mem disk data
     {

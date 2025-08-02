@@ -19,7 +19,9 @@ pub fn run() {
             validate::is_valid_repo_url,
             validate::is_valid_addons_folder_str,
             install::install_addon_cmd,
-            addon_discovery::refresh_addon_data
+            addon_discovery::refresh_addon_data,
+            addon_store::add_addon_directory,
+            addon_store::delete_addon_directory
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
