@@ -1,5 +1,10 @@
 {
     "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["src/*"],
+            "@bindings/*": ["src-tauri/bindings/*"]
+        },
         "target": "ES2020",
         "useDefineForClassFields": true,
         "module": "ESNext",
@@ -20,6 +25,12 @@
         "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true
     },
-    "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.d.ts",
+        "src/**/*.tsx",
+        "src/**/*.vue",
+        "src-tauri/bindings/*ts"
+    ],
     "references": [{ "path": "./tsconfig.node.json" }]
 }

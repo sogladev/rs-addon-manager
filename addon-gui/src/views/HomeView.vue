@@ -6,60 +6,23 @@ import { useTimeoutFn } from '@vueuse/core'
 import { Plus, Ellipsis } from 'lucide-vue-next'
 import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next'
 import { invoke } from '@tauri-apps/api/core'
-import { load } from '@tauri-apps/plugin-store'
+
+import type { AddOnsFolder } from '@bindings/AddOnsFolder'
+import type { AddonRepository } from '@bindings/AddonRepository'
+import type { Addon } from '@bindings/Addon'
 
 import AddonCollapse from '@/components/AddonCollapse.vue'
 import AddonCloneModal from '@/components/AddonCloneModal.vue'
-
-const STORE_FILE = 'addon-manager.json'
-const STORE_KEY = 'addon-directories'
 
 const showAddModal = ref(false)
 
 // Handle toggling a subAddon (enable/disable)
 function handleToggleSubAddon(addon: AddonRepository, sub: Addon) {
-    // Here you can call an API or update state as needed
-    // For now, just log the change
+    // @todo: fix toggle sub addon
     console.log(
-        'Toggled subAddon',
-        sub.name,
-        'enabled:',
-        sub.enabled,
-        'in repo',
-        addon.repoName
+        `Toggled subAddon ${sub.name} enabled: ${sub.enabled} in repo ${addon.repoName}`
     )
     // TODO: Implement backend call or state update if needed
-}
-
-// async function loadAddonDirectoriesFromStore(): Promise<
-//     StoredAddonDirectory[]
-// > {
-//     try {
-//         const store = await load(STORE_FILE)
-//         const dirs = await store.get<StoredAddonDirectory[]>(STORE_KEY)
-//         return Array.isArray(dirs) ? dirs : []
-//     } catch (error: any) {
-//         console.error('Failed to load addon directories from store:', error)
-//         return []
-//     }
-// }
-//
-// async function saveAddonDirectoriesToStore(dirs: StoredAddonDirectory[]) {
-//     try {
-//         const store = await load(STORE_FILE)
-//         await store.set(STORE_KEY, dirs)
-//         await store.save()
-//     } catch (error) {
-//         console.error('Failed to save addon directories to store:', error)
-//     }
-// }
-
-type Addon = {
-    name: string // symlink name in AddOns
-    dir: string // relative path inside repo
-    names: string[] // normalized base names from .toc
-    tocFiles: string[] // .toc file names
-    enabled: boolean
 }
 
 enum InstallStatus {
@@ -68,30 +31,6 @@ enum InstallStatus {
     Success = 'success',
     Error = 'error',
 }
-
-type AddonRepository = {
-    repoUrl: string // git repository URL
-    owner: string // repository owner
-    repoName: string // repository name
-    repoRef?: string | null // commit hash or tag
-    branch?: string | null // branch
-    availableBranches?: string[] // List of available branches
-    addons: Addon[]
-    // --- UI-only fields for install state ---
-    installStatus?: InstallStatus
-    installProgress?: { current: number; total: number }
-    installError?: string
-    installStep?: string
-    selectedBranch?: string
-}
-
-type AddOnsFolder = {
-    path: string // absolute path to AddOns folder
-    isValid: boolean
-    addonRepos: AddonRepository[]
-}
-
-import { listen } from '@tauri-apps/api/event'
 
 type InstallKey = { path: string; url: string }
 type InstallEventPayload = {
@@ -131,7 +70,7 @@ onMounted(async () => {
         }
     })
 
-    listen<AddOnsFolder>('addon-manager-data-updated', ({ payload }) => {
+    listen<FolderWithMeta>('addon-manager-data-updated', ({ payload }) => {
         console.debug('[addon-manager-data-updated]', payload)
         const idx = addonFolders.value.findIndex((f) => f.path === payload.path)
         if (idx !== -1) {
@@ -187,6 +126,7 @@ const isOpening = ref(false)
 
 const search = ref('')
 import { computed } from 'vue'
+import { listen } from '@tauri-apps/api/event'
 
 // Compute filtered folders and their addons based on search
 const filteredFolders = computed(() => {

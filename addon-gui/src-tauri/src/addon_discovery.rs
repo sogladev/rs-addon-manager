@@ -30,7 +30,7 @@ impl Default for AppState {
 pub fn refresh_addon_data(
     app: AppHandle,
     state: tauri::State<AppState>,
-) -> Result<Vec<view_models::FolderWithMeta>, String> {
+) -> Result<Vec<view_models::AddOnsFolder>, String> {
     // Read configured addon directories from store
     let store = app.store(STORE_FILE).map_err(|e| e.to_string())?;
     let raw = store.get(STORE_KEY).unwrap_or_default();
@@ -60,7 +60,7 @@ pub fn refresh_addon_data(
     let disk_map = guard.clone();
 
     // Merge disk + user‐meta
-    let merged: Vec<view_models::FolderWithMeta> = disk_map
+    let merged: Vec<view_models::AddOnsFolder> = disk_map
         .into_iter()
         .map(|(path, disk_folder)| {
             // find the matching folder user‐meta (if any)
@@ -80,7 +80,7 @@ pub fn refresh_addon_data(
                         .into_iter()
                         .map(|disk_addon| {
                             let user_addon = user_repo.and_then(|r| r.addons.get(&disk_addon.name));
-                            view_models::AddonWithMeta {
+                            view_models::Addon {
                                 name: disk_addon.name.clone(),
                                 names: disk_addon.names,
                                 dir: disk_addon.dir,
@@ -91,7 +91,7 @@ pub fn refresh_addon_data(
                         })
                         .collect();
 
-                    view_models::RepositoryWithMeta {
+                    view_models::AddonRepository {
                         repo_url: disk_repo.repo_url.clone(),
                         repo_name: disk_repo.repo_name,
                         owner: disk_repo.owner,
@@ -103,7 +103,7 @@ pub fn refresh_addon_data(
                 })
                 .collect();
 
-            view_models::FolderWithMeta {
+            view_models::AddOnsFolder {
                 path: disk_folder.path,
                 is_valid: disk_folder.is_valid,
                 error: disk_folder.error,

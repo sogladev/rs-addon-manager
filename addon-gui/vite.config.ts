@@ -12,6 +12,8 @@ export default defineConfig(async () => ({
     resolve: {
         alias: {
             '@': '/src',
+            // generated ts-rs bindings
+            '@bindings': '/src-tauri/bindings',
         },
     },
 

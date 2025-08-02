@@ -4,7 +4,7 @@ use ts_rs::TS;
 #[derive(Debug, Serialize, Deserialize, Clone, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
-pub struct AddonWithMeta {
+pub struct Addon {
     pub name: String,
     pub dir: String,
     pub names: Vec<String>,
@@ -18,7 +18,7 @@ pub struct AddonWithMeta {
 #[derive(Debug, Serialize, Deserialize, Clone, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
-pub struct RepositoryWithMeta {
+pub struct AddonRepository {
     pub repo_url: String,
     pub repo_name: String,
     pub owner: String,
@@ -27,15 +27,15 @@ pub struct RepositoryWithMeta {
     pub repo_ref: Option<String>,
 
     // merged addon list:
-    pub addons: Vec<AddonWithMeta>,
+    pub addons: Vec<Addon>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
-pub struct FolderWithMeta {
+pub struct AddOnsFolder {
     pub path: String,
     pub is_valid: bool,
     pub error: Option<String>,
-    pub repositories: Vec<RepositoryWithMeta>,
+    pub repositories: Vec<AddonRepository>,
 }
