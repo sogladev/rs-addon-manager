@@ -44,40 +44,10 @@ impl DiskAddOnsFolder {
                     if !repo_path.is_dir() {
                         continue;
                     }
-                    let repo = git2::Repository::open(&repo_path).map_err(|e| {
-                        format!("Failed to open git repo {}: {e}", repo_path.display())
-                    })?;
-                    let repo_url = repo
-                        .find_remote("origin")
-                        .and_then(|r| {
-                            r.url()
-                                .map(|u| u.to_string())
-                                .ok_or(git2::Error::from_str("no url"))
-                        })
-                        .unwrap_or_default();
-                    let addons = find_all_sub_addons(&repo_path)
-                        .map_err(|e| format!("Failed to discover sub-addons: {e}"))?;
-                    let current_branch = repo
-                        .head()
-                        .ok()
-                        .and_then(|h| h.shorthand().map(|s| s.to_string()));
-                    let repo_ref = repo
-                        .head()
-                        .ok()
-                        .and_then(|h| h.target().map(|oid| oid.to_string()));
-                    let available_branches = get_branch_names(&repo);
-                    repositories.push(DiskAddonRepository {
-                        repo_url,
-                        repo_name: repo_path
-                            .file_name()
-                            .map(|f| f.to_string_lossy().to_string())
-                            .unwrap_or_default(),
-                        owner: owner.clone(),
-                        current_branch,
-                        available_branches,
-                        repo_ref,
-                        addons,
-                    });
+                    let mut disk_repo = create_disk_addon_repository(&repo_path, &owner)?;
+                    // Check which addons are actually symlinked in the AddOns directory
+                    check_addon_symlinks(&mut disk_repo.addons, addons_path);
+                    repositories.push(disk_repo);
                 }
             }
         }
@@ -123,6 +93,70 @@ pub struct DiskAddonRepository {
     pub available_branches: Vec<String>,
     pub repo_ref: Option<String>, // commit hash or tag
     pub addons: Vec<DiskAddon>,
+}
+
+/// Check if addons are symlinked in the AddOns directory
+/// Updates the is_symlinked field for each addon
+pub fn check_addon_symlinks(addons: &mut [DiskAddon], addons_dir: &Path) {
+    for addon in addons {
+        let symlink_path = addons_dir.join(&addon.name);
+        addon.is_symlinked = symlink_path.exists() && symlink_path.is_symlink();
+    }
+}
+
+/// Create a DiskAddonRepository from a repository path
+/// This is used by both scan and install operations
+pub fn create_disk_addon_repository(
+    repo_path: &Path,
+    owner: &str,
+) -> Result<DiskAddonRepository, String> {
+    let repo = git2::Repository::open(repo_path)
+        .map_err(|e| format!("Failed to open git repo {}: {e}", repo_path.display()))?;
+
+    let (repo_url, current_branch, repo_ref, available_branches) = extract_repo_metadata(&repo);
+    let addons = find_all_sub_addons(&repo_path.to_path_buf())
+        .map_err(|e| format!("Failed to discover sub-addons: {e}"))?;
+
+    Ok(DiskAddonRepository {
+        repo_url,
+        repo_name: repo_path
+            .file_name()
+            .map(|f| f.to_string_lossy().to_string())
+            .unwrap_or_default(),
+        owner: owner.to_string(),
+        current_branch,
+        available_branches,
+        repo_ref,
+        addons,
+    })
+}
+
+/// Extract git repository metadata (URL, branches, current ref, etc.)
+pub fn extract_repo_metadata(
+    repo: &git2::Repository,
+) -> (String, Option<String>, Option<String>, Vec<String>) {
+    let repo_url = repo
+        .find_remote("origin")
+        .and_then(|r| {
+            r.url()
+                .map(|u| u.to_string())
+                .ok_or(git2::Error::from_str("no url"))
+        })
+        .unwrap_or_default();
+
+    let current_branch = repo
+        .head()
+        .ok()
+        .and_then(|h| h.shorthand().map(|s| s.to_string()));
+
+    let repo_ref = repo
+        .head()
+        .ok()
+        .and_then(|h| h.target().map(|oid| oid.to_string()));
+
+    let available_branches = get_branch_names(repo);
+
+    (repo_url, current_branch, repo_ref, available_branches)
 }
 
 fn get_branch_names(repo: &git2::Repository) -> Vec<String> {
@@ -194,7 +228,7 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<DiskAddon>, String> {
             dir: ".".to_string(),
             names,
             name,
-            is_symlinked: true,
+            is_symlinked: false, // Will be updated by check_addon_symlinks
         });
     }
 
@@ -221,7 +255,7 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<DiskAddon>, String> {
                     dir: dir_name,
                     names,
                     name,
-                    is_symlinked: true,
+                    is_symlinked: false, // Will be updated by check_addon_symlinks
                 })
             }),
     );
@@ -397,7 +431,7 @@ mod tests {
 /// assert_eq!(toc_file_base_name("TrainerButton.toc"), "TrainerButton");
 /// assert_eq!(toc_file_base_name("!!TrainerButton.toc"), "!!TrainerButton");
 /// ```
-fn toc_file_base_name(toc_file: &str) -> &str {
+pub fn toc_file_base_name(toc_file: &str) -> &str {
     const SUFFIXES_TO_STRIP: &[&str] = &[
         "-mainline.toc",
         "-cataclysm.toc",

@@ -66,19 +66,6 @@ where
             .expect("Repository has no workdir. It should not be bare"),
     );
 
-    reporter(InstallEvent::Status(
-        "Discovering sub-addons...".to_string(),
-    ));
-    let sub_addons = match crate::addon_disk::find_all_sub_addons(&path) {
-        Ok(s) => s,
-        Err(e) => {
-            reporter(InstallEvent::Error(format!(
-                "Failed to discover sub-addons: {e}"
-            )));
-            return Err(format!("Failed to discover sub-addons: {e}"));
-        }
-    };
-
     let (owner, _) = match clone::extract_owner_repo_from_url(&url) {
         Ok(o) => o,
         Err(e) => {
@@ -89,34 +76,32 @@ where
         }
     };
 
-    let addon_repo =
-        AddonRepository::build_addon_repository(&url, &path, &repo, owner, sub_addons.clone());
-
-    reporter(InstallEvent::Status("Saving addon metadata...".to_string()));
-    let mut addons_folder = match AddOnsFolder::load_from_manager_dir(&manager_dir) {
-        Ok(folder) => folder,
-        Err(_) => AddOnsFolder::default_with_path(dir),
+    reporter(InstallEvent::Status(
+        "Discovering sub-addons...".to_string(),
+    ));
+    let disk_repo = match crate::addon_disk::create_disk_addon_repository(&path, &owner) {
+        Ok(repo) => repo,
+        Err(e) => {
+            reporter(InstallEvent::Error(format!(
+                "Failed to discover sub-addons: {e}"
+            )));
+            return Err(format!("Failed to discover sub-addons: {e}"));
+        }
     };
-
-    addons_folder.upsert_addon(addon_repo.clone());
-    if let Err(e) = addons_folder.save_to_manager_dir(&manager_dir) {
-        reporter(InstallEvent::Error(format!("Failed to save metadata: {e}")));
-        return Err(format!("Failed to save metadata: {e}"));
-    }
 
     reporter(InstallEvent::Status(
         "Installing sub-addons (symlinking)...".to_string(),
     ));
-    install_sub_addons(addon_repo.addons, &path, dir, &mut reporter);
+    install_sub_addons(disk_repo.addons, &path, dir, &mut reporter);
 
     reporter(InstallEvent::Status(
         "Addon installation complete.".to_string(),
     ));
-    Ok(addons_folder)
+    Ok(())
 }
 
 pub fn install_sub_addons<F>(
-    addons: Vec<Addon>,
+    addons: Vec<crate::addon_disk::DiskAddon>,
     repo_root: &Path,
     addons_dir: &Path,
     mut reporter: F,
@@ -124,9 +109,6 @@ pub fn install_sub_addons<F>(
     F: FnMut(InstallEvent) + Send,
 {
     for addon in addons {
-        if !addon.enabled {
-            continue;
-        }
         let symlink_name = &addon.name;
         let target_dir = if addon.dir == "." {
             repo_root.to_path_buf()
@@ -182,6 +164,7 @@ pub async fn install_addon_cmd(
     };
 
     let app_handle_clone = app_handle.clone();
+    let key_clone = key.clone();
 
     // Move the blocking work into spawn_blocking, but keep async code outside.
     // perform install in blocking task, emitting progress events
@@ -202,126 +185,13 @@ pub async fn install_addon_cmd(
     .map_err(|e| format!("Task join error: {e}"))?;
     // signal install complete; front-end should refresh data
     app_handle_clone
-        .emit("install-complete", &key)
+        .emit("install-complete", &key_clone)
         .map_err(|e| format!("Failed to emit install-complete: {e}"))?;
     Ok(())
 }
 
-#[tauri::command]
-pub async fn get_addon_manager_data(app_handle: tauri::AppHandle, path: String) {
-    if let Ok(data) = AddOnsFolder::load_from_addons_dir(&path) {
-        if let Err(e) = app_handle.emit("addon-manager-data-updated", &data) {
-            eprintln!("Failed to emit addon-manager-data: {e}");
-        }
-    } else {
-        eprintln!("Failed to load addon manager data from path: {path}");
-    }
-}
-
-#[tauri::command]
-pub async fn delete_addon(
-    app_handle: tauri::AppHandle,
-    path: String,
-    url: String,
-) -> Result<(), String> {
-    let key = InstallKey {
-        path: path.clone(),
-        url: url.clone(),
-    };
-
-    let handler = |event: InstallEvent| {
-        if let Err(e) = app_handle.emit(
-            "install-event",
-            InstallEventPayload {
-                key: key.clone(),
-                event,
-            },
-        ) {
-            eprintln!("Failed to emit install-event: {e}");
-        }
-    };
-    handler(InstallEvent::Status("Saving addon metadata...".to_string()));
-
-    // Load the existing AddOnsFolder metadata
-    let mut addons_folder = match AddOnsFolder::load_from_addons_dir(&path) {
-        Ok(folder) => folder,
-        Err(_) => AddOnsFolder::default_with_path(&path),
-    };
-
-    // Remove the addon repository by URL
-    if let Err(e) = remove_addon_by_url(&mut addons_folder, &url) {
-        handler(InstallEvent::Error(format!(
-            "Failed to remove addon with URL: {url} ({e})"
-        )));
-        return Err(format!("Failed to remove addon with URL: {url} ({e})"));
-    }
-
-    handler(InstallEvent::Status(
-        "Addon removed successfully".to_string(),
-    ));
-
-    if let Err(e) = app_handle.emit("addon-manager-data-updated", &addons_folder) {
-        eprintln!("Failed to emit addon-manager-data-updated: {e}");
-    }
-
-    Ok(())
-}
-
-pub fn remove_addon_by_url(addons_folder: &mut AddOnsFolder, url: &str) -> Result<(), String> {
-    let addons_dir = addons_folder.path.clone();
-    let addons_dir = Path::new(&addons_dir);
-    let manager_dir = addons_dir.join(".addonmanager");
-    if let Some(repo) = addons_folder
-        .addon_repos
-        .iter()
-        .find(|repo| repo.repo_url == url)
-    {
-        // Remove symlinks in the AddOns folder
-        for addon in &repo.addons {
-            let symlink_path = addons_dir.join(&addon.name);
-            if symlink_path.exists() {
-                if let Err(e) = std::fs::remove_file(&symlink_path) {
-                    // We sometimes expect the symlink to not exist
-                    if e.kind() != std::io::ErrorKind::NotFound {
-                        eprintln!("Failed to remove symlink {}: {e}", symlink_path.display());
-                    }
-                }
-            }
-        }
-        // Remove the cloned repository directory: .addonmanager/owner/repo_name
-        let owner_dir = manager_dir.join(&repo.owner);
-        let repo_path = owner_dir.join(&repo.repo_name);
-        if repo_path.exists() {
-            if let Err(e) = std::fs::remove_dir_all(&repo_path) {
-                eprintln!(
-                    "Failed to remove repository directory {}: {e}",
-                    repo_path.display()
-                );
-            }
-        }
-        // If the owner directory is now empty, remove it as well
-        if let Ok(mut entries) = std::fs::read_dir(&owner_dir) {
-            if entries.next().is_none() {
-                if let Err(e) = std::fs::remove_dir(&owner_dir) {
-                    eprintln!(
-                        "Failed to remove owner directory {}: {e}",
-                        owner_dir.display()
-                    );
-                }
-            }
-        }
-    }
-
-    addons_folder.addon_repos.retain(|a| a.repo_url != url);
-
-    addons_folder
-        .save_to_manager_dir(manager_dir)
-        .map_err(|e| format!("Failed to save metadata: {e}"))
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::addon_meta::Addon;
     use crate::validate;
     use std::fs;
 
@@ -389,27 +259,14 @@ mod tests {
             "Repository was not cloned to the manager directory"
         );
 
-        let folder = result.unwrap();
-        assert_eq!(
-            folder.path,
-            addons_dir.to_string_lossy(),
-            "Returned AddOnsFolder path does not match AddOns folder"
-        );
+        // Verify that metadata was written correctly by scanning the directory
+        let disk_folder = crate::addon_disk::DiskAddOnsFolder::scan(addons_dir_str)
+            .expect("Failed to scan addons directory");
 
-        assert!(
-            folder.is_valid,
-            "Returned AddOnsFolder is_valid should be true"
-        );
-
-        assert!(
-            !folder.addon_repos.is_empty(),
-            "Returned AddOnsFolder.addons should not be empty"
-        );
-
-        let repo = folder.addon_repos.iter().find(|r| r.repo_url == url);
+        let repo = disk_folder.repositories.iter().find(|r| r.repo_url == url);
         assert!(
             repo.is_some(),
-            "Returned AddOnsFolder.addons should contain the installed repo"
+            "AddOns directory should contain the installed repo"
         );
         let repo = repo.unwrap();
         assert_eq!(repo.owner, "sogladev", "Repo owner mismatch");
@@ -432,27 +289,17 @@ mod tests {
         let repo_root = manager_dir.join("fakeowner").join("fakerepo");
         let sub_dir = repo_root.join("SubAddonDir");
         fs::create_dir_all(&sub_dir).expect("Failed to create sub-addon dir");
-        let sub_addon = Addon {
+        let sub_addon = crate::addon_disk::DiskAddon {
             name: "TestSymlink".to_string(),
             dir: "SubAddonDir".to_string(),
-            enabled: true,
             names: vec!["TestSymlink".to_string()],
-            toc_files: vec![],
-        };
-        let addon_meta = AddonRepository {
-            repo_url: "https://github.com/fakeowner/fakerepo.git".to_string(),
-            owner: "fakeowner".to_string(),
-            repo_name: "fakerepo".to_string(),
-            repo_ref: None,
-            branch: None,
-            available_branches: vec![],
-            addons: vec![sub_addon],
+            is_symlinked: false,
         };
 
         println!("Before install_sub_addons:");
         print_dir_tree(addons_dir.to_str().unwrap());
 
-        install_sub_addons(addon_meta.addons, &repo_root, &addons_dir, |_| {});
+        install_sub_addons(vec![sub_addon], &repo_root, &addons_dir, |_| {});
 
         println!("After install_sub_addons:");
         print_dir_tree(addons_dir.to_str().unwrap());
@@ -473,144 +320,5 @@ mod tests {
                 "Symlink does not point to SubAddonDir"
             );
         }
-    }
-
-    #[test]
-    fn test_remove_addon_by_url_removes_repo_and_symlinks() {
-        let (_temp, addons_dir) = setup_addons_dir();
-        let url: String = "https://github.com/sogladev/addon-335-train-all-button.git".into();
-        let addons_dir_str = addons_dir.to_str().unwrap();
-
-        let result = install_addon(url.clone(), addons_dir_str.to_string(), |_| {});
-        assert!(result.is_ok(), "install_addon failed: {:?}", result);
-        let mut folder = result.unwrap();
-
-        // Find the repo and its sub-addons
-        let repo = folder
-            .addon_repos
-            .iter()
-            .find(|r| r.repo_url == url)
-            .expect("Repo not found after install");
-        let manager_dir = addons_dir.join(".addonmanager");
-        let repo_dir = manager_dir
-            .join("sogladev")
-            .join("addon-335-train-all-button");
-        assert!(repo_dir.exists(), "Repo dir should exist after install");
-        let addon_names: Vec<String> = repo.addons.iter().map(|a| a.name.clone()).collect();
-        for addon_name in &addon_names {
-            let symlink_path = addons_dir.join(addon_name);
-            assert!(
-                symlink_path.exists(),
-                "Symlink should exist after install: {}",
-                symlink_path.display()
-            );
-        }
-
-        println!("Directory tree under AddOns before removal:");
-        print_dir_tree(addons_dir_str);
-
-        let remove_result = remove_addon_by_url(&mut folder, &url);
-        assert!(
-            remove_result.is_ok(),
-            "remove_addon_by_url failed: {:?}",
-            remove_result
-        );
-
-        println!("Directory tree under AddOns after removal:");
-        print_dir_tree(addons_dir_str);
-
-        assert!(
-            !repo_dir.exists(),
-            "Repo dir should not exist after remove_addon_by_url"
-        );
-        for addon_name in &addon_names {
-            let symlink_path = addons_dir.join(addon_name);
-            assert!(
-                !symlink_path.exists(),
-                "Symlink should not exist after remove_addon_by_url: {}",
-                symlink_path.display()
-            );
-        }
-        assert!(
-            folder
-                .addon_repos
-                .iter()
-                .find(|r| r.repo_url == url)
-                .is_none(),
-            "Repo should be removed from AddOnsFolder after remove_addon_by_url"
-        );
-    }
-
-    #[test]
-    fn test_remove_addon_by_url_with_multiple_author_repos() {
-        let (_temp, addons_dir) = setup_addons_dir();
-        let url1: String = "https://github.com/sogladev/addon-335-train-all-button.git".into();
-        let url2: String = "https://github.com/sogladev/pretty_lootalert".into();
-        let addons_dir_str = addons_dir.to_str().unwrap();
-
-        let result1 = install_addon(url1.clone(), addons_dir_str.to_string(), |_| {});
-        assert!(result1.is_ok(), "install_addon 1 failed: {:?}", result1);
-        let _folder = result1.unwrap();
-
-        let result2 = install_addon(url2.clone(), addons_dir_str.to_string(), |_| {});
-        assert!(result2.is_ok(), "install_addon 2 failed: {:?}", result2);
-        let mut folder2 = result2.unwrap();
-
-        let _repo1 = folder2
-            .addon_repos
-            .iter()
-            .find(|r| r.repo_url == url1)
-            .expect("Repo1 not found after install");
-        let _repo2 = folder2
-            .addon_repos
-            .iter()
-            .find(|r| r.repo_url == url2)
-            .expect("Repo2 not found after install");
-        let manager_dir = addons_dir.join(".addonmanager");
-        let repo1_dir = manager_dir
-            .join("sogladev")
-            .join("addon-335-train-all-button");
-        let repo2_dir = manager_dir.join("sogladev").join("pretty_lootalert");
-        assert!(repo1_dir.exists(), "Repo1 dir should exist after install");
-        assert!(repo2_dir.exists(), "Repo2 dir should exist after install");
-
-        let remove_result = remove_addon_by_url(&mut folder2, &url1);
-        assert!(
-            remove_result.is_ok(),
-            "remove_addon_by_url failed: {:?}",
-            remove_result
-        );
-
-        assert!(
-            !repo1_dir.exists(),
-            "Repo1 dir should not exist after removal"
-        );
-        assert!(
-            repo2_dir.exists(),
-            "Repo2 dir should still exist after removal of Repo1"
-        );
-
-        let author_dir = manager_dir.join("sogladev");
-        assert!(
-            author_dir.exists(),
-            "Author dir should still exist while other repos remain"
-        );
-
-        assert!(
-            folder2
-                .addon_repos
-                .iter()
-                .find(|r| r.repo_url == url1)
-                .is_none(),
-            "Repo1 should be removed from AddOnsFolder"
-        );
-        assert!(
-            folder2
-                .addon_repos
-                .iter()
-                .find(|r| r.repo_url == url2)
-                .is_some(),
-            "Repo2 should remain in AddOnsFolder"
-        );
     }
 }

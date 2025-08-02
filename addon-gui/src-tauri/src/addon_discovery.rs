@@ -41,7 +41,7 @@ pub fn refresh_addon_data(
         let mut map = match state.disk_state.write() {
             Ok(guard) => guard,
             Err(poisoned) => {
-                eprintln!("RwLock poisoned: {:?}", poisoned);
+                eprintln!("RwLock poisoned: {poisoned:?}");
                 poisoned.into_inner()
             }
         };
@@ -49,7 +49,7 @@ pub fn refresh_addon_data(
         for folder_meta in &config.folders {
             let path = &folder_meta.path;
             let folder = DiskAddOnsFolder::scan(path).unwrap_or_else(|error| {
-                eprintln!("Failed to scan path {:?}: {:?}", path, error);
+                eprintln!("Failed to scan path {path:?}: {error:?}");
                 DiskAddOnsFolder::default_with_error(path, error)
             });
             map.insert(path.clone(), folder.clone());

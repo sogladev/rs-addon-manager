@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::Path};
+use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -33,15 +33,8 @@ pub struct AddOnsFolderUserMeta {
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 /// user configuration stored in Tauri store
+#[derive(Default)]
 pub struct AddOnsUserConfig {
     /// All managed AddOns directories and their metadata
     pub folders: Vec<AddOnsFolderUserMeta>,
-}
-
-impl Default for AddOnsUserConfig {
-    fn default() -> Self {
-        AddOnsUserConfig {
-            folders: Vec::new(),
-        }
-    }
 }

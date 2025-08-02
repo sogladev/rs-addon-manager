@@ -6,7 +6,7 @@ use regex::Regex;
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```
 /// use addon_gui_lib::validate::is_valid_repo_url;
 /// assert!(is_valid_repo_url("https://github.com/user/repo.git"));
 /// assert!(is_valid_repo_url("http://github.com/user/repo.git"));
@@ -24,15 +24,13 @@ pub fn is_valid_repo_url(url: &str) -> bool {
 ///
 /// ```
 /// use tempfile::tempdir;
-/// use std::fs;
 /// use std::path::Path;
 /// use addon_gui_lib::validate::is_valid_addons_folder;
 ///
 /// let temp = tempdir().unwrap();
 /// let interface_dir = temp.path().join("Interface");
 /// let addons_dir = interface_dir.join("AddOns");
-/// fs::create_dir_all(&addons_dir).unwrap();
-///
+/// std::fs::create_dir_all(&addons_dir).unwrap();
 /// assert!(is_valid_addons_folder(Path::new(&addons_dir)));
 /// assert!(!is_valid_addons_folder(temp.path()));
 /// assert!(!is_valid_addons_folder(&interface_dir));
