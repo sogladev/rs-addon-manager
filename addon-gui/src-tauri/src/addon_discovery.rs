@@ -1,330 +1,116 @@
-use itertools::Itertools;
-use std::{
-    ffi::OsStr,
-    path::{Path, PathBuf},
-};
+use std::sync::RwLockReadGuard;
 
-use crate::addon_meta::Addon;
+use crate::addon_disk::DiskAddOnsFolder;
+use crate::addon_store::AddOnsUserConfig;
+use crate::view_models;
+use serde_json;
+use tauri::AppHandle;
+use tauri_plugin_store::StoreExt;
 
-/// Returns the canonical base name for a .toc file
-///
-/// https://wowpedia.fandom.com/wiki/TOC_format
-/// Classic and retail versions of the game can be properly supported by including multiple TOC files in the same addon.
-/// The client first searches for the respective suffix and otherwise falls back to AddonName.toc
-///
-/// _MainLine, _Cata, _Wrath, _TBC, _Vanilla,
-/// -Cata, -WOTLKC, -BCC, -Classic
-/// extra: _wotlk
-///
-/// # Examples
-///
-/// ```
-/// use addon_gui_lib::addon_discovery::toc_file_base_name;
-/// assert_eq!(toc_file_base_name("AdiBags.toc"), "AdiBags");
-/// assert_eq!(toc_file_base_name("AdiBags_Mainline.toc"), "AdiBags");
-/// assert_eq!(toc_file_base_name("AdiBags_Cata.toc"), "AdiBags");
-/// assert_eq!(toc_file_base_name("AdiBags_Wrath.toc"), "AdiBags");
-/// assert_eq!(toc_file_base_name("AdiBags_TBC.toc"), "AdiBags");
-/// assert_eq!(toc_file_base_name("AdiBags_Vanilla.toc"), "AdiBags");
-/// assert_eq!(toc_file_base_name("AdiBags_Cata.toc"), "AdiBags");
-/// assert_eq!(toc_file_base_name("AdiBags-WOTLKC.toc"), "AdiBags");
-/// assert_eq!(toc_file_base_name("AdiBags_BCC.toc"), "AdiBags");
-/// assert_eq!(toc_file_base_name("AdiBags-Classic.toc"), "AdiBags");
-/// assert_eq!(toc_file_base_name("AdiBags_wotlk.toc"), "AdiBags");
-/// assert_eq!(toc_file_base_name("Questie-335.toc"), "Questie-335");
-/// assert_eq!(toc_file_base_name("TrainerButton.toc"), "TrainerButton");
-/// assert_eq!(toc_file_base_name("!!TrainerButton.toc"), "!!TrainerButton");
-/// ```
-pub fn toc_file_base_name(toc_file: &str) -> &str {
-    const SUFFIXES_TO_STRIP: &[&str] = &[
-        "-mainline.toc",
-        "-cataclysm.toc",
-        "-cata.toc",
-        "-wrath.toc",
-        "-tbc.toc",
-        "-vanilla.toc",
-        "-classic.toc",
-        "-bcc.toc",
-        "-wotlkc.toc",
-        "-wotlk.toc",
-        "_mainline.toc",
-        "_cataclysm.toc",
-        "_cata.toc",
-        "_wrath.toc",
-        "_tbc.toc",
-        "_vanilla.toc",
-        "_classic.toc",
-        "_bcc.toc",
-        "_wotlkc.toc",
-        "_wotlk.toc",
-        ".toc",
-    ];
+use std::{collections::HashMap, sync::RwLock};
 
-    let toc_file_lower = toc_file.to_lowercase();
-    for suf in SUFFIXES_TO_STRIP {
-        if toc_file_lower.ends_with(suf) {
-            // Find the start index of the suffix in the original string
-            let idx = toc_file.len() - suf.len();
-            return &toc_file[..idx];
-        }
-    }
-    toc_file
+const STORE_FILE: &str = "addon-manager.json";
+const STORE_KEY: &str = "addon-directories";
+
+// This is never persisted; just holds our latest disk scan data
+pub struct AppState {
+    disk_state: RwLock<HashMap<String, DiskAddOnsFolder>>,
 }
 
-/// Finds all sub-addons by searching for .toc files in the root directory and immediate subdirectories only.
-///
-/// This function does NOT recursively walk all subdirectories to find .toc files.
-/// It checks for .toc files in the root of the given path and in each immediate subdirectory (one level deep).
-pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<Addon>, String> {
-    let mut sub_addons = Vec::new();
+impl Default for AppState {
+    fn default() -> Self {
+        AppState {
+            disk_state: RwLock::new(HashMap::new()),
+        }
+    }
+}
 
-    // Helper to process a directory and collect .toc files
-    fn collect_toc_files(dir: &Path) -> Result<Vec<String>, String> {
-        let let_toc_files = std::fs::read_dir(dir)
-            .map_err(|e| format!("Failed to read dir: {e}"))?
-            .filter_map(|entry| {
-                let path = entry.ok()?.path();
-                if path.is_file() && path.extension() == Some(OsStr::new("toc")) {
-                    path.file_name().map(|f| f.to_string_lossy().to_string())
-                } else {
-                    None
-                }
-            })
-            .collect();
-        Ok(let_toc_files)
+#[tauri::command]
+/// Refresh addon data by scanning configured folders
+pub fn refresh_addon_data(
+    app: AppHandle,
+    state: tauri::State<AppState>,
+) -> Result<Vec<view_models::FolderWithMeta>, String> {
+    // Read configured addon directories from store
+    let store = app.store(STORE_FILE).map_err(|e| e.to_string())?;
+    let raw = store.get(STORE_KEY).unwrap_or_default();
+    let config: AddOnsUserConfig = serde_json::from_value(raw).unwrap_or_default();
+
+    // Scan folders and stash in‐mem disk data
+    {
+        let mut map = match state.disk_state.write() {
+            Ok(guard) => guard,
+            Err(poisoned) => {
+                eprintln!("RwLock poisoned: {:?}", poisoned);
+                poisoned.into_inner()
+            }
+        };
+        map.clear();
+        for folder_meta in &config.folders {
+            let path = &folder_meta.path;
+            let folder = DiskAddOnsFolder::scan(path).unwrap_or_else(|error| {
+                eprintln!("Failed to scan path {:?}: {:?}", path, error);
+                DiskAddOnsFolder::default_with_error(path, error)
+            });
+            map.insert(path.clone(), folder.clone());
+        }
     }
 
-    /// This is to handle cases where multiple .toc files exist in the root with multiple base names
-    fn names_from_toc_files(toc_files: &[String]) -> Vec<String> {
-        toc_files
-            .iter()
-            .map(|toc| toc_file_base_name(toc))
-            .unique()
-            .map(|name| name.to_string())
-            .collect()
-    }
+    let guard: RwLockReadGuard<'_, _> = state.disk_state.read().map_err(|e| e.to_string())?;
+    let disk_map = guard.clone();
 
-    fn longest_string(names: &[String]) -> String {
-        names
-            .iter()
-            .max_by_key(|n| n.len())
-            .cloned()
-            .unwrap_or_else(|| "default".to_string())
-    }
+    // Merge disk + user‐meta
+    let merged: Vec<view_models::FolderWithMeta> = disk_map
+        .into_iter()
+        .map(|(path, disk_folder)| {
+            // find the matching folder user‐meta (if any)
+            let folder_meta = config.folders.iter().find(|f| f.path == path);
 
-    // Process root directory
-    let toc_files = collect_toc_files(path)?;
-    if !toc_files.is_empty() {
-        let names = names_from_toc_files(&toc_files);
-        let name = longest_string(&names);
-        sub_addons.push(Addon {
-            dir: ".".to_string(),
-            toc_files,
-            names,
-            name,
-            enabled: true,
-        });
-    }
+            let repos = disk_folder
+                .repositories
+                .into_iter()
+                .map(|disk_repo| {
+                    // find the matching repo user‐meta by repo_url
+                    let user_repo = folder_meta
+                        .and_then(|f| f.repos.iter().find(|r| r.repo_url == disk_repo.repo_url));
 
-    // Process immediate subdirectories
-    sub_addons.extend(
-        std::fs::read_dir(path)
-            .map_err(|e| format!("Failed to read repo dir: {e}"))?
-            .filter_map(Result::ok)
-            .map(|entry| entry.path())
-            .filter(|sub_path| sub_path.is_dir())
-            .filter_map(|sub_path| {
-                let toc_files = collect_toc_files(&sub_path).ok()?;
-                if toc_files.is_empty() {
-                    return None;
-                }
-                let names = names_from_toc_files(&toc_files);
-                let name = longest_string(&names);
-                let dir_name = sub_path
-                    .file_name()
-                    .unwrap_or_default()
-                    .to_string_lossy()
-                    .to_string();
-                Some(Addon {
-                    dir: dir_name,
-                    toc_files,
-                    names,
-                    name,
-                    enabled: true,
+                    // build addons + user‐meta
+                    let addons = disk_repo
+                        .addons
+                        .into_iter()
+                        .map(|disk_addon| {
+                            let user_addon = user_repo.and_then(|r| r.addons.get(&disk_addon.name));
+                            view_models::AddonWithMeta {
+                                name: disk_addon.name.clone(),
+                                names: disk_addon.names,
+                                dir: disk_addon.dir,
+                                is_symlinked: disk_addon.is_symlinked,
+                                enabled: user_addon.map(|m| m.enabled).unwrap_or(true),
+                                custom_name: user_addon.and_then(|m| m.name.clone()),
+                            }
+                        })
+                        .collect();
+
+                    view_models::RepositoryWithMeta {
+                        repo_url: disk_repo.repo_url.clone(),
+                        repo_name: disk_repo.repo_name,
+                        owner: disk_repo.owner,
+                        current_branch: disk_repo.current_branch,
+                        available_branches: disk_repo.available_branches,
+                        repo_ref: disk_repo.repo_ref,
+                        addons,
+                    }
                 })
-            }),
-    );
-    Ok(sub_addons)
-}
+                .collect();
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
+            view_models::FolderWithMeta {
+                path: disk_folder.path,
+                is_valid: disk_folder.is_valid,
+                error: disk_folder.error,
+                repositories: repos,
+            }
+        })
+        .collect();
 
-    #[test]
-    /// https://github.com/Sattva-108/AdiBags
-    fn test_find_all_sub_addons_single_toc_in_root() {
-        let temp = tempdir().unwrap();
-        let repo_dir = temp.path();
-
-        let toc_path = repo_dir.join("AdiBags.toc");
-        std::fs::File::create(&toc_path).unwrap();
-
-        let sub_addons = find_all_sub_addons(&repo_dir.to_path_buf()).unwrap();
-
-        assert!(
-            sub_addons.len() == 1,
-            "Expected 1 sub_addon, found: {:?}",
-            sub_addons
-        );
-        assert!(
-            sub_addons[0].dir == ".",
-            "Expected sub_addon dir to be '.', found: {}",
-            sub_addons[0].dir
-        );
-        assert!(
-            sub_addons[0].toc_files.len() == 1,
-            "Expected 1 .toc file, found: {:?}",
-            sub_addons[0].toc_files
-        );
-        assert!(
-            sub_addons[0].names.len() == 1,
-            "Expected 1 name, found: {:?}",
-            sub_addons[0].names
-        );
-        assert!(
-            sub_addons[0].names[0].contains(&"AdiBags".to_string()),
-            "Expected sub_addon names to contain 'AdiBags', found: {:?}",
-            sub_addons[0].names[0]
-        );
-    }
-
-    #[test]
-    /// https://github.com/Sattva-108/AdiBags-WoTLK-3.3.5-Mods
-    fn test_find_all_sub_addons_multiple_subdirs_with_toc() {
-        let temp = tempdir().unwrap();
-        let repo_dir = temp.path();
-
-        // Create subdirectories
-        let sub1 = repo_dir.join("AdiBags-ItemOverlayPlus");
-        let sub2 = repo_dir.join("AdiBags_Bound");
-        let sub3 = repo_dir.join("NoTocSubAddon");
-        std::fs::create_dir_all(&sub1).unwrap();
-        std::fs::create_dir_all(&sub2).unwrap();
-        std::fs::create_dir_all(&sub3).unwrap();
-
-        // Create .toc files in each sub-addon directory
-        let toc1 = sub1.join("AdiBags-ItemOverlayPlus.toc");
-        let toc2 = sub2.join("AdiBags_Bound.toc");
-        std::fs::File::create(&toc1).unwrap();
-        std::fs::File::create(&toc2).unwrap();
-
-        let sub_addons = find_all_sub_addons(&repo_dir.to_path_buf()).unwrap();
-
-        assert_eq!(
-            sub_addons.len(),
-            2,
-            "Expected 2 sub_addons, found: {:?}",
-            sub_addons
-        );
-
-        let mut found_dirs = sub_addons.iter().map(|s| s.dir.clone()).collect::<Vec<_>>();
-        found_dirs.sort();
-        assert_eq!(
-            found_dirs,
-            vec!["AdiBags-ItemOverlayPlus", "AdiBags_Bound"],
-            "Unexpected sub_addon dirs: {:?}",
-            found_dirs
-        );
-
-        for sub in &sub_addons {
-            assert_eq!(
-                sub.toc_files.len(),
-                1,
-                "Expected 1 .toc file in {:?}, found: {:?}",
-                sub.dir,
-                sub.toc_files
-            );
-            assert_eq!(
-                sub.names.len(),
-                1,
-                "Expected 1 name in {:?}, found: {:?}",
-                sub.dir,
-                sub.names
-            );
-            assert!(
-                sub.toc_files[0].ends_with(".toc"),
-                "Expected .toc file, found: {:?}",
-                sub.toc_files[0]
-            );
-        }
-    }
-
-    #[test]
-    /// https://github.com/widxwer/Questie
-    /// This Questie has multiple basename .toc files in the root directory
-    /// It is expected that the user renames the folder manually
-    /// We should discover the multiple base names
-    fn test_find_all_sub_addons_questie_multiple_tocs_in_root() {
-        let temp = tempdir().unwrap();
-        let repo_dir = temp.path();
-
-        // Create multiple .toc files in the root directory
-        let toc_files = vec![
-            "Questie-335-Classic.toc",
-            "Questie-335-TBC.toc",
-            "Questie-335.toc",
-            "Questie-BCC.toc",
-            "Questie-Classic.toc",
-            "Questie-WOTLKC.toc",
-            "Questie.toc",
-        ];
-        for toc in &toc_files {
-            std::fs::File::create(repo_dir.join(toc)).unwrap();
-        }
-
-        let sub_addons = find_all_sub_addons(&repo_dir.to_path_buf()).unwrap();
-
-        assert_eq!(
-            sub_addons.len(),
-            1,
-            "Expected 1 sub_addon, found: {:?}",
-            sub_addons
-        );
-        let sub = &sub_addons[0];
-        assert_eq!(
-            sub.dir, ".",
-            "Expected sub_addon dir to be '.', found: {}",
-            sub.dir
-        );
-        assert_eq!(
-            sub.toc_files.len(),
-            toc_files.len(),
-            "Expected all .toc files to be detected, found: {:?}",
-            sub.toc_files
-        );
-
-        for toc in &toc_files {
-            assert!(
-                sub.toc_files.contains(&toc.to_string()),
-                "Missing toc file: {}",
-                toc
-            );
-        }
-
-        for name in &sub.names {
-            assert!(
-                name == "Questie" || name == "Questie-335",
-                "Expected normalized name to be 'Questie' or 'Questie-335', found: {}",
-                name
-            );
-        }
-
-        assert!(
-            sub.names.len() == 2,
-            "Expected 2 unique names, found: {:?}",
-            sub.names
-        );
-    }
+    Ok(merged)
 }

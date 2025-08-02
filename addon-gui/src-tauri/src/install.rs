@@ -3,8 +3,6 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 use tauri::Emitter;
 
-use crate::addon_discovery::find_all_sub_addons;
-use crate::addon_meta::{AddOnsFolder, Addon, AddonRepository};
 use crate::{clone, validate};
 
 #[derive(Serialize, Clone)]
@@ -31,7 +29,7 @@ pub struct InstallReporter {
     pub event: Box<dyn FnMut(InstallEvent) + Send>,
 }
 
-pub fn install_addon<F>(url: String, dir: String, mut reporter: F) -> Result<AddOnsFolder, String>
+pub fn install_addon<F>(url: String, dir: String, mut reporter: F) -> Result<(), String>
 where
     F: FnMut(InstallEvent) + Send,
 {
@@ -71,7 +69,7 @@ where
     reporter(InstallEvent::Status(
         "Discovering sub-addons...".to_string(),
     ));
-    let sub_addons = match find_all_sub_addons(&path) {
+    let sub_addons = match crate::addon_disk::find_all_sub_addons(&path) {
         Ok(s) => s,
         Err(e) => {
             reporter(InstallEvent::Error(format!(
@@ -175,7 +173,7 @@ pub async fn install_addon_cmd(
     app_handle: tauri::AppHandle,
     url: String,
     path: String,
-) -> Result<AddOnsFolder, String> {
+) -> Result<(), String> {
     // No need to validate the AddOns folder here, as it is already done in the frontend.
 
     let key = InstallKey {
@@ -186,7 +184,8 @@ pub async fn install_addon_cmd(
     let app_handle_clone = app_handle.clone();
 
     // Move the blocking work into spawn_blocking, but keep async code outside.
-    let result = tauri::async_runtime::spawn_blocking(move || {
+    // perform install in blocking task, emitting progress events
+    let _ = tauri::async_runtime::spawn_blocking(move || {
         install_addon(url, path, |event| {
             if let Err(e) = app_handle.emit(
                 "install-event",
@@ -200,12 +199,12 @@ pub async fn install_addon_cmd(
         })
     })
     .await
-    .map_err(|e| format!("Task join error: {e}"))??;
-
+    .map_err(|e| format!("Task join error: {e}"))?;
+    // signal install complete; front-end should refresh data
     app_handle_clone
-        .emit("addon-manager-data-updated", &result)
-        .map_err(|e| format!("Failed to emit addon-manager-data-updated: {e}"))?;
-    Ok(result)
+        .emit("install-complete", &key)
+        .map_err(|e| format!("Failed to emit install-complete: {e}"))?;
+    Ok(())
 }
 
 #[tauri::command]
