@@ -124,6 +124,15 @@ function handleUpdateRepo(folderPath: string, addon: AddonRepository) {
     })
 }
 
+function handleInstallRepo(folderPath: string, addon: AddonRepository) {
+    console.log('Install clicked', addon, folderPath)
+    invoke('install_addon_cmd', {
+        url: addon.repoUrl,
+        path: folderPath,
+        branch: addon.currentBranch,
+    })
+}
+
 function handleRepoReadme(repo: AddonRepository) {
     console.log('Readme clicked', repo)
 }
@@ -188,6 +197,7 @@ async function handleUpdateAll() {
             @delete-addon="requestAddonDeletion"
             @toggle-addon="handleToggleAddon"
             @branch-change="handleBranchChange"
+            @install-repo="handleInstallRepo"
             @update-repo="handleUpdateRepo"
             @repo-readme="handleRepoReadme"
             @repo-website="handleRepoWebsite"

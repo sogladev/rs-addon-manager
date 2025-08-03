@@ -1,5 +1,4 @@
 use git2::{FetchOptions, Repository, ResetType};
-use serde::Serialize;
 use std::path::Path;
 use tauri::{AppHandle, Emitter};
 
@@ -50,13 +49,6 @@ pub fn update_addon_repo(path: &str, url: &str, branch: &str) -> Result<(), Stri
         .map_err(|e| format!("Failed to reset repo: {e}"))?;
 
     Ok(())
-}
-
-#[derive(Serialize, Clone)]
-pub struct UpdateKey {
-    url: String,
-    path: String,
-    branch: String,
 }
 
 #[tauri::command]

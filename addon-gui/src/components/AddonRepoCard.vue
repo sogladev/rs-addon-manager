@@ -14,6 +14,7 @@ const emit = defineEmits<{
     'toggle-addon': [addon: Addon]
     'branch-change': [branch: string]
     update: []
+    install: []
     readme: []
     website: []
     repair: []
@@ -32,6 +33,15 @@ function handleBranchChange(e: Event) {
 
 function handleToggleAddon(addon: Addon) {
     emit('toggle-addon', addon)
+}
+
+function handleButtonClick() {
+    // If repo is not installed, emit install event
+    if (!props.repo.repoRef) {
+        emit('install')
+    } else {
+        emit('update')
+    }
 }
 
 // Computed properties for operation state
@@ -151,7 +161,7 @@ const progressPercent = computed(() => {
                         ? 'btn-primary'
                         : 'btn-primary',
                 ]"
-                @click="emit('update')"
+                @click="handleButtonClick"
                 :disabled="buttonDisabled"
             >
                 <span class="relative z-10">{{ buttonText }}</span>

@@ -1,61 +1,40 @@
 use std::path::{Path, PathBuf};
 
-use serde::Serialize;
 use tauri::Emitter;
 
 use crate::{clone, operation_tracker::*, validate};
 
-#[derive(Serialize, Clone)]
-pub struct InstallKey {
-    pub path: String,
-    pub url: String,
-}
-
-#[derive(Debug, Serialize, Clone)]
-pub enum InstallEvent {
-    Progress { current: usize, total: usize },
-    Status(String),
-    Warning(String),
-    Error(String),
-}
-
-#[derive(Serialize, Clone)]
-pub struct InstallEventPayload {
-    pub key: InstallKey,
-    pub event: InstallEvent,
-}
-
 pub struct InstallReporter {
-    pub event: Box<dyn FnMut(InstallEvent) + Send>,
+    pub event: Box<dyn FnMut(OperationEvent) + Send>,
 }
 
 pub fn install_addon<F>(url: String, dir: String, mut reporter: F) -> Result<(), String>
 where
-    F: FnMut(InstallEvent) + Send,
+    F: FnMut(OperationEvent) + Send,
 {
     let dir = Path::new(&dir);
 
-    reporter(InstallEvent::Status(
+    reporter(OperationEvent::Status(
         "Starting addon installation...".to_string(),
     ));
 
     let manager_dir = match validate::ensure_manager_dir(dir) {
         Ok(m) => m,
         Err(e) => {
-            reporter(InstallEvent::Error(format!(
+            reporter(OperationEvent::Error(format!(
                 "Failed to ensure manager dir: {e}"
             )));
             return Err(e);
         }
     };
 
-    reporter(InstallEvent::Status("Cloning repository...".to_string()));
+    reporter(OperationEvent::Status("Cloning repository...".to_string()));
     let repo = match clone::clone_git_repo(&url, manager_dir.clone(), &mut |current, total| {
-        reporter(InstallEvent::Progress { current, total });
+        reporter(OperationEvent::Progress { current, total });
     }) {
         Ok(r) => r,
         Err(e) => {
-            reporter(InstallEvent::Error(format!(
+            reporter(OperationEvent::Error(format!(
                 "Failed to clone repository from {url}: {e}"
             )));
             return Err(format!("Failed to clone repository from {url}: {e}"));
@@ -66,25 +45,25 @@ where
             .expect("Repository has no workdir. It should not be bare"),
     );
 
-    reporter(InstallEvent::Status(
+    reporter(OperationEvent::Status(
         "Discovering sub-addons...".to_string(),
     ));
     let disk_repo = match crate::addon_disk::create_disk_addon_repository(&path) {
         Ok(repo) => repo,
         Err(e) => {
-            reporter(InstallEvent::Error(format!(
+            reporter(OperationEvent::Error(format!(
                 "Failed to discover sub-addons: {e}"
             )));
             return Err(format!("Failed to discover sub-addons: {e}"));
         }
     };
 
-    reporter(InstallEvent::Status(
+    reporter(OperationEvent::Status(
         "Installing sub-addons (symlinking)...".to_string(),
     ));
     install_sub_addons(disk_repo.addons, &path, dir, &mut reporter);
 
-    reporter(InstallEvent::Status(
+    reporter(OperationEvent::Status(
         "Addon installation complete.".to_string(),
     ));
     Ok(())
@@ -96,7 +75,7 @@ pub fn install_sub_addons<F>(
     addons_dir: &Path,
     mut reporter: F,
 ) where
-    F: FnMut(InstallEvent) + Send,
+    F: FnMut(OperationEvent) + Send,
 {
     for addon in addons {
         let symlink_name = &addon.name;
@@ -112,26 +91,26 @@ pub fn install_sub_addons<F>(
                 "Removing existing symlink or directory: {}",
                 symlink_path.display()
             );
-            reporter(InstallEvent::Status(msg.clone()));
+            reporter(OperationEvent::Status(msg.clone()));
             std::fs::remove_file(&symlink_path)
                 .or_else(|_| std::fs::remove_dir_all(&symlink_path))
                 .ok();
         }
 
         if addon.names.len() > 1 {
-            reporter(InstallEvent::Warning(format!(
+            reporter(OperationEvent::Warning(format!(
                 "Multiple possible names for sub-addon '{}': {:?}. Using '{symlink_name}'.",
                 addon.dir, addon.names
             )));
         }
 
-        reporter(InstallEvent::Status(format!(
+        reporter(OperationEvent::Status(format!(
             "Creating symlink for '{symlink_name}': {} -> {}",
             target_dir.display(),
             symlink_path.display()
         )));
         if let Err(e) = crate::symlink::create_symlink(&target_dir, &symlink_path) {
-            reporter(InstallEvent::Error(format!(
+            reporter(OperationEvent::Error(format!(
                 "Failed to create symlink for '{symlink_name}': {} -> {} ({e})",
                 target_dir.display(),
                 symlink_path.display(),
@@ -173,20 +152,11 @@ pub async fn install_addon_cmd(
     // Move the blocking work into spawn_blocking
     let install_result = tauri::async_runtime::spawn_blocking(move || {
         install_addon(url, path, |event| {
-            let operation_event = match event {
-                InstallEvent::Progress { current, total } => {
-                    OperationEvent::Progress { current, total }
-                }
-                InstallEvent::Status(msg) => OperationEvent::Status(msg),
-                InstallEvent::Warning(msg) => OperationEvent::Warning(msg),
-                InstallEvent::Error(msg) => OperationEvent::Error(msg),
-            };
-
             if let Err(e) = app_handle.emit(
                 "operation-event",
                 OperationEventPayload {
                     key: operation_key.clone(),
-                    event: operation_event,
+                    event,
                 },
             ) {
                 eprintln!("Failed to emit operation-event: {e}");
