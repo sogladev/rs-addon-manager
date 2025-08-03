@@ -11,6 +11,14 @@ pub struct AppState {
     disk_state: RwLock<HashMap<String, DiskAddOnsFolder>>,
 }
 
+impl AppState {
+    pub fn get_disk_state(
+        &self,
+    ) -> Result<std::sync::RwLockReadGuard<HashMap<String, DiskAddOnsFolder>>, String> {
+        self.disk_state.read().map_err(|e| e.to_string())
+    }
+}
+
 impl Default for AppState {
     fn default() -> Self {
         AppState {

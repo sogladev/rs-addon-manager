@@ -10,14 +10,12 @@ import type { Addon } from '@bindings/Addon'
 
 import { useAddonData } from '@/composables/useAddonData'
 import AddonToolbar from '@/components/AddonToolbar.vue'
-import InstallStatusBar from '@/components/InstallStatusBar.vue'
 import AddonCloneModal from '@/components/AddonCloneModal.vue'
 import AddonFolderList from '@/components/AddonFolderList.vue'
 import DeleteFolderModal from '@/components/DeleteFolderModal.vue'
 import DeleteAddonModal from '@/components/DeleteAddonModal.vue'
 
-const { addonFolders, folderPaths, installStatus, refreshAddonData } =
-    useAddonData()
+const { addonFolders, folderPaths, refreshAddonData } = useAddonData()
 
 const showAddModal = ref(false)
 const search = ref('')
@@ -117,8 +115,13 @@ function handleBranchChange(repo: AddonRepository, branch: string) {
     console.log('Branch change requested:', branch, 'for repo:', repo.repoUrl)
 }
 
-function handleUpdateRepo(repo: AddonRepository) {
-    console.log('Update clicked', repo)
+function handleUpdateRepo(folderPath: string, addon: AddonRepository) {
+    console.log('Update clicked', addon, folderPath)
+    invoke('update_addon_cmd', {
+        url: addon.repoUrl,
+        path: folderPath,
+        branch: addon.currentBranch,
+    })
 }
 
 function handleRepoReadme(repo: AddonRepository) {
@@ -132,6 +135,16 @@ function handleRepoWebsite(repo: AddonRepository) {
 function handleRepoRepair(repo: AddonRepository) {
     console.log('Repair clicked', repo)
 }
+
+async function handleUpdateAll() {
+    console.log('Update all clicked')
+    try {
+        await invoke('update_all_addons_cmd')
+        console.log('Update all completed')
+    } catch (error) {
+        console.error('Update all failed:', error)
+    }
+}
 </script>
 
 <template>
@@ -139,7 +152,7 @@ function handleRepoRepair(repo: AddonRepository) {
     <div class="flex flex-col h-full">
         <AddonToolbar
             v-model:search="search"
-            @update-all="console.log('Update all clicked')"
+            @update-all="handleUpdateAll"
             @refresh="refreshAddonData"
             @add-addon="showAddModal = true"
         />

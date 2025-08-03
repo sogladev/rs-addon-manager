@@ -18,7 +18,7 @@ const emit = defineEmits<{
     'delete-addon': [folderPath: string, addon: AddonRepository]
     'toggle-addon': [repo: AddonRepository, addon: Addon]
     'branch-change': [repo: AddonRepository, branch: string]
-    'update-repo': [repo: AddonRepository]
+    'update-repo': [folderPath: string, repo: AddonRepository]
     'repo-readme': [repo: AddonRepository]
     'repo-website': [repo: AddonRepository]
     'repo-repair': [repo: AddonRepository]
@@ -53,8 +53,8 @@ function handleBranchChange(repo: AddonRepository, branch: string) {
     emit('branch-change', repo, branch)
 }
 
-function handleUpdateRepo(repo: AddonRepository) {
-    emit('update-repo', repo)
+function handleUpdateRepo(repo: AddonRepository, folderPath: string) {
+    emit('update-repo', folderPath, repo)
 }
 
 function handleRepoReadme(repo: AddonRepository) {
@@ -90,9 +90,10 @@ function handleDeleteAddon(repo: AddonRepository, folderPath: string) {
                     v-for="repo in folder.repositories"
                     :key="repo.repoUrl + (repo.currentBranch || '')"
                     :repo="repo"
+                    :folderPath="folder.path"
                     @toggle-addon="handleToggleAddon(repo, $event)"
                     @branch-change="handleBranchChange(repo, $event)"
-                    @update="handleUpdateRepo(repo)"
+                    @update="handleUpdateRepo(repo, folder.path)"
                     @readme="handleRepoReadme(repo)"
                     @website="handleRepoWebsite(repo)"
                     @repair="handleRepoRepair(repo)"

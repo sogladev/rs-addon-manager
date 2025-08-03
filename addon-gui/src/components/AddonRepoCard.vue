@@ -7,6 +7,7 @@ import { ref, onMounted, computed } from 'vue'
 
 const props = defineProps<{
     repo: AddonRepository & { latestRef?: string | null }
+    folderPath: string
 }>()
 const emit = defineEmits<{
     'toggle-addon': [addon: Addon]
@@ -55,7 +56,7 @@ const updateAvailable = computed(() => {
             <span class="text-xs text-base-content/60">{{ repo.owner }}</span>
             <span v-if="repo.repoRef" class="text-xs text-base-content/50">
                 Installed: {{ repo.repoRef }}
-                <span v-if="updateAvailable" class="badge badge-warning ml-2"
+                <span v-if="updateAvailable" class="badge badge-primary ml-2"
                     >Update available</span
                 >
             </span>
@@ -102,7 +103,7 @@ const updateAvailable = computed(() => {
             <button
                 :class="[
                     'btn btn-sm relative overflow-hidden w-20',
-                    updateAvailable ? 'btn-warning' : 'btn-primary',
+                    updateAvailable ? 'btn-primary' : 'btn-primary',
                 ]"
                 @click="emit('update')"
                 :disabled="isUpdating || !updateAvailable"
@@ -112,7 +113,8 @@ const updateAvailable = computed(() => {
                         ? 'Updating...'
                         : updateAvailable
                           ? 'Update'
-                          : 'Up to date'
+                          : //   : 'Up to date'
+                            'Update'
                 }}</span>
                 <div
                     v-if="isUpdating"

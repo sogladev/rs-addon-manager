@@ -66,6 +66,12 @@ export function useAddonData() {
         // Listen for addon data updates
         listen('addon-data-updated', refreshAddonData)
 
+        // Listen for update-all completion
+        listen<string>('update-all-complete', ({ payload }) => {
+            console.log('Update all completed:', payload)
+            // You can add toast notifications here later
+        })
+
         // Load initial addon data from backend
         await refreshAddonData()
     })

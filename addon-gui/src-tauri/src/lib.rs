@@ -7,6 +7,7 @@ pub mod remove;
 pub mod symlink;
 #[cfg(test)]
 pub mod test_utils;
+pub mod update;
 pub mod validate;
 pub mod view_models;
 
@@ -23,6 +24,8 @@ pub fn run() {
             validate::is_valid_addons_folder_str,
             install::install_addon_cmd,
             remove::delete_addon_cmd,
+            update::update_addon_cmd,
+            update::update_all_addons_cmd,
             addon_discovery::refresh_addon_data,
             addon_store::add_addon_directory,
             addon_store::delete_addon_directory
