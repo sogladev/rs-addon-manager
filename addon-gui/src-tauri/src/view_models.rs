@@ -9,6 +9,7 @@ pub struct Addon {
     pub dir: String,
     pub names: Vec<String>,
     pub is_symlinked: bool,
+    pub notes: Option<String>,
 
     // user overrides:
     pub custom_name: Option<String>,

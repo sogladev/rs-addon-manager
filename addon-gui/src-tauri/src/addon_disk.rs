@@ -107,6 +107,7 @@ pub struct DiskAddon {
     pub dir: String,
     pub names: Vec<String>,
     pub is_symlinked: bool, // true is symlink exists in AddOns
+    pub notes: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, TS)]
@@ -308,6 +309,17 @@ fn get_branch_names(repo: &git2::Repository) -> Vec<String> {
 
 /// Finds all sub-addons by searching for .toc files in the root directory and immediate subdirectories only
 pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<DiskAddon>, String> {
+    // Helper to extract notes from a .toc file
+    fn extract_notes(toc_path: &std::path::Path) -> Option<String> {
+        if let Ok(content) = std::fs::read_to_string(toc_path) {
+            for line in content.lines() {
+                if let Some(rest) = line.strip_prefix("## Notes:") {
+                    return Some(rest.trim().to_string());
+                }
+            }
+        }
+        None
+    }
     let mut sub_addons = Vec::new();
 
     // Helper to process a directory and collect .toc files
@@ -349,11 +361,15 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<DiskAddon>, String> {
     if !toc_files.is_empty() {
         let names = names_from_toc_files(&toc_files);
         let name = longest_string(&names);
+        // Extract notes from the first .toc file in root
+        let primary_toc = path.join(&toc_files[0]);
+        let notes = extract_notes(&primary_toc);
         sub_addons.push(DiskAddon {
             dir: ".".to_string(),
             names,
             name,
             is_symlinked: false, // Will be updated by check_addon_symlinks
+            notes,
         });
     }
 
@@ -376,11 +392,17 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<DiskAddon>, String> {
                     .unwrap_or_default()
                     .to_string_lossy()
                     .to_string();
-                Some(DiskAddon {
-                    dir: dir_name,
-                    names,
-                    name,
-                    is_symlinked: false, // Will be updated by check_addon_symlinks
+                Some({
+                    // Extract notes from the first .toc file in this subdirectory
+                    let toc_full = sub_path.join(&toc_files[0]);
+                    let notes = extract_notes(&toc_full);
+                    DiskAddon {
+                        dir: dir_name,
+                        names,
+                        name,
+                        is_symlinked: false, // Will be updated by check_addon_symlinks
+                        notes,
+                    }
                 })
             }),
     );

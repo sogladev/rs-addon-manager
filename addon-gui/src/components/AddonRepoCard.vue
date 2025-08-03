@@ -2,7 +2,7 @@
 import type { AddonRepository } from '@bindings/AddonRepository'
 import type { Addon } from '@bindings/Addon'
 import { Ellipsis } from 'lucide-vue-next'
-import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next'
+import { FileText, Globe, Wrench, Trash2, Info } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 import { useOperationTracker } from '@/composables/useOperationTracker'
 import { invoke } from '@tauri-apps/api/core'
@@ -206,7 +206,7 @@ const progressPercent = computed(() => {
         <div class="flex flex-1 flex-col gap-1 p-2">
             <span class="font-semibold">{{ repo.repoName }}</span>
             <span class="text-xs text-base-content/60">{{ repo.owner }}</span>
-            <div v-if="repo.addons && repo.addons.length" class="mt-1">
+            <div v-if="repo.addons && repo.addons.length">
                 <ul class="ml-2 flex flex-col gap-1">
                     <li
                         v-for="addon in repo.addons"
@@ -219,8 +219,18 @@ const progressPercent = computed(() => {
                             v-model="addon.isSymlinked"
                             @change="handleToggleAddon(addon)"
                         />
-                        <span class="font-mono text-xs">{{ addon.name }}</span>
-                        <!-- <span v-if="!addon.isSymlinked" class="badge badge-xs badge-error" > disabled </span> -->
+                        <span class="font-mono text-xs flex items-center gap-1">
+                            {{ addon.name }}
+                            <span v-if="addon.notes" class="relative group">
+                                <Info class="w-4 h-4 cursor-pointer" />
+                                <span
+                                    class="absolute left-5 top-0 z-50 hidden group-hover:block text-xs rounded shadow p-3 min-w-[220px] max-w-md whitespace-pre-line bg-base-200 backdrop-blur border border-base-content/20"
+                                    style="white-space: pre-line"
+                                >
+                                    {{ addon.notes }}
+                                </span>
+                            </span>
+                        </span>
                     </li>
                 </ul>
             </div>

@@ -92,6 +92,7 @@ pub fn refresh_addon_data(
                                 name: disk_addon.name.clone(),
                                 names: disk_addon.names,
                                 dir: disk_addon.dir,
+                                notes: disk_addon.notes,
                                 is_symlinked: disk_addon.is_symlinked,
                                 custom_name: user_addon.and_then(|m| m.name.clone()),
                             }
@@ -181,6 +182,7 @@ pub fn refresh_disk_data(
                                 names: disk_addon.names,
                                 dir: disk_addon.dir,
                                 is_symlinked: disk_addon.is_symlinked,
+                                notes: disk_addon.notes,
                                 custom_name: user_addon.and_then(|m| m.name.clone()),
                             }
                         })

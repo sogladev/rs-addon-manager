@@ -5,5 +5,6 @@ export type Addon = {
     dir: string
     names: Array<string>
     isSymlinked: boolean
+    notes: string | null
     customName: string | null
 }

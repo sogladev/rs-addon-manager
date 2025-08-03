@@ -340,6 +340,7 @@ mod tests {
             dir: "SubAddonDir".to_string(),
             names: vec!["TestSymlink".to_string()],
             is_symlinked: false,
+            notes: None,
         };
 
         println!("Before install_sub_addons:");
