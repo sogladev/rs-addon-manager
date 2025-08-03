@@ -6,6 +6,7 @@ import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 import { useOperationTracker } from '@/composables/useOperationTracker'
 import { invoke } from '@tauri-apps/api/core'
+import { join } from '@tauri-apps/api/path'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { readTextFile } from '@tauri-apps/plugin-fs'
 import { marked } from 'marked'
@@ -59,10 +60,14 @@ function handleButtonClick() {
 }
 
 async function handleReadme() {
-    const basePath = `${props.folderPath}/${props.repo.repoName}`
+    const basePath = await join(
+        props.folderPath,
+        '.addonmanager',
+        props.repo.repoName
+    )
     const readmePaths = [
-        `${basePath}/README.md`,
-        `${basePath}/.github/README.md`,
+        await join(basePath, 'README.md'),
+        await join(basePath, '.github', 'README.md'),
     ]
     let content = ''
 
