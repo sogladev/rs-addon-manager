@@ -6,10 +6,10 @@ import {
     Trash2,
     MessageSquareWarning,
 } from 'lucide-vue-next'
+import TimeoutButton from '@/components/TimeoutButton.vue'
 
 const props = defineProps({
     path: { type: String, required: true },
-    isOpening: { type: Boolean, default: false },
     isValid: { type: Boolean, default: true },
 })
 const emit = defineEmits(['open-folder', 'delete-folder'])
@@ -48,17 +48,12 @@ function onOpenFolder() {
                 </span>
                 {{ path }}
             </span>
-            <button
-                class="btn btn-ghost btn-sm"
-                :disabled="isOpening"
-                @click.stop="onOpenFolder"
-            >
+            <TimeoutButton class="btn btn-ghost btn-sm" @click="onOpenFolder">
                 <FolderOpen class="w-5 h-5" />
-            </button>
+            </TimeoutButton>
 
             <button
                 class="btn btn-ghost btn-sm"
-                :disabled="isOpening"
                 @click.stop="() => emit('delete-folder', path)"
             >
                 <Trash2 class="w-5 h-5" />

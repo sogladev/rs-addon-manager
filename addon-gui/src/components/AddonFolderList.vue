@@ -9,7 +9,6 @@ import AddonRepoCard from '@/components/AddonRepoCard.vue'
 const props = defineProps<{
     folders: AddOnsFolder[]
     search: string
-    isOpening: boolean
 }>()
 
 const emit = defineEmits<{
@@ -93,7 +92,6 @@ function handleDeleteAddon(repo: AddonRepository, folderPath: string) {
             v-for="folder in filteredFolders"
             :key="folder.path"
             :path="folder.path"
-            :isOpening="isOpening"
             :isValid="folder.isValid"
             @open-folder="emit('open-folder', $event)"
             @delete-folder="emit('delete-folder', $event)"

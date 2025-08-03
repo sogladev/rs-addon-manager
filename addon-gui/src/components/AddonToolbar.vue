@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { Plus } from 'lucide-vue-next'
+import TimeoutButton from '@/components/TimeoutButton.vue'
 
 defineProps<{
     search: string
+    hasUpdates: boolean
 }>()
 
 const emit = defineEmits<{
@@ -29,12 +31,22 @@ const emit = defineEmits<{
         <div
             class="flex flex-wrap items-center gap-2 bg-base-200 pb-2 pt-2 px-2"
         >
-            <button class="btn btn-primary" @click="emit('update-all')">
-                Update All
-            </button>
-            <button class="btn btn-secondary" @click="emit('refresh')">
+            <TimeoutButton
+                :timeout="5000"
+                class="btn btn-primary w-40"
+                :disabled="!hasUpdates"
+                @click="emit('update-all')"
+            >
+                <span v-if="hasUpdates">Update All</span>
+                <span v-else>Up-to-date</span>
+            </TimeoutButton>
+            <TimeoutButton
+                :timeout="2000"
+                class="btn btn-secondary"
+                @click="emit('refresh')"
+            >
                 Check for Updates
-            </button>
+            </TimeoutButton>
             <input
                 :value="search"
                 @input="
@@ -47,7 +59,7 @@ const emit = defineEmits<{
                 placeholder="Search installed addons..."
                 type="search"
             />
-            <button class="btn btn-accent ml-2" @click="emit('add-addon')">
+            <button class="btn btn-accent ml-2 w-40" @click="emit('add-addon')">
                 <Plus />
                 Add addon
             </button>

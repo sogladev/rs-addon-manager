@@ -3,9 +3,8 @@ import type { AddonRepository } from '@bindings/AddonRepository'
 import type { Addon } from '@bindings/Addon'
 import { Ellipsis } from 'lucide-vue-next'
 import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useOperationTracker } from '@/composables/useOperationTracker'
-import type { OperationType } from '@bindings/OperationType'
 import { invoke } from '@tauri-apps/api/core'
 
 const props = defineProps<{
@@ -25,13 +24,6 @@ const emit = defineEmits<{
 
 const { isOperationActive, getOperationType, getProgress } =
     useOperationTracker()
-
-function handleBranchChange(e: Event) {
-    const target = e.target as HTMLSelectElement | null
-    if (!target) return
-    const newBranch = target.value
-    emit('branch-change', newBranch)
-}
 
 function handleToggleAddon(addon: Addon) {
     emit('toggle-addon', addon)
@@ -61,6 +53,19 @@ function handleButtonClick() {
 }
 
 // Computed properties for operation state
+// Track selected branch and detect if changed from original
+const selectedBranch = ref(props.repo.currentBranch)
+const branchChanged = ref(false)
+// Reset branchChanged when repo.currentBranch prop updates
+watch(
+    () => props.repo.currentBranch,
+    (newBranch) => {
+        selectedBranch.value = newBranch
+        branchChanged.value = false
+    }
+)
+
+// Computed properties for operation state
 const isOperating = computed(() =>
     isOperationActive(props.repo.repoUrl, props.folderPath)
 )
@@ -73,7 +78,19 @@ const operationProgress = computed(() =>
     getProgress(props.repo.repoUrl, props.folderPath)
 )
 
+function handleBranchChange(e: Event) {
+    const target = e.target as HTMLSelectElement | null
+    if (!target) return
+    const newBranch = target.value
+    selectedBranch.value = newBranch
+    // Enable update only when new branch differs from disk state
+    branchChanged.value = newBranch !== props.repo.currentBranch
+    emit('branch-change', newBranch)
+}
+
 const updateAvailable = computed(() => {
+    // If branch was changed, always show update available
+    if (branchChanged.value) return true
     return props.repo.latestRef && props.repo.repoRef !== props.repo.latestRef
 })
 
@@ -109,6 +126,9 @@ const buttonDisabled = computed(() => {
 
     // If not installed, always allow install
     if (!props.repo.repoRef) return false
+
+    // If branch was changed, always enable update
+    if (branchChanged.value) return false
 
     // If installed, only allow update if update is available
     return !updateAvailable.value
@@ -154,7 +174,7 @@ const progressPercent = computed(() => {
             <div class="w-40">
                 <select
                     class="select select-bordered select-sm w-full truncate"
-                    :value="repo.currentBranch"
+                    v-model="selectedBranch"
                     @change="handleBranchChange"
                 >
                     <option

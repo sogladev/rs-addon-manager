@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { revealItemInDir } from '@tauri-apps/plugin-opener'
 import { open } from '@tauri-apps/plugin-dialog'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useTimeoutFn } from '@vueuse/core'
 import { invoke } from '@tauri-apps/api/core'
 
@@ -39,16 +39,8 @@ const addAddonDirectory = async () => {
     }
 }
 
-const isOpening = ref(false)
-
-const FOLDER_REVEAL_TIMEOUT_IN_MS = 800
 function handleOpenPath(path: string) {
-    if (isOpening.value) return
-    isOpening.value = true
     revealItemInDir(path)
-    useTimeoutFn(() => {
-        isOpening.value = false
-    }, FOLDER_REVEAL_TIMEOUT_IN_MS)
 }
 
 // Modal state
@@ -154,6 +146,14 @@ async function handleUpdateAll() {
         console.error('Update all failed:', error)
     }
 }
+
+const hasUpdates = computed(() =>
+    addonFolders.value.some((folder) =>
+        folder.repositories.some(
+            (repo) => repo.latestRef && repo.repoRef !== repo.latestRef
+        )
+    )
+)
 </script>
 
 <template>
@@ -161,6 +161,7 @@ async function handleUpdateAll() {
     <div class="flex flex-col h-full">
         <AddonToolbar
             v-model:search="search"
+            :hasUpdates="hasUpdates"
             @update-all="handleUpdateAll"
             @refresh="refreshAddonData"
             @add-addon="showAddModal = true"
@@ -191,7 +192,6 @@ async function handleUpdateAll() {
         <AddonFolderList
             :folders="addonFolders"
             :search="search"
-            :isOpening="isOpening"
             @open-folder="handleOpenPath"
             @delete-folder="requestDeleteAddonDirectory"
             @delete-addon="requestAddonDeletion"
