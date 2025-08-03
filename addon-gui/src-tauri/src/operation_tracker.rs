@@ -1,14 +1,20 @@
-use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-#[derive(Debug, Serialize, Clone)]
+use serde::Serialize;
+use ts_rs::TS;
+
+#[derive(Debug, Serialize, Clone, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub enum OperationType {
     Install,
     Update,
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Clone, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub enum OperationEvent {
     Started { operation: OperationType },
     Progress { current: usize, total: usize },
@@ -18,7 +24,9 @@ pub enum OperationEvent {
     Completed,
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Clone, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct OperationKey {
     pub repo_url: String,
     pub folder_path: String,
@@ -38,7 +46,9 @@ impl OperationKey {
     }
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Clone, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct OperationEventPayload {
     pub key: OperationKey,
     pub event: OperationEvent,
