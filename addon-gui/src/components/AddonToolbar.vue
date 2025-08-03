@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { Menu, Copy, Download, Save } from 'lucide-vue-next'
+import {
+    Menu,
+    Copy,
+    Save,
+    Info,
+    Import,
+    ArrowRightFromLine,
+} from 'lucide-vue-next'
 import TimeoutButton from '@/components/TimeoutButton.vue'
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
@@ -26,6 +33,7 @@ const showImport = ref(false)
 const importText = ref('')
 const showExport = ref(false)
 const exportText = ref('')
+const showAbout = ref(false)
 
 function confirmImport() {
     // Each line: <path> <addonName> *<gitUrl> <branch>
@@ -108,7 +116,7 @@ const saveToFile = async () => {
             defaultPath: 'addons-export.txt',
         })
         if (path) {
-            await writeTextFile({ path, contents: exportText.value })
+            await writeTextFile(path, exportText.value)
         }
         showExport.value = false
     } catch (err) {
@@ -164,18 +172,31 @@ const saveToFile = async () => {
                     class="dropdown-content menu shadow bg-base-100 rounded-box w-52"
                 >
                     <li>
-                        <button @click="showImport = true">Import</button>
-                    </li>
-                    <li>
-                        <button @click="handleExport">Export</button>
-                    </li>
-                    <li>
-                        <a
-                            href="https://github.com/sogladev/rs-game-launcher"
-                            target="_blank"
+                        <button
+                            @click="showImport = true"
+                            class="flex items-center gap-2"
                         >
+                            <Import class="w-4 h-4" />
+                            Import
+                        </button>
+                    </li>
+                    <li>
+                        <button
+                            @click="handleExport"
+                            class="flex items-center gap-2"
+                        >
+                            <ArrowRightFromLine class="w-4 h-4" />
+                            Export
+                        </button>
+                    </li>
+                    <li>
+                        <button
+                            @click="showAbout = true"
+                            class="flex items-center gap-2"
+                        >
+                            <Info class="w-4 h-4" />
                             About
-                        </a>
+                        </button>
                     </li>
                 </ul>
             </div>
@@ -237,6 +258,44 @@ const saveToFile = async () => {
                     class="btn btn-outline"
                     @click.prevent="showExport = false"
                 >
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- About Modal -->
+    <div
+        v-if="showAbout"
+        class="modal modal-open"
+        @click.self="showAbout = false"
+    >
+        <div class="modal-box max-w-md">
+            <h3 class="font-bold text-lg flex items-center gap-2">
+                <Info class="w-6 h-6" />
+                About
+            </h3>
+            <p class="mt-4">Addon manager using git for version control</p>
+            <p class="mt-4">
+                Source:
+                <a
+                    href="https://github.com/sogladev/rs-game-launcher"
+                    target="_blank"
+                    class="link link-primary"
+                >
+                    https://github.com/sogladev/rs-game-launcher
+                </a>
+            </p>
+            <p class="mt-4">
+                Author:
+                <a
+                    href="https://github.com/sogladev"
+                    target="_blank"
+                    class="link link-primary"
+                    >Sogladev</a
+                >
+            </p>
+            <div class="modal-action">
+                <button class="btn btn-primary" @click="showAbout = false">
                     Close
                 </button>
             </div>

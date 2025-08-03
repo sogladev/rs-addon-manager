@@ -2,7 +2,7 @@
 import type { AddonRepository } from '@bindings/AddonRepository'
 import type { Addon } from '@bindings/Addon'
 import { Ellipsis } from 'lucide-vue-next'
-import { FileText, Globe, Wrench, Trash2, Info } from 'lucide-vue-next'
+import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 import { useOperationTracker } from '@/composables/useOperationTracker'
 import { invoke } from '@tauri-apps/api/core'
@@ -22,6 +22,24 @@ const emit = defineEmits<{
 
 const showReadmeModal = ref(false)
 const readmeHtml = ref('')
+
+function handleReadmeLinks(e: MouseEvent) {
+    const target = e.target as HTMLElement | null
+    if (!target) return
+    // Only handle anchor tags
+    if (target.tagName === 'A') {
+        const href = (target as HTMLAnchorElement).getAttribute('href')
+        if (href && !href.startsWith('#')) {
+            e.preventDefault()
+            open(href)
+        }
+    }
+}
+function handleWebsite() {
+    const url = props.repo.repoUrl.replace(/\.git$/, '')
+    console.log('Open website', url)
+    openUrl(url)
+}
 
 const { isOperationActive, getOperationType, getProgress } =
     useOperationTracker()
@@ -94,12 +112,6 @@ async function handleReadme() {
 function closeReadmeModal() {
     showReadmeModal.value = false
     readmeHtml.value = ''
-}
-
-function handleWebsite() {
-    const url = props.repo.repoUrl.replace(/\.git$/, '')
-    console.log('Open website', url)
-    openUrl(url)
 }
 
 function handleRepair() {
@@ -219,17 +231,16 @@ const progressPercent = computed(() => {
                             v-model="addon.isSymlinked"
                             @change="handleToggleAddon(addon)"
                         />
-                        <span class="font-mono text-xs flex items-center gap-1">
+                        <span
+                            class="font-mono text-xs flex items-center gap-1"
+                            :class="
+                                addon.notes
+                                    ? 'tooltip tooltip-right cursor-pointer'
+                                    : ''
+                            "
+                            :data-tip="addon.notes || undefined"
+                        >
                             {{ addon.name }}
-                            <span v-if="addon.notes" class="relative group">
-                                <Info class="w-4 h-4 cursor-pointer" />
-                                <span
-                                    class="absolute left-5 top-0 z-50 hidden group-hover:block text-xs rounded shadow p-3 min-w-[220px] max-w-md whitespace-pre-line bg-base-200 backdrop-blur border border-base-content/20"
-                                    style="white-space: pre-line"
-                                >
-                                    {{ addon.notes }}
-                                </span>
-                            </span>
                         </span>
                     </li>
                 </ul>
@@ -326,7 +337,11 @@ const progressPercent = computed(() => {
             >
                 ✕
             </button>
-            <div class="prose max-w-none" v-html="readmeHtml"></div>
+            <div
+                class="prose max-w-none"
+                v-html="readmeHtml"
+                @click="handleReadmeLinks"
+            ></div>
         </div>
         <div class="modal-backdrop" @click="closeReadmeModal"></div>
     </div>
