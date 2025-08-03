@@ -82,7 +82,7 @@ async function confirmDeleteAddonDirectory() {
 async function confirmAddonDelete() {
     if (folderOfAddonToDelete.value && addonToDelete.value) {
         try {
-            await invoke('delete_addon', {
+            await invoke('delete_addon_cmd', {
                 path: folderOfAddonToDelete.value,
                 url: addonToDelete.value.repoUrl,
             })

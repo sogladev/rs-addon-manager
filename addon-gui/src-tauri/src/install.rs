@@ -182,39 +182,11 @@ pub async fn install_addon_cmd(
 
 #[cfg(test)]
 mod tests {
-    use crate::validate;
     use std::fs;
 
     use super::*;
-    use tempfile::tempdir;
-
-    /// Helper to create Interface/AddOns structure in a temp dir
-    fn setup_addons_dir() -> (tempfile::TempDir, std::path::PathBuf) {
-        let temp = tempdir().unwrap();
-        let interface_dir = temp.path().join("Interface");
-        let addons_dir = interface_dir.join("AddOns");
-        std::fs::create_dir_all(&addons_dir).unwrap();
-        assert!(
-            interface_dir.exists() && interface_dir.is_dir(),
-            "Interface directory was not created"
-        );
-        assert!(
-            addons_dir.exists() && addons_dir.is_dir(),
-            "AddOns directory was not created"
-        );
-        (temp, addons_dir)
-    }
-
-    /// Helper to print a directory tree using the `tree` command
-    fn print_dir_tree(path: &str) {
-        println!("Directory tree under {path}:");
-        let output = std::process::Command::new("tree")
-            .arg("-a") // include hidden files
-            .arg(path)
-            .output()
-            .expect("failed to execute tree");
-        println!("{}", String::from_utf8_lossy(&output.stdout));
-    }
+    use crate::test_utils::{print_dir_tree, setup_addons_dir};
+    use crate::validate;
 
     #[test]
     fn test_install_clone() {
