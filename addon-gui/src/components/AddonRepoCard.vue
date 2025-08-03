@@ -5,6 +5,7 @@ import { Ellipsis } from 'lucide-vue-next'
 import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useOperationTracker } from '@/composables/useOperationTracker'
+import type { OperationType } from '@bindings/OperationType'
 
 const props = defineProps<{
     repo: AddonRepository & { latestRef?: string | null }
@@ -64,12 +65,14 @@ const updateAvailable = computed(() => {
 // Computed button text and state
 const buttonText = computed(() => {
     if (isOperating.value) {
-        if (operationType.value === 'Install') {
-            return 'Installing...'
-        } else if (operationType.value === 'Update') {
-            return 'Updating...'
+        switch (operationType.value) {
+            case 'update':
+                return 'Updating...'
+            case 'install':
+                return 'Installing...'
+            default:
+                return 'Processing...'
         }
-        return 'Processing...'
     }
 
     // If repo is not installed (no repoRef), show Install
