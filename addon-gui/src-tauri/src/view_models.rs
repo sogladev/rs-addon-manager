@@ -11,7 +11,6 @@ pub struct Addon {
     pub is_symlinked: bool,
 
     // user overrides:
-    pub enabled: bool,
     pub custom_name: Option<String>,
 }
 

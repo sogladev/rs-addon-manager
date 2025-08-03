@@ -107,7 +107,7 @@ function cancelAddonDelete() {
 // Event handlers
 function handleToggleAddon(repo: AddonRepository, addon: Addon) {
     console.log(
-        `Toggled subAddon ${addon.name} enabled: ${addon.enabled} in repo ${repo.repoName}`
+        `Toggled subAddon ${addon.name} enabled: ${addon.isSymlinked} in repo ${repo.repoName}`
     )
 }
 

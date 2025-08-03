@@ -127,12 +127,12 @@ const progressPercent = computed(() => {
                         <input
                             type="checkbox"
                             class="checkbox checkbox-sm"
-                            v-model="addon.enabled"
+                            v-model="addon.isSymlinked"
                             @change="handleToggleAddon(addon)"
                         />
                         <span class="font-mono text-xs">{{ addon.name }}</span>
                         <span
-                            v-if="!addon.enabled"
+                            v-if="!addon.isSymlinked"
                             class="badge badge-xs badge-error"
                         >
                             disabled

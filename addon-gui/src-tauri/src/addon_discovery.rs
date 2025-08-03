@@ -93,7 +93,6 @@ pub fn refresh_addon_data(
                                 names: disk_addon.names,
                                 dir: disk_addon.dir,
                                 is_symlinked: disk_addon.is_symlinked,
-                                enabled: user_addon.map(|m| m.enabled).unwrap_or(true),
                                 custom_name: user_addon.and_then(|m| m.name.clone()),
                             }
                         })
@@ -182,7 +181,6 @@ pub fn refresh_disk_data(
                                 names: disk_addon.names,
                                 dir: disk_addon.dir,
                                 is_symlinked: disk_addon.is_symlinked,
-                                enabled: user_addon.map(|m| m.enabled).unwrap_or(true),
                                 custom_name: user_addon.and_then(|m| m.name.clone()),
                             }
                         })
