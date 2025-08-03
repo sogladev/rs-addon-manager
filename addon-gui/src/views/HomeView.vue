@@ -179,8 +179,6 @@ const outOfDateCount = computed(() =>
             @add-addon="showAddModal = true"
         />
 
-        <!-- <InstallStatusBar :installStatus="installStatus" /> -->
-
         <AddonCloneModal
             v-model:open="showAddModal"
             :folderPaths="folderPaths"

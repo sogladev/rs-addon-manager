@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Plus, Menu } from 'lucide-vue-next'
+import { Menu } from 'lucide-vue-next'
 import TimeoutButton from '@/components/TimeoutButton.vue'
 import { ref } from 'vue'
 
@@ -21,12 +21,6 @@ const showImportExport = ref(false)
 
 <template>
     <div class="sticky top-0 z-10 bg-base-200 flex flex-col gap-0">
-        <!--     <div class="tabs tabs-box tabs-sm w-full justify-center gap-4">
-  <button class="tab" :class="{ 'tab-active': activeTab === 'addons' }" @click="activeTab = 'addons'">Addons</button>
-  <button class="tab" :class="{ 'tab-active': activeTab === 'about' }" @click="activeTab = 'about'">About</button>
-  <button class="tab" :class="{ 'tab-active': activeTab === 'config' }" @click="activeTab = 'config'">Config</button>
-< /div>-->
-
         <div
             class="flex flex-wrap items-center gap-2 bg-base-200 pb-2 pt-2 px-2"
         >
