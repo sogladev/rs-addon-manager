@@ -17,11 +17,6 @@ const emit = defineEmits<{
     'delete-addon': [folderPath: string, addon: AddonRepository]
     'toggle-addon': [repo: AddonRepository, addon: Addon]
     'branch-change': [repo: AddonRepository, branch: string]
-    'install-repo': [folderPath: string, repo: AddonRepository]
-    'update-repo': [folderPath: string, repo: AddonRepository]
-    'repo-readme': [repo: AddonRepository]
-    'repo-website': [repo: AddonRepository]
-    'repo-repair': [repo: AddonRepository]
     'add-directory': []
 }>()
 
@@ -61,26 +56,6 @@ function handleBranchChange(repo: AddonRepository, branch: string) {
     emit('branch-change', repo, branch)
 }
 
-function handleInstallRepo(repo: AddonRepository, folderPath: string) {
-    emit('install-repo', folderPath, repo)
-}
-
-function handleUpdateRepo(repo: AddonRepository, folderPath: string) {
-    emit('update-repo', folderPath, repo)
-}
-
-function handleRepoReadme(repo: AddonRepository) {
-    emit('repo-readme', repo)
-}
-
-function handleRepoWebsite(repo: AddonRepository) {
-    emit('repo-website', repo)
-}
-
-function handleRepoRepair(repo: AddonRepository) {
-    emit('repo-repair', repo)
-}
-
 function handleDeleteAddon(repo: AddonRepository, folderPath: string) {
     emit('delete-addon', folderPath, repo)
 }
@@ -104,11 +79,6 @@ function handleDeleteAddon(repo: AddonRepository, folderPath: string) {
                     :folderPath="folder.path"
                     @toggle-addon="handleToggleAddon(repo, $event)"
                     @branch-change="handleBranchChange(repo, $event)"
-                    @install="handleInstallRepo(repo, folder.path)"
-                    @update="handleUpdateRepo(repo, folder.path)"
-                    @readme="handleRepoReadme(repo)"
-                    @website="handleRepoWebsite(repo)"
-                    @repair="handleRepoRepair(repo)"
                     @delete="handleDeleteAddon(repo, folder.path)"
                 />
             </div>

@@ -5,7 +5,6 @@ import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 
 import type { AddonRepository } from '@bindings/AddonRepository'
-import type { Addon } from '@bindings/Addon'
 
 import { useAddonData } from '@/composables/useAddonData'
 import AddonToolbar from '@/components/AddonToolbar.vue'
@@ -95,15 +94,6 @@ function cancelAddonDelete() {
     folderOfAddonToDelete.value = null
 }
 
-// Event handlers
-// TODO: Implement actual functionality for these handlers
-function handleToggleAddon(repo: AddonRepository, addon: Addon) {
-    console.log(
-        `Toggled subAddon ${addon.name} enabled: ${addon.isSymlinked} in repo ${repo.repoName}`
-    )
-    // TODO: Implement symlink toggling logic
-}
-
 function handleBranchChange(repo: AddonRepository, branch: string) {
     console.log('Branch change requested:', branch, 'for repo:', repo.repoUrl)
     // TODO: Implement branch switching logic
@@ -116,30 +106,6 @@ function handleUpdateRepo(folderPath: string, addon: AddonRepository) {
         path: folderPath,
         branch: addon.currentBranch,
     })
-}
-
-function handleInstallRepo(folderPath: string, addon: AddonRepository) {
-    console.log('Install clicked', addon, folderPath)
-    invoke('install_addon_cmd', {
-        url: addon.repoUrl,
-        path: folderPath,
-        branch: addon.currentBranch,
-    })
-}
-
-function handleRepoReadme(repo: AddonRepository) {
-    console.log('Readme clicked', repo)
-    // TODO: Implement readme viewing functionality
-}
-
-function handleRepoWebsite(repo: AddonRepository) {
-    console.log('Website clicked', repo)
-    // TODO: Implement website opening functionality
-}
-
-function handleRepoRepair(repo: AddonRepository) {
-    console.log('Repair clicked', repo)
-    // TODO: Implement repository repair functionality
 }
 
 async function handleUpdateAll() {
@@ -211,13 +177,7 @@ const outOfDateCount = computed(() =>
             @open-folder="handleOpenPath"
             @delete-folder="requestDeleteAddonDirectory"
             @delete-addon="requestAddonDeletion"
-            @toggle-addon="handleToggleAddon"
             @branch-change="handleBranchChange"
-            @install-repo="handleInstallRepo"
-            @update-repo="handleUpdateRepo"
-            @repo-readme="handleRepoReadme"
-            @repo-website="handleRepoWebsite"
-            @repo-repair="handleRepoRepair"
             @add-directory="addAddonDirectory"
         />
     </div>

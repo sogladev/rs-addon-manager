@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import HomeView from '@/views/HomeView.vue'
+import AddonManager from '@/views/AddonManager.vue'
 import { onMounted } from 'vue'
 
 onMounted(() => {
@@ -8,5 +8,5 @@ onMounted(() => {
 </script>
 
 <template>
-    <HomeView />
+    <AddonManager />
 </template>

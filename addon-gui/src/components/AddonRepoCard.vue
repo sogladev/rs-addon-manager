@@ -12,13 +12,7 @@ const props = defineProps<{
     folderPath: string
 }>()
 const emit = defineEmits<{
-    'toggle-addon': [addon: Addon]
     'branch-change': [branch: string]
-    update: []
-    install: []
-    readme: []
-    website: []
-    repair: []
     delete: []
 }>()
 
@@ -26,7 +20,6 @@ const { isOperationActive, getOperationType, getProgress } =
     useOperationTracker()
 
 function handleToggleAddon(addon: Addon) {
-    emit('toggle-addon', addon)
     // Symlink logic
     if (addon.isSymlinked) {
         invoke('create_addon_symlink', {
@@ -44,12 +37,43 @@ function handleToggleAddon(addon: Addon) {
 }
 
 function handleButtonClick() {
-    // If repo is not installed, emit install event
+    // Install or update directly
     if (!props.repo.repoRef) {
-        emit('install')
+        invoke('install_addon_cmd', {
+            url: props.repo.repoUrl,
+            path: props.folderPath,
+            branch: props.repo.currentBranch,
+        }).catch((e) => console.error('Install failed:', e))
     } else {
-        emit('update')
+        invoke('update_addon_cmd', {
+            url: props.repo.repoUrl,
+            path: props.folderPath,
+            branch: props.repo.currentBranch,
+        }).catch((e) => console.error('Update failed:', e))
     }
+}
+
+// Open repository readme (stub)
+function handleReadme() {
+    console.log('Open readme for', props.repo.repoUrl)
+    // TODO: implement reading README file or opening its URL
+}
+
+// Open repository website
+function handleWebsite() {
+    const url = props.repo.repoUrl.replace(/\.git$/, '')
+    window.open(url, '_blank')
+}
+
+// Repair repository (stub)
+function handleRepair() {
+    console.log('Repair repo', props.repo.repoUrl)
+    // re-install
+    invoke('install_addon_cmd', {
+        url: props.repo.repoUrl,
+        path: props.folderPath,
+        branch: props.repo.currentBranch,
+    })
 }
 
 // Computed properties for operation state
@@ -209,7 +233,7 @@ const progressPercent = computed(() => {
                     <li>
                         <button
                             class="flex items-center gap-2"
-                            @click="emit('readme')"
+                            @click="handleReadme"
                         >
                             <FileText class="w-4 h-4" />
                             Readme
@@ -218,7 +242,7 @@ const progressPercent = computed(() => {
                     <li>
                         <button
                             class="flex items-center gap-2"
-                            @click="emit('website')"
+                            @click="handleWebsite"
                         >
                             <Globe class="w-4 h-4" />
                             Website
@@ -227,7 +251,7 @@ const progressPercent = computed(() => {
                     <li>
                         <button
                             class="flex items-center gap-2"
-                            @click="emit('repair')"
+                            @click="handleRepair"
                         >
                             <Wrench class="w-4 h-4" />
                             Repair
