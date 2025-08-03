@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 use std::{ffi::OsStr, path::PathBuf};
 use ts_rs::TS;
 
+use crate::clone;
+
 #[derive(Debug, Serialize, Deserialize, Clone, TS)]
 #[serde(rename_all = "camelCase")]
 // #[ts(export)]
@@ -26,29 +28,17 @@ impl DiskAddOnsFolder {
         let manager_dir = addons_path.join(".addonmanager");
         let mut repositories = Vec::new();
         if manager_dir.exists() {
-            for owner_entry in std::fs::read_dir(&manager_dir)
+            for repo_entry in std::fs::read_dir(&manager_dir)
                 .map_err(|e| format!("Failed to read manager dir {}: {e}", manager_dir.display()))?
             {
-                let owner_path = owner_entry.map_err(|e| e.to_string())?.path();
-                if !owner_path.is_dir() {
+                let repo_path = repo_entry.map_err(|e| e.to_string())?.path();
+                if !repo_path.is_dir() {
                     continue;
                 }
-                let owner = owner_path
-                    .file_name()
-                    .map(|s| s.to_string_lossy().to_string())
-                    .unwrap_or_default();
-                for repo_entry in std::fs::read_dir(&owner_path).map_err(|e| {
-                    format!("Failed to read owner dir {}: {e}", owner_path.display())
-                })? {
-                    let repo_path = repo_entry.map_err(|e| e.to_string())?.path();
-                    if !repo_path.is_dir() {
-                        continue;
-                    }
-                    let mut disk_repo = create_disk_addon_repository(&repo_path, &owner)?;
-                    // Check which addons are actually symlinked in the AddOns directory
-                    check_addon_symlinks(&mut disk_repo.addons, addons_path);
-                    repositories.push(disk_repo);
-                }
+                let mut disk_repo = create_disk_addon_repository(&repo_path)?;
+                // Check which addons are actually symlinked in the AddOns directory
+                check_addon_symlinks(&mut disk_repo.addons, addons_path);
+                repositories.push(disk_repo);
             }
         }
         Ok(DiskAddOnsFolder {
@@ -106,14 +96,12 @@ pub fn check_addon_symlinks(addons: &mut [DiskAddon], addons_dir: &Path) {
 
 /// Create a DiskAddonRepository from a repository path
 /// This is used by both scan and install operations
-pub fn create_disk_addon_repository(
-    repo_path: &Path,
-    owner: &str,
-) -> Result<DiskAddonRepository, String> {
+pub fn create_disk_addon_repository(repo_path: &Path) -> Result<DiskAddonRepository, String> {
     let repo = git2::Repository::open(repo_path)
         .map_err(|e| format!("Failed to open git repo {}: {e}", repo_path.display()))?;
 
-    let (repo_url, current_branch, repo_ref, available_branches) = extract_repo_metadata(&repo);
+    let (repo_url, current_branch, repo_ref, available_branches, owner) =
+        extract_repo_metadata(&repo);
     let addons = find_all_sub_addons(&repo_path.to_path_buf())
         .map_err(|e| format!("Failed to discover sub-addons: {e}"))?;
 
@@ -123,7 +111,7 @@ pub fn create_disk_addon_repository(
             .file_name()
             .map(|f| f.to_string_lossy().to_string())
             .unwrap_or_default(),
-        owner: owner.to_string(),
+        owner,
         current_branch,
         available_branches,
         repo_ref,
@@ -134,7 +122,7 @@ pub fn create_disk_addon_repository(
 /// Extract git repository metadata (URL, branches, current ref, etc.)
 pub fn extract_repo_metadata(
     repo: &git2::Repository,
-) -> (String, Option<String>, Option<String>, Vec<String>) {
+) -> (String, Option<String>, Option<String>, Vec<String>, String) {
     let repo_url = repo
         .find_remote("origin")
         .and_then(|r| {
@@ -156,7 +144,16 @@ pub fn extract_repo_metadata(
 
     let available_branches = get_branch_names(repo);
 
-    (repo_url, current_branch, repo_ref, available_branches)
+    let (owner, _) = clone::extract_owner_repo_from_url(&repo_url)
+        .unwrap_or_else(|_| ("Unknown owner".to_string(), "Unknown repo".to_string()));
+
+    (
+        repo_url,
+        current_branch,
+        repo_ref,
+        available_branches,
+        owner,
+    )
 }
 
 fn get_branch_names(repo: &git2::Repository) -> Vec<String> {

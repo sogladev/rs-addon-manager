@@ -15,8 +15,8 @@ pub async fn delete_addon(
     let manager_root = addons_dir.join(".addonmanager");
 
     // Extract owner and repo name from URL
-    let (owner, repo_name) =
-        clone::extract_owner_repo_from_url(&url).map_err(|e| format!("Invalid repo URL: {}", e))?;
+    let (_owner, repo_name) =
+        clone::extract_owner_repo_from_url(&url).map_err(|e| format!("Invalid repo URL: {e}"))?;
 
     // Cleanup symlinks in AddOns folder
     if let Ok(entries) = fs::read_dir(&addons_dir) {
@@ -41,7 +41,7 @@ pub async fn delete_addon(
     }
 
     // Remove cloned repository directory
-    let repo_dir = manager_root.join(owner).join(repo_name);
+    let repo_dir = manager_root.join(repo_name);
     if repo_dir.exists() {
         let _ = fs::remove_dir_all(&repo_dir);
     }

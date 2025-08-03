@@ -66,20 +66,10 @@ where
             .expect("Repository has no workdir. It should not be bare"),
     );
 
-    let (owner, _) = match clone::extract_owner_repo_from_url(&url) {
-        Ok(o) => o,
-        Err(e) => {
-            reporter(InstallEvent::Error(format!(
-                "Failed to extract owner/repo from url: {e}"
-            )));
-            return Err(format!("Failed to extract owner/repo from url: {e}"));
-        }
-    };
-
     reporter(InstallEvent::Status(
         "Discovering sub-addons...".to_string(),
     ));
-    let disk_repo = match crate::addon_disk::create_disk_addon_repository(&path, &owner) {
+    let disk_repo = match crate::addon_disk::create_disk_addon_repository(&path) {
         Ok(repo) => repo,
         Err(e) => {
             reporter(InstallEvent::Error(format!(
@@ -251,9 +241,7 @@ mod tests {
             ".addonmanager directory was not created"
         );
 
-        let repo_dir = manager_dir
-            .join("sogladev")
-            .join("addon-335-train-all-button");
+        let repo_dir = manager_dir.join("addon-335-train-all-button");
         assert!(
             repo_dir.exists() && repo_dir.is_dir(),
             "Repository was not cloned to the manager directory"

@@ -37,7 +37,7 @@ pub fn extract_owner_repo_from_url(url: &str) -> Result<(String, String), String
 /// let base_path = temp.path().to_path_buf();
 /// let url = "https://github.com/sogladev/addon-335-train-all-button.git";
 /// let repo = clone_git_repo(url, base_path.clone(), &mut |progress, total| { println!("progress: {progress}/{total}"); }).unwrap();
-/// let repo_dir = base_path.join("sogladev").join("addon-335-train-all-button");
+/// let repo_dir = base_path.join("addon-335-train-all-button");
 /// assert!(repo_dir.exists());
 /// assert!(repo_dir.join(".git").is_dir());
 /// assert!(repo_dir.join("TrainerButton").is_dir());
@@ -50,9 +50,9 @@ pub fn clone_git_repo<F>(
 where
     F: FnMut(usize, usize) + Send,
 {
-    let (owner, repo) = extract_owner_repo_from_url(url)?;
+    let (_owner, repo) = extract_owner_repo_from_url(url)?;
 
-    let target_path = base_path.join(&owner).join(&repo);
+    let target_path = base_path.join(&repo);
 
     let mut callbacks = RemoteCallbacks::new();
     callbacks.transfer_progress(move |stats| {
