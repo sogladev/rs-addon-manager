@@ -18,9 +18,9 @@ pub fn load_user_config(app: &AppHandle) -> Result<AddOnsUserConfig, String> {
 }
 
 #[tauri::command]
-pub async fn add_addon_directory(path: String, app: AppHandle) -> Result<(), String> {
+pub async fn add_addon_directory(path: String, app_handle: AppHandle) -> Result<(), String> {
     println!("Adding addon directory: {path}");
-    let store = app.store(STORE_FILE).map_err(|e| e.to_string())?;
+    let store = app_handle.store(STORE_FILE).map_err(|e| e.to_string())?;
     let raw = store.get(STORE_KEY).unwrap_or_default();
     let mut config: AddOnsUserConfig = serde_json::from_value(raw).unwrap_or_default();
 
@@ -32,7 +32,8 @@ pub async fn add_addon_directory(path: String, app: AppHandle) -> Result<(), Str
         let value = serde_json::to_value(&config).map_err(|e| e.to_string())?;
         store.set(STORE_KEY, value);
         store.save().map_err(|e| e.to_string())?;
-        app.emit("addon-data-updated", ())
+        app_handle
+            .emit("addon-data-updated", ())
             .map_err(|e| format!("Failed to emit event: {e}"))?;
     }
     Ok(())

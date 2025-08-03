@@ -173,10 +173,12 @@ pub async fn install_addon_cmd(
     })
     .await
     .map_err(|e| format!("Task join error: {e}"))?;
-    // signal install complete; front-end should refresh data
     app_handle_clone
         .emit("install-complete", &key_clone)
         .map_err(|e| format!("Failed to emit install-complete: {e}"))?;
+    app_handle_clone
+        .emit("addon-data-updated", ())
+        .map_err(|e| format!("Failed to emit event: {e}"))?;
     Ok(())
 }
 
