@@ -3,12 +3,11 @@ import type { AddonRepository } from '@bindings/AddonRepository'
 import type { Addon } from '@bindings/Addon'
 import { Ellipsis } from 'lucide-vue-next'
 import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 
-defineProps<{
-    repo: AddonRepository
+const props = defineProps<{
+    repo: AddonRepository & { latestRef?: string | null }
 }>()
-
 const emit = defineEmits<{
     'toggle-addon': [addon: Addon]
     'branch-change': [branch: string]
@@ -43,6 +42,10 @@ onMounted(() => {
         }
     }, 40)
 })
+
+const updateAvailable = computed(() => {
+    return props.repo.latestRef && props.repo.repoRef !== props.repo.latestRef
+})
 </script>
 
 <template>
@@ -52,6 +55,9 @@ onMounted(() => {
             <span class="text-xs text-base-content/60">{{ repo.owner }}</span>
             <span v-if="repo.repoRef" class="text-xs text-base-content/50">
                 Installed: {{ repo.repoRef }}
+                <span v-if="updateAvailable" class="badge badge-warning ml-2"
+                    >Update available</span
+                >
             </span>
             <div v-if="repo.addons && repo.addons.length" class="mt-1">
                 <ul class="ml-2 flex flex-col gap-1">
@@ -94,12 +100,19 @@ onMounted(() => {
                 </select>
             </div>
             <button
-                class="btn btn-sm btn-primary relative overflow-hidden w-20"
+                :class="[
+                    'btn btn-sm relative overflow-hidden w-20',
+                    updateAvailable ? 'btn-warning' : 'btn-primary',
+                ]"
                 @click="emit('update')"
-                :disabled="isUpdating"
+                :disabled="isUpdating || !updateAvailable"
             >
                 <span class="relative z-10">{{
-                    isUpdating ? 'Updating...' : 'Update'
+                    isUpdating
+                        ? 'Updating...'
+                        : updateAvailable
+                          ? 'Update'
+                          : 'Up to date'
                 }}</span>
                 <div
                     v-if="isUpdating"

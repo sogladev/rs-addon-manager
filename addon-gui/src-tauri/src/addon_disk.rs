@@ -81,7 +81,8 @@ pub struct DiskAddonRepository {
     pub owner: String,
     pub current_branch: Option<String>,
     pub available_branches: Vec<String>,
-    pub repo_ref: Option<String>, // commit hash or tag
+    pub repo_ref: Option<String>, // local HEAD commit hash or tag
+    pub latest_ref: Option<String>,
     pub addons: Vec<DiskAddon>,
 }
 
@@ -100,7 +101,7 @@ pub fn create_disk_addon_repository(repo_path: &Path) -> Result<DiskAddonReposit
     let repo = git2::Repository::open(repo_path)
         .map_err(|e| format!("Failed to open git repo {}: {e}", repo_path.display()))?;
 
-    let (repo_url, current_branch, repo_ref, available_branches, owner) =
+    let (repo_url, current_branch, repo_ref, available_branches, owner, latest_ref) =
         extract_repo_metadata(&repo);
     let addons = find_all_sub_addons(&repo_path.to_path_buf())
         .map_err(|e| format!("Failed to discover sub-addons: {e}"))?;
@@ -115,6 +116,7 @@ pub fn create_disk_addon_repository(repo_path: &Path) -> Result<DiskAddonReposit
         current_branch,
         available_branches,
         repo_ref,
+        latest_ref,
         addons,
     })
 }
@@ -122,7 +124,14 @@ pub fn create_disk_addon_repository(repo_path: &Path) -> Result<DiskAddonReposit
 /// Extract git repository metadata (URL, branches, current ref, etc.)
 pub fn extract_repo_metadata(
     repo: &git2::Repository,
-) -> (String, Option<String>, Option<String>, Vec<String>, String) {
+) -> (
+    String,
+    Option<String>,
+    Option<String>,
+    Vec<String>,
+    String,
+    Option<String>,
+) {
     let repo_url = repo
         .find_remote("origin")
         .and_then(|r| {
@@ -147,12 +156,20 @@ pub fn extract_repo_metadata(
     let (owner, _) = clone::extract_owner_repo_from_url(&repo_url)
         .unwrap_or_else(|_| ("Unknown owner".to_string(), "Unknown repo".to_string()));
 
+    let latest_ref = current_branch.as_ref().and_then(|branch| {
+        let refname = format!("refs/remotes/origin/{}", branch);
+        repo.find_reference(&refname)
+            .ok()
+            .and_then(|r| r.target().map(|oid| oid.to_string()))
+    });
+
     (
         repo_url,
         current_branch,
         repo_ref,
         available_branches,
         owner,
+        latest_ref,
     )
 }
 

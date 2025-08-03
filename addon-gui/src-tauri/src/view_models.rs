@@ -25,6 +25,7 @@ pub struct AddonRepository {
     pub current_branch: Option<String>,
     pub available_branches: Vec<String>,
     pub repo_ref: Option<String>,
+    pub latest_ref: Option<String>,
 
     // merged addon list:
     pub addons: Vec<Addon>,

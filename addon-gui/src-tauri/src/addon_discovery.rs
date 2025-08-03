@@ -90,6 +90,7 @@ pub fn refresh_addon_data(
                         current_branch: disk_repo.current_branch,
                         available_branches: disk_repo.available_branches,
                         repo_ref: disk_repo.repo_ref,
+                        latest_ref: disk_repo.latest_ref,
                         addons,
                     }
                 })
