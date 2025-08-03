@@ -3,7 +3,7 @@ use serde::Serialize;
 use std::path::Path;
 use tauri::{AppHandle, Emitter};
 
-use crate::{addon_discovery::AppState, clone, validate};
+use crate::{addon_discovery::AppState, clone, operation_tracker::*, validate};
 
 /// Perform a forced update of the repository at the given path and branch.
 /// Fetches from origin, force resets local branch to remote HEAD.
@@ -62,34 +62,65 @@ pub struct UpdateKey {
 #[tauri::command]
 pub async fn update_addon_cmd(
     app_handle: AppHandle,
+    state: tauri::State<'_, AppState>,
     url: String,
     path: String,
     branch: String,
 ) -> Result<(), String> {
-    let key = UpdateKey {
-        url: url.clone(),
-        path: path.clone(),
-        branch: branch.clone(),
-    };
-    let app_clone = app_handle.clone();
-    let key_clone = key.clone();
+    // Create operation key for tracking
+    let operation_key = OperationKey::new(url.clone(), path.clone());
+    let tracker = state.get_operation_tracker();
 
-    tauri::async_runtime::spawn_blocking(move || {
-        if let Err(e) = update_addon_repo(&path, &url, &branch) {
-            eprintln!("Update failed: {e}");
-        }
-    })
-    .await
-    .map_err(|e| format!("Task join error: {e}"))?;
+    // Mark operation as started
+    tracker.start_operation(&operation_key, OperationType::Update);
+
+    let app_clone = app_handle.clone();
+    let operation_key_clone = operation_key.clone();
+
+    // Emit started event
+    app_handle
+        .emit(
+            "operation-event",
+            OperationEventPayload {
+                key: operation_key.clone(),
+                event: OperationEvent::Started {
+                    operation: OperationType::Update,
+                },
+            },
+        )
+        .map_err(|e| format!("Failed to emit operation-event: {e}"))?;
+
+    // Move the blocking work into spawn_blocking
+    let update_result =
+        tauri::async_runtime::spawn_blocking(move || update_addon_repo(&path, &url, &branch))
+            .await
+            .map_err(|e| format!("Task join error: {e}"))?;
+
+    // Mark operation as completed
+    tracker.finish_operation(&operation_key_clone);
+
+    // Emit completion event
+    let completion_event = match update_result {
+        Ok(()) => OperationEvent::Completed,
+        Err(ref e) => OperationEvent::Error(e.clone()),
+    };
 
     app_clone
-        .emit("install-complete", &key_clone)
-        .map_err(|e| format!("Failed to emit update-complete: {e}"))?;
+        .emit(
+            "operation-event",
+            OperationEventPayload {
+                key: operation_key_clone.clone(),
+                event: completion_event,
+            },
+        )
+        .map_err(|e| format!("Failed to emit operation-event: {e}"))?;
 
+    // Signal frontend to refresh data
     app_clone
         .emit("addon-data-updated", ())
         .map_err(|e| format!("Failed to emit addon-data-updated: {e}"))?;
-    Ok(())
+
+    update_result
 }
 
 /// Tauri command to update all addons across all folders

@@ -3,7 +3,8 @@ import type { AddonRepository } from '@bindings/AddonRepository'
 import type { Addon } from '@bindings/Addon'
 import { Ellipsis } from 'lucide-vue-next'
 import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next'
-import { ref, onMounted, computed } from 'vue'
+import { computed } from 'vue'
+import { useOperationTracker } from '@/composables/useOperationTracker'
 
 const props = defineProps<{
     repo: AddonRepository & { latestRef?: string | null }
@@ -19,6 +20,9 @@ const emit = defineEmits<{
     delete: []
 }>()
 
+const { isOperationActive, getOperationType, getProgress } =
+    useOperationTracker()
+
 function handleBranchChange(e: Event) {
     const target = e.target as HTMLSelectElement | null
     if (!target) return
@@ -30,22 +34,62 @@ function handleToggleAddon(addon: Addon) {
     emit('toggle-addon', addon)
 }
 
-// mock update button progress background
-const isUpdating = ref(true)
-const updateProgress = ref(0)
-onMounted(() => {
-    const interval = setInterval(() => {
-        if (updateProgress.value < 100) {
-            updateProgress.value += 1
-        } else {
-            clearInterval(interval)
-            isUpdating.value = false
-        }
-    }, 40)
-})
+// Computed properties for operation state
+const isOperating = computed(() =>
+    isOperationActive(props.repo.repoUrl, props.folderPath)
+)
+
+const operationType = computed(() =>
+    getOperationType(props.repo.repoUrl, props.folderPath)
+)
+
+const operationProgress = computed(() =>
+    getProgress(props.repo.repoUrl, props.folderPath)
+)
 
 const updateAvailable = computed(() => {
     return props.repo.latestRef && props.repo.repoRef !== props.repo.latestRef
+})
+
+// Computed button text and state
+const buttonText = computed(() => {
+    if (isOperating.value) {
+        if (operationType.value === 'Install') {
+            return 'Installing...'
+        } else if (operationType.value === 'Update') {
+            return 'Updating...'
+        }
+        return 'Processing...'
+    }
+
+    // If repo is not installed (no repoRef), show Install
+    if (!props.repo.repoRef) {
+        return 'Install'
+    }
+
+    // If update is available, show Update
+    if (updateAvailable.value) {
+        return 'Update'
+    }
+
+    return 'Update'
+})
+
+const buttonDisabled = computed(() => {
+    // Disable if currently operating
+    if (isOperating.value) return true
+
+    // If not installed, always allow install
+    if (!props.repo.repoRef) return false
+
+    // If installed, only allow update if update is available
+    return !updateAvailable.value
+})
+
+const progressPercent = computed(() => {
+    if (!operationProgress.value) return 0
+    const { current, total } = operationProgress.value
+    return total > 0 ? (current / total) * 100 : 0
 })
 </script>
 
@@ -103,23 +147,18 @@ const updateAvailable = computed(() => {
             <button
                 :class="[
                     'btn btn-sm relative overflow-hidden w-20',
-                    updateAvailable ? 'btn-primary' : 'btn-primary',
+                    updateAvailable || !repo.repoRef
+                        ? 'btn-primary'
+                        : 'btn-primary',
                 ]"
                 @click="emit('update')"
-                :disabled="isUpdating || !updateAvailable"
+                :disabled="buttonDisabled"
             >
-                <span class="relative z-10">{{
-                    isUpdating
-                        ? 'Updating...'
-                        : updateAvailable
-                          ? 'Update'
-                          : //   : 'Up to date'
-                            'Update'
-                }}</span>
+                <span class="relative z-10">{{ buttonText }}</span>
                 <div
-                    v-if="isUpdating"
+                    v-if="isOperating && operationProgress"
                     class="absolute left-0 top-0 h-full bg-primary/30 transition-all"
-                    :style="{ width: updateProgress + '%' }"
+                    :style="{ width: progressPercent + '%' }"
                 ></div>
             </button>
             <div class="dropdown dropdown-end">

@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 use tauri::Emitter;
 
-use crate::{clone, validate};
+use crate::{clone, operation_tracker::*, validate};
 
 #[derive(Serialize, Clone)]
 pub struct InstallKey {
@@ -143,43 +143,77 @@ pub fn install_sub_addons<F>(
 #[tauri::command]
 pub async fn install_addon_cmd(
     app_handle: tauri::AppHandle,
+    state: tauri::State<'_, crate::addon_discovery::AppState>,
     url: String,
     path: String,
 ) -> Result<(), String> {
-    // No need to validate the AddOns folder here, as it is already done in the frontend.
+    // Create operation key for tracking
+    let operation_key = OperationKey::new(url.clone(), path.clone());
+    let tracker = state.get_operation_tracker();
 
-    let key = InstallKey {
-        url: url.clone(),
-        path: path.clone(),
-    };
+    // Mark operation as started
+    tracker.start_operation(&operation_key, OperationType::Install);
 
     let app_handle_clone = app_handle.clone();
-    let key_clone = key.clone();
+    let operation_key_clone = operation_key.clone();
 
-    // Move the blocking work into spawn_blocking, but keep async code outside.
-    // perform install in blocking task, emitting progress events
-    let _ = tauri::async_runtime::spawn_blocking(move || {
+    // Emit started event
+    app_handle
+        .emit(
+            "operation-event",
+            OperationEventPayload {
+                key: operation_key.clone(),
+                event: OperationEvent::Started {
+                    operation: OperationType::Install,
+                },
+            },
+        )
+        .map_err(|e| format!("Failed to emit operation-event: {e}"))?;
+
+    // Move the blocking work into spawn_blocking
+    let install_result = tauri::async_runtime::spawn_blocking(move || {
         install_addon(url, path, |event| {
+            let operation_event = match event {
+                InstallEvent::Progress { current, total } => {
+                    OperationEvent::Progress { current, total }
+                }
+                InstallEvent::Status(msg) => OperationEvent::Status(msg),
+                InstallEvent::Warning(msg) => OperationEvent::Warning(msg),
+                InstallEvent::Error(msg) => OperationEvent::Error(msg),
+            };
+
             if let Err(e) = app_handle.emit(
-                "install-event",
-                InstallEventPayload {
-                    key: key.clone(),
-                    event,
+                "operation-event",
+                OperationEventPayload {
+                    key: operation_key.clone(),
+                    event: operation_event,
                 },
             ) {
-                eprintln!("Failed to emit install-event: {e}");
+                eprintln!("Failed to emit operation-event: {e}");
             }
         })
     })
     .await
     .map_err(|e| format!("Task join error: {e}"))?;
+
+    // Mark operation as completed and emit completion event
+    tracker.finish_operation(&operation_key_clone);
+
     app_handle_clone
-        .emit("install-complete", &key_clone)
-        .map_err(|e| format!("Failed to emit install-complete: {e}"))?;
+        .emit(
+            "operation-event",
+            OperationEventPayload {
+                key: operation_key_clone.clone(),
+                event: OperationEvent::Completed,
+            },
+        )
+        .map_err(|e| format!("Failed to emit operation-completed: {e}"))?;
+
     app_handle_clone
         .emit("addon-data-updated", ())
-        .map_err(|e| format!("Failed to emit event: {e}"))?;
-    Ok(())
+        .map_err(|e| format!("Failed to emit addon-data-updated: {e}"))?;
+
+    install_result
 }
 
 #[cfg(test)]

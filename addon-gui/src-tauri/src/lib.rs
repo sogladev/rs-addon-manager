@@ -3,6 +3,7 @@ pub mod addon_disk;
 pub mod addon_store;
 pub mod clone;
 pub mod install;
+pub mod operation_tracker;
 pub mod remove;
 pub mod symlink;
 #[cfg(test)]

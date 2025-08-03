@@ -1,6 +1,7 @@
 use std::sync::RwLockReadGuard;
 
 use crate::addon_disk::DiskAddOnsFolder;
+use crate::operation_tracker::OperationTracker;
 use crate::view_models;
 use tauri::AppHandle;
 
@@ -9,6 +10,7 @@ use std::{collections::HashMap, sync::RwLock};
 // This is never persisted; just holds our latest disk scan data
 pub struct AppState {
     disk_state: RwLock<HashMap<String, DiskAddOnsFolder>>,
+    operation_tracker: OperationTracker,
 }
 
 impl AppState {
@@ -17,12 +19,18 @@ impl AppState {
     ) -> Result<std::sync::RwLockReadGuard<HashMap<String, DiskAddOnsFolder>>, String> {
         self.disk_state.read().map_err(|e| e.to_string())
     }
+
+    /// Get a reference to the operation tracker
+    pub fn get_operation_tracker(&self) -> &OperationTracker {
+        &self.operation_tracker
+    }
 }
 
 impl Default for AppState {
     fn default() -> Self {
         AppState {
             disk_state: RwLock::new(HashMap::new()),
+            operation_tracker: OperationTracker::default(),
         }
     }
 }
