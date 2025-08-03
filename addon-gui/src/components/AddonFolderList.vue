@@ -26,24 +26,32 @@ const emit = defineEmits<{
     'add-directory': []
 }>()
 
-// Compute filtered folders and their addons based on search
+// Compute filtered folders and their repositories based on search
 const filteredFolders = computed(() => {
     const term = props.search.trim().toLowerCase()
     if (!term) {
-        return props.folders
+        return props.folders.map((folder) => ({
+            ...folder,
+            repositories: folder.repositories,
+        }))
     }
-    // Filter folders by whether any of their addons match
-    return props.folders.filter((folder) => {
-        const filteredRepos = folder.repositories.filter(
-            (repo) =>
-                repo.repoName.toLowerCase().includes(term) ||
-                repo.owner.toLowerCase().includes(term) ||
-                repo.addons.some((addon) =>
-                    addon.name.toLowerCase().includes(term)
-                )
-        )
-        return filteredRepos.length > 0
-    })
+    // For each folder, filter its repositories
+    return props.folders
+        .map((folder) => {
+            const filteredRepos = folder.repositories.filter(
+                (repo) =>
+                    repo.repoName.toLowerCase().includes(term) ||
+                    repo.owner.toLowerCase().includes(term) ||
+                    repo.addons.some((addon) =>
+                        addon.name.toLowerCase().includes(term)
+                    )
+            )
+            return {
+                ...folder,
+                repositories: filteredRepos,
+            }
+        })
+        .filter((folder) => folder.repositories.length > 0)
 })
 
 function handleToggleAddon(repo: AddonRepository, addon: Addon) {

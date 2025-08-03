@@ -24,6 +24,8 @@ pub fn run() {
             validate::is_valid_repo_url,
             validate::is_valid_addons_folder_str,
             install::install_addon_cmd,
+            install::create_addon_symlink,
+            install::remove_addon_symlink,
             remove::delete_addon_cmd,
             update::update_addon_cmd,
             update::update_all_addons_cmd,

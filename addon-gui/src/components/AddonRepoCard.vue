@@ -6,6 +6,7 @@ import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useOperationTracker } from '@/composables/useOperationTracker'
 import type { OperationType } from '@bindings/OperationType'
+import { invoke } from '@tauri-apps/api/core'
 
 const props = defineProps<{
     repo: AddonRepository & { latestRef?: string | null }
@@ -34,6 +35,20 @@ function handleBranchChange(e: Event) {
 
 function handleToggleAddon(addon: Addon) {
     emit('toggle-addon', addon)
+    // Symlink logic
+    if (addon.isSymlinked) {
+        invoke('create_addon_symlink', {
+            repoUrl: props.repo.repoUrl,
+            folderPath: props.folderPath,
+            addonName: addon.name,
+        })
+    } else {
+        invoke('remove_addon_symlink', {
+            repoUrl: props.repo.repoUrl,
+            folderPath: props.folderPath,
+            addonName: addon.name,
+        })
+    }
 }
 
 function handleButtonClick() {
@@ -111,12 +126,6 @@ const progressPercent = computed(() => {
         <div class="flex flex-1 flex-col gap-1 p-2">
             <span class="font-semibold">{{ repo.repoName }}</span>
             <span class="text-xs text-base-content/60">{{ repo.owner }}</span>
-            <span v-if="repo.repoRef" class="text-xs text-base-content/50">
-                Installed: {{ repo.repoRef }}
-                <span v-if="updateAvailable" class="badge badge-primary ml-2"
-                    >Update available</span
-                >
-            </span>
             <div v-if="repo.addons && repo.addons.length" class="mt-1">
                 <ul class="ml-2 flex flex-col gap-1">
                     <li

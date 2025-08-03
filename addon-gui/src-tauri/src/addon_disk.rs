@@ -35,6 +35,11 @@ impl DiskAddOnsFolder {
                 if !repo_path.is_dir() {
                     continue;
                 }
+                let git_dir = repo_path.join(".git");
+                if !git_dir.exists() || !git_dir.is_dir() {
+                    println!("Skipping {}: .git directory not found", repo_path.display());
+                    continue;
+                }
                 let mut disk_repo = create_disk_addon_repository(&repo_path)?;
                 // Check which addons are actually symlinked in the AddOns directory
                 check_addon_symlinks(&mut disk_repo.addons, addons_path);
@@ -61,6 +66,11 @@ impl DiskAddOnsFolder {
             {
                 let repo_path = repo_entry.map_err(|e| e.to_string())?.path();
                 if !repo_path.is_dir() {
+                    continue;
+                }
+                let git_dir = repo_path.join(".git");
+                if !git_dir.exists() || !git_dir.is_dir() {
+                    // If .git does not exist or is not a directory, skip this folder
                     continue;
                 }
                 let mut disk_repo = create_disk_addon_repository_disk_only(&repo_path)?;

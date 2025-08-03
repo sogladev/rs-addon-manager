@@ -206,6 +206,66 @@ pub async fn install_addon_cmd(
     install_result
 }
 
+#[tauri::command]
+pub async fn create_addon_symlink(
+    folder_path: String,
+    repo_url: String,
+    addon_name: String,
+    state: tauri::State<'_, crate::addon_discovery::AppState>,
+) -> Result<(), String> {
+    // Find repo directory
+    let disk_state = state
+        .get_disk_state()
+        .map_err(|e| format!("Disk state error: {e}"))?;
+    let folder = disk_state.get(&folder_path).ok_or("Folder not found")?;
+    let repo = folder
+        .repositories
+        .iter()
+        .find(|r| r.repo_url == repo_url)
+        .ok_or("Repo not found")?;
+    let addon = repo
+        .addons
+        .iter()
+        .find(|a| a.name == addon_name)
+        .ok_or("Addon not found")?;
+    let repo_root = Path::new(&folder_path)
+        .join(".addonmanager")
+        .join(&repo.repo_name);
+    let addons_dir = Path::new(&folder_path);
+    let symlink_name = &addon.name;
+    let target_dir = if addon.dir == "." {
+        repo_root.to_path_buf()
+    } else {
+        repo_root.join(&addon.dir)
+    };
+    let symlink_path = addons_dir.join(symlink_name);
+    // Remove any existing symlink or directory
+    if symlink_path.exists() {
+        std::fs::remove_file(&symlink_path)
+            .or_else(|_| std::fs::remove_dir_all(&symlink_path))
+            .ok();
+    }
+    crate::symlink::create_symlink(&target_dir, &symlink_path)
+        .map_err(|e| format!("Failed to create symlink: {e}"))
+}
+
+#[tauri::command]
+pub async fn remove_addon_symlink(
+    folder_path: String,
+    _repo_url: String,
+    addon_name: String,
+    _state: tauri::State<'_, crate::addon_discovery::AppState>,
+) -> Result<(), String> {
+    let addons_dir = Path::new(&folder_path);
+    let symlink_path = addons_dir.join(&addon_name);
+    if symlink_path.exists() {
+        std::fs::remove_file(&symlink_path)
+            .or_else(|_| std::fs::remove_dir_all(&symlink_path))
+            .ok();
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
