@@ -3,6 +3,7 @@ import type { AddonRepository } from '@bindings/AddonRepository'
 import type { Addon } from '@bindings/Addon'
 import { Ellipsis } from 'lucide-vue-next'
 import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next'
+import { ref, onMounted } from 'vue'
 
 defineProps<{
     repo: AddonRepository
@@ -28,12 +29,34 @@ function handleBranchChange(e: Event) {
 function handleToggleAddon(addon: Addon) {
     emit('toggle-addon', addon)
 }
+
+// mock progress bar state for demo
+const showRepoProgress = ref(true)
+const repoProgress = ref(0)
+onMounted(() => {
+    const interval = setInterval(() => {
+        if (repoProgress.value < 100) {
+            repoProgress.value += 1
+        } else {
+            clearInterval(interval)
+            showRepoProgress.value = false
+        }
+    }, 400)
+})
 </script>
 
 <template>
     <div class="card card-bordered bg-base-100 flex-row items-center p-2">
         <div class="flex flex-1 flex-col gap-1 p-2">
-            <span class="font-semibold">{{ repo.repoName }}</span>
+            <span class="font-semibold"
+                >{{ repo.repoName }}
+                <progress
+                    v-if="showRepoProgress"
+                    class="progress progress-primary w-full h-1 my-1"
+                    :value="repoProgress"
+                    max="100"
+                ></progress>
+            </span>
             <span class="text-xs text-base-content/60">{{ repo.owner }}</span>
             <span v-if="repo.repoRef" class="text-xs text-base-content/50">
                 Installed: {{ repo.repoRef }}
@@ -130,3 +153,5 @@ function handleToggleAddon(addon: Addon) {
         </div>
     </div>
 </template>
+
+<style scoped></style>
