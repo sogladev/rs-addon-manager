@@ -160,12 +160,7 @@ const progressPercent = computed(() => {
                             @change="handleToggleAddon(addon)"
                         />
                         <span class="font-mono text-xs">{{ addon.name }}</span>
-                        <span
-                            v-if="!addon.isSymlinked"
-                            class="badge badge-xs badge-error"
-                        >
-                            disabled
-                        </span>
+                        <!-- <span v-if="!addon.isSymlinked" class="badge badge-xs badge-error" > disabled </span> -->
                     </li>
                 </ul>
             </div>

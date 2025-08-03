@@ -154,6 +154,17 @@ const hasUpdates = computed(() =>
         )
     )
 )
+
+const outOfDateCount = computed(() =>
+    addonFolders.value.reduce(
+        (sum, folder) =>
+            sum +
+            folder.repositories.filter(
+                (repo) => repo.latestRef && repo.repoRef !== repo.latestRef
+            ).length,
+        0
+    )
+)
 </script>
 
 <template>
@@ -162,6 +173,7 @@ const hasUpdates = computed(() =>
         <AddonToolbar
             v-model:search="search"
             :hasUpdates="hasUpdates"
+            :outOfDateCount="outOfDateCount"
             @update-all="handleUpdateAll"
             @refresh="refreshAddonData"
             @add-addon="showAddModal = true"
