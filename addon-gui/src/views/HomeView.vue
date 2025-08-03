@@ -172,6 +172,7 @@ const outOfDateCount = computed(() =>
     <div class="flex flex-col h-full">
         <AddonToolbar
             v-model:search="search"
+            :folders="addonFolders"
             :hasUpdates="hasUpdates"
             :outOfDateCount="outOfDateCount"
             @update-all="handleUpdateAll"
