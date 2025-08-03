@@ -2,7 +2,6 @@
 import { revealItemInDir } from '@tauri-apps/plugin-opener'
 import { open } from '@tauri-apps/plugin-dialog'
 import { ref, computed } from 'vue'
-import { useTimeoutFn } from '@vueuse/core'
 import { invoke } from '@tauri-apps/api/core'
 
 import type { AddonRepository } from '@bindings/AddonRepository'
@@ -97,14 +96,17 @@ function cancelAddonDelete() {
 }
 
 // Event handlers
+// TODO: Implement actual functionality for these handlers
 function handleToggleAddon(repo: AddonRepository, addon: Addon) {
     console.log(
         `Toggled subAddon ${addon.name} enabled: ${addon.isSymlinked} in repo ${repo.repoName}`
     )
+    // TODO: Implement symlink toggling logic
 }
 
 function handleBranchChange(repo: AddonRepository, branch: string) {
     console.log('Branch change requested:', branch, 'for repo:', repo.repoUrl)
+    // TODO: Implement branch switching logic
 }
 
 function handleUpdateRepo(folderPath: string, addon: AddonRepository) {
@@ -127,14 +129,17 @@ function handleInstallRepo(folderPath: string, addon: AddonRepository) {
 
 function handleRepoReadme(repo: AddonRepository) {
     console.log('Readme clicked', repo)
+    // TODO: Implement readme viewing functionality
 }
 
 function handleRepoWebsite(repo: AddonRepository) {
     console.log('Website clicked', repo)
+    // TODO: Implement website opening functionality
 }
 
 function handleRepoRepair(repo: AddonRepository) {
     console.log('Repair clicked', repo)
+    // TODO: Implement repository repair functionality
 }
 
 async function handleUpdateAll() {

@@ -29,11 +29,8 @@ watch(
     }
 )
 
-// @todo: Uncomment auto filling
-// const gitUrl = ref('')
-const gitUrl = ref('https://github.com/sogladev/addon-335-train-all-button.git')
-const isGitUrlValid = ref<boolean | null>(true)
-// const isGitUrlValid = ref<boolean | null>(null)
+const gitUrl = ref('')
+const isGitUrlValid = ref<boolean | null>(null)
 
 watch(gitUrl, async () => {
     if (!trimmedGitUrl.value) {
@@ -54,15 +51,22 @@ const directoryTouched = ref(false)
 const handleClone = async () => {
     directoryTouched.value = true
     if (!isGitUrlValid.value || !selectedDirectory.value) return
-    emit('update:open', false)
+
     try {
+        emit('update:open', false)
         await invoke('install_addon_cmd', {
             url: trimmedGitUrl.value,
             path: selectedDirectory.value,
         })
         console.log('Addon cloned successfully')
+        // Reset form after successful clone
+        gitUrl.value = ''
+        isGitUrlValid.value = null
+        directoryTouched.value = false
     } catch (err) {
         console.error('Failed to clone addon', err)
+        // Reopen modal on error so user can retry
+        emit('update:open', true)
     }
 }
 </script>

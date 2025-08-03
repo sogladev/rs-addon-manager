@@ -15,13 +15,6 @@ type InstallEventPayload = {
 
 export function useAddonData() {
     const addonFolders = ref<AddOnsFolder[]>([])
-    const installStatus = ref<{
-        progress?: { current: number; total: number }
-        step?: string
-        error?: string
-        warning?: string
-        active: boolean
-    }>({ active: false })
 
     const folderPaths = computed(() => addonFolders.value.map((f) => f.path))
 
@@ -44,32 +37,11 @@ export function useAddonData() {
     }
 
     onMounted(async () => {
-        // Listen for install events
+        // Listen for install events (for potential future use)
         listen<InstallEventPayload>('install-event', ({ payload }) => {
             console.debug('[install-event]', payload)
-            installStatus.value.active = true
-
-            const event = payload.event
-            if ('Progress' in event) {
-                const { current, total } = event.Progress
-                installStatus.value.progress = { current, total }
-                installStatus.value.step = undefined
-                installStatus.value.error = undefined
-                installStatus.value.warning = undefined
-            } else if ('Status' in event) {
-                installStatus.value.step = event.Status
-                installStatus.value.progress = undefined
-                installStatus.value.error = undefined
-                installStatus.value.warning = undefined
-            } else if ('Warning' in event) {
-                installStatus.value.warning = event.Warning
-                installStatus.value.error = undefined
-            } else if ('Error' in event) {
-                installStatus.value.error = event.Error
-                installStatus.value.warning = undefined
-            } else {
-                console.warn('[install-event] Unknown event type:', payload)
-            }
+            // Install events are currently logged for debugging
+            // Future enhancement: Could display progress notifications
         })
 
         // Listen for addon data updates
@@ -91,7 +63,6 @@ export function useAddonData() {
     return {
         addonFolders,
         folderPaths,
-        installStatus,
         refreshAddonData,
         refreshDiskData,
     }
