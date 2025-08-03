@@ -94,20 +94,6 @@ function cancelAddonDelete() {
     folderOfAddonToDelete.value = null
 }
 
-function handleBranchChange(repo: AddonRepository, branch: string) {
-    console.log('Branch change requested:', branch, 'for repo:', repo.repoUrl)
-    // TODO: Implement branch switching logic
-}
-
-function handleUpdateRepo(folderPath: string, addon: AddonRepository) {
-    console.log('Update clicked', addon, folderPath)
-    invoke('update_addon_cmd', {
-        url: addon.repoUrl,
-        path: folderPath,
-        branch: addon.currentBranch,
-    })
-}
-
 async function handleUpdateAll() {
     console.log('Update all clicked')
     try {
@@ -177,7 +163,6 @@ const outOfDateCount = computed(() =>
             @open-folder="handleOpenPath"
             @delete-folder="requestDeleteAddonDirectory"
             @delete-addon="requestAddonDeletion"
-            @branch-change="handleBranchChange"
             @add-directory="addAddonDirectory"
         />
     </div>

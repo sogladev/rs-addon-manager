@@ -17,6 +17,7 @@
         "@tauri-apps/plugin-store": "^2.3.0",
         "@vueuse/core": "^13.6.0",
         "lucide-vue-next": "^0.534.0",
+        "marked": "^16.1.1",
         "vue": "^3.5.18"
     },
     "devDependencies": {

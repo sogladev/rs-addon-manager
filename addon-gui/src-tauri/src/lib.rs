@@ -4,6 +4,7 @@ pub mod addon_store;
 pub mod clone;
 pub mod install;
 pub mod operation_tracker;
+pub mod permission_workaround;
 pub mod remove;
 pub mod symlink;
 #[cfg(test)]
@@ -33,7 +34,8 @@ pub fn run() {
             addon_discovery::refresh_addon_data,
             addon_discovery::refresh_disk_data,
             addon_store::add_addon_directory,
-            addon_store::delete_addon_directory
+            addon_store::delete_addon_directory,
+            permission_workaround::allow_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

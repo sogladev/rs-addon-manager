@@ -16,7 +16,6 @@ const emit = defineEmits<{
     'delete-folder': [path: string]
     'delete-addon': [folderPath: string, addon: AddonRepository]
     'toggle-addon': [repo: AddonRepository, addon: Addon]
-    'branch-change': [repo: AddonRepository, branch: string]
     'add-directory': []
 }>()
 
@@ -48,14 +47,6 @@ const filteredFolders = computed(() => {
         .filter((folder) => folder.repositories.length > 0)
 })
 
-function handleToggleAddon(repo: AddonRepository, addon: Addon) {
-    emit('toggle-addon', repo, addon)
-}
-
-function handleBranchChange(repo: AddonRepository, branch: string) {
-    emit('branch-change', repo, branch)
-}
-
 function handleDeleteAddon(repo: AddonRepository, folderPath: string) {
     emit('delete-addon', folderPath, repo)
 }
@@ -77,8 +68,6 @@ function handleDeleteAddon(repo: AddonRepository, folderPath: string) {
                     :key="repo.repoUrl + (repo.currentBranch || '')"
                     :repo="repo"
                     :folderPath="folder.path"
-                    @toggle-addon="handleToggleAddon(repo, $event)"
-                    @branch-change="handleBranchChange(repo, $event)"
                     @delete="handleDeleteAddon(repo, folder.path)"
                 />
             </div>

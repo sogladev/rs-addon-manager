@@ -6,15 +6,21 @@ import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 import { useOperationTracker } from '@/composables/useOperationTracker'
 import { invoke } from '@tauri-apps/api/core'
+import { openUrl } from '@tauri-apps/plugin-opener'
+import { readTextFile } from '@tauri-apps/plugin-fs'
+import { marked } from 'marked'
 
 const props = defineProps<{
     repo: AddonRepository & { latestRef?: string | null }
     folderPath: string
 }>()
 const emit = defineEmits<{
-    'branch-change': [branch: string]
     delete: []
+    'branch-change': [newBranch: string]
 }>()
+
+const showReadmeModal = ref(false)
+const readmeHtml = ref('')
 
 const { isOperationActive, getOperationType, getProgress } =
     useOperationTracker()
@@ -37,7 +43,6 @@ function handleToggleAddon(addon: Addon) {
 }
 
 function handleButtonClick() {
-    // Install or update directly
     if (!props.repo.repoRef) {
         invoke('install_addon_cmd', {
             url: props.repo.repoUrl,
@@ -53,19 +58,45 @@ function handleButtonClick() {
     }
 }
 
-// Open repository readme (stub)
-function handleReadme() {
-    console.log('Open readme for', props.repo.repoUrl)
-    // TODO: implement reading README file or opening its URL
+async function handleReadme() {
+    const basePath = `${props.folderPath}/${props.repo.repoName}`
+    const readmePaths = [
+        `${basePath}/README.md`,
+        `${basePath}/.github/README.md`,
+    ]
+    let content = ''
+
+    for (const path of readmePaths) {
+        try {
+            await invoke('allow_file', { path })
+            content = await readTextFile(path)
+            break
+        } catch (e) {
+            console.debug(`No README found at ${path}`, e)
+        }
+    }
+
+    if (!content) {
+        console.warn('No README found in', basePath)
+        return
+    }
+
+    const rawHtml = marked(content)
+    readmeHtml.value = typeof rawHtml === 'string' ? rawHtml : await rawHtml
+    showReadmeModal.value = true
 }
 
-// Open repository website
+function closeReadmeModal() {
+    showReadmeModal.value = false
+    readmeHtml.value = ''
+}
+
 function handleWebsite() {
     const url = props.repo.repoUrl.replace(/\.git$/, '')
-    window.open(url, '_blank')
+    console.log('Open website', url)
+    openUrl(url)
 }
 
-// Repair repository (stub)
 function handleRepair() {
     console.log('Repair repo', props.repo.repoUrl)
     // re-install
@@ -269,6 +300,20 @@ const progressPercent = computed(() => {
                 </ul>
             </div>
         </div>
+    </div>
+
+    <!-- README Modal -->
+    <div v-if="showReadmeModal" class="modal modal-open">
+        <div class="modal-box max-w-3xl">
+            <button
+                class="btn btn-sm btn-circle absolute right-2 top-2"
+                @click="closeReadmeModal"
+            >
+                ✕
+            </button>
+            <div class="prose max-w-none" v-html="readmeHtml"></div>
+        </div>
+        <div class="modal-backdrop" @click="closeReadmeModal"></div>
     </div>
 </template>
 
