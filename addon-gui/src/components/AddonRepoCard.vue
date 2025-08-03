@@ -30,33 +30,25 @@ function handleToggleAddon(addon: Addon) {
     emit('toggle-addon', addon)
 }
 
-// mock progress bar state for demo
-const showRepoProgress = ref(true)
-const repoProgress = ref(0)
+// mock update button progress background
+const isUpdating = ref(true)
+const updateProgress = ref(0)
 onMounted(() => {
     const interval = setInterval(() => {
-        if (repoProgress.value < 100) {
-            repoProgress.value += 1
+        if (updateProgress.value < 100) {
+            updateProgress.value += 1
         } else {
             clearInterval(interval)
-            showRepoProgress.value = false
+            isUpdating.value = false
         }
-    }, 400)
+    }, 40)
 })
 </script>
 
 <template>
     <div class="card card-bordered bg-base-100 flex-row items-center p-2">
         <div class="flex flex-1 flex-col gap-1 p-2">
-            <span class="font-semibold"
-                >{{ repo.repoName }}
-                <progress
-                    v-if="showRepoProgress"
-                    class="progress progress-primary w-full h-1 my-1"
-                    :value="repoProgress"
-                    max="100"
-                ></progress>
-            </span>
+            <span class="font-semibold">{{ repo.repoName }}</span>
             <span class="text-xs text-base-content/60">{{ repo.owner }}</span>
             <span v-if="repo.repoRef" class="text-xs text-base-content/50">
                 Installed: {{ repo.repoRef }}
@@ -101,8 +93,19 @@ onMounted(() => {
                     </option>
                 </select>
             </div>
-            <button class="btn btn-sm btn-primary" @click="emit('update')">
-                Update
+            <button
+                class="btn btn-sm btn-primary relative overflow-hidden w-20"
+                @click="emit('update')"
+                :disabled="isUpdating"
+            >
+                <span class="relative z-10">{{
+                    isUpdating ? 'Updating...' : 'Update'
+                }}</span>
+                <div
+                    v-if="isUpdating"
+                    class="absolute left-0 top-0 h-full bg-primary/30 transition-all"
+                    :style="{ width: updateProgress + '%' }"
+                ></div>
             </button>
             <div class="dropdown dropdown-end">
                 <button tabindex="0" class="btn btn-sm btn-ghost">

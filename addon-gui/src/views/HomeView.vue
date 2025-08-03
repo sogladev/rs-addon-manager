@@ -135,7 +135,8 @@ function handleRepoRepair(repo: AddonRepository) {
 </script>
 
 <template>
-    <div class="flex flex-col h-full gap-4">
+    <!-- gap-4 -->
+    <div class="flex flex-col h-full">
         <AddonToolbar
             v-model:search="search"
             @update-all="console.log('Update all clicked')"
@@ -143,7 +144,7 @@ function handleRepoRepair(repo: AddonRepository) {
             @add-addon="showAddModal = true"
         />
 
-        <InstallStatusBar :installStatus="installStatus" />
+        <!-- <InstallStatusBar :installStatus="installStatus" /> -->
 
         <AddonCloneModal
             v-model:open="showAddModal"
