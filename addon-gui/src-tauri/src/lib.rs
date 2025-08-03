@@ -28,6 +28,7 @@ pub fn run() {
             update::update_addon_cmd,
             update::update_all_addons_cmd,
             addon_discovery::refresh_addon_data,
+            addon_discovery::refresh_disk_data,
             addon_store::add_addon_directory,
             addon_store::delete_addon_directory
         ])

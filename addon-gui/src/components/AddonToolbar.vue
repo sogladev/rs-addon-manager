@@ -33,7 +33,7 @@ const emit = defineEmits<{
                 Update All
             </button>
             <button class="btn btn-secondary" @click="emit('refresh')">
-                Refresh
+                Check for Updates
             </button>
             <input
                 :value="search"

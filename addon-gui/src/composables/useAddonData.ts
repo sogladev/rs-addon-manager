@@ -34,6 +34,15 @@ export function useAddonData() {
         }
     }
 
+    async function refreshDiskData() {
+        try {
+            const folders = await invoke<AddOnsFolder[]>('refresh_disk_data')
+            addonFolders.value = folders
+        } catch (err) {
+            console.error('Failed to refresh disk data:', err)
+        }
+    }
+
     onMounted(async () => {
         // Listen for install events
         listen<InstallEventPayload>('install-event', ({ payload }) => {
@@ -66,6 +75,9 @@ export function useAddonData() {
         // Listen for addon data updates
         listen('addon-data-updated', refreshAddonData)
 
+        // Listen for addon disk updates (fast, disk-only refresh)
+        listen('addon-disk-updated', refreshDiskData)
+
         // Listen for update-all completion
         listen<string>('update-all-complete', ({ payload }) => {
             console.log('Update all completed:', payload)
@@ -81,5 +93,6 @@ export function useAddonData() {
         folderPaths,
         installStatus,
         refreshAddonData,
+        refreshDiskData,
     }
 }

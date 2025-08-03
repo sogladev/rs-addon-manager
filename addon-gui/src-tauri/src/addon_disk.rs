@@ -49,6 +49,34 @@ impl DiskAddOnsFolder {
         })
     }
 
+    /// Scan the AddOns directory on disk (disk-only, no remote operations)
+    pub fn scan_disk_only(path: &str) -> Result<Self, String> {
+        let addons_path = Path::new(path);
+        let is_valid = crate::validate::is_valid_addons_folder_str(path);
+        let manager_dir = addons_path.join(".addonmanager");
+        let mut repositories = Vec::new();
+        if manager_dir.exists() {
+            for repo_entry in std::fs::read_dir(&manager_dir)
+                .map_err(|e| format!("Failed to read manager dir {}: {e}", manager_dir.display()))?
+            {
+                let repo_path = repo_entry.map_err(|e| e.to_string())?.path();
+                if !repo_path.is_dir() {
+                    continue;
+                }
+                let mut disk_repo = create_disk_addon_repository_disk_only(&repo_path)?;
+                // Check which addons are actually symlinked in the AddOns directory
+                check_addon_symlinks(&mut disk_repo.addons, addons_path);
+                repositories.push(disk_repo);
+            }
+        }
+        Ok(DiskAddOnsFolder {
+            path: path.to_string(),
+            is_valid,
+            repositories,
+            error: None,
+        })
+    }
+
     /// With error
     pub fn default_with_error(path: &str, error: String) -> Self {
         DiskAddOnsFolder {
@@ -121,6 +149,34 @@ pub fn create_disk_addon_repository(repo_path: &Path) -> Result<DiskAddonReposit
     })
 }
 
+/// Create a DiskAddonRepository from a repository path (disk-only, no remote operations)
+/// This is used for fast disk-only scans
+pub fn create_disk_addon_repository_disk_only(
+    repo_path: &Path,
+) -> Result<DiskAddonRepository, String> {
+    let repo = git2::Repository::open(repo_path)
+        .map_err(|e| format!("Failed to open git repo {}: {e}", repo_path.display()))?;
+
+    let (repo_url, current_branch, repo_ref, available_branches, owner, latest_ref) =
+        extract_repo_metadata_disk_only(&repo);
+    let addons = find_all_sub_addons(&repo_path.to_path_buf())
+        .map_err(|e| format!("Failed to discover sub-addons: {e}"))?;
+
+    Ok(DiskAddonRepository {
+        repo_url,
+        repo_name: repo_path
+            .file_name()
+            .map(|f| f.to_string_lossy().to_string())
+            .unwrap_or_default(),
+        owner,
+        current_branch,
+        available_branches,
+        repo_ref,
+        latest_ref,
+        addons,
+    })
+}
+
 /// Extract git repository metadata (URL, branches, current ref, etc.)
 pub fn extract_repo_metadata(
     repo: &git2::Repository,
@@ -136,7 +192,7 @@ pub fn extract_repo_metadata(
         .find_remote("origin")
         .and_then(|r| {
             r.url()
-                .map(|u| u.to_string())
+                .map(|s| s.to_string())
                 .ok_or(git2::Error::from_str("no url"))
         })
         .unwrap_or_default();
@@ -162,6 +218,54 @@ pub fn extract_repo_metadata(
             .ok()
             .and_then(|r| r.target().map(|oid| oid.to_string()))
     });
+
+    (
+        repo_url,
+        current_branch,
+        repo_ref,
+        available_branches,
+        owner,
+        latest_ref,
+    )
+}
+
+/// Extract git repository metadata without remote operations (disk-only)
+pub fn extract_repo_metadata_disk_only(
+    repo: &git2::Repository,
+) -> (
+    String,
+    Option<String>,
+    Option<String>,
+    Vec<String>,
+    String,
+    Option<String>,
+) {
+    let repo_url = repo
+        .find_remote("origin")
+        .and_then(|r| {
+            r.url()
+                .map(|s| s.to_string())
+                .ok_or(git2::Error::from_str("no url"))
+        })
+        .unwrap_or_default();
+
+    let current_branch = repo
+        .head()
+        .ok()
+        .and_then(|h| h.shorthand().map(|s| s.to_string()));
+
+    let repo_ref = repo
+        .head()
+        .ok()
+        .and_then(|h| h.target().map(|oid| oid.to_string()));
+
+    let available_branches = get_branch_names(repo);
+
+    let (owner, _) = clone::extract_owner_repo_from_url(&repo_url)
+        .unwrap_or_else(|_| ("Unknown owner".to_string(), "Unknown repo".to_string()));
+
+    // For disk-only mode, don't fetch remote refs - use None for latest_ref
+    let latest_ref = None;
 
     (
         repo_url,

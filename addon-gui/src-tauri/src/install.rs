@@ -29,6 +29,17 @@ where
     };
 
     reporter(OperationEvent::Status("Cloning repository...".to_string()));
+    let repo_name = url
+        .split('/')
+        .last()
+        .and_then(|s| s.strip_suffix(".git"))
+        .unwrap_or("repo");
+    let repo_path = manager_dir.join(repo_name);
+
+    if repo_path.exists() {
+        std::fs::remove_dir_all(&repo_path).ok();
+    }
+
     let repo = match clone::clone_git_repo(&url, manager_dir.clone(), &mut |current, total| {
         reporter(OperationEvent::Progress { current, total });
     }) {
@@ -149,9 +160,18 @@ pub async fn install_addon_cmd(
         )
         .map_err(|e| format!("Failed to emit operation-event: {e}"))?;
 
-    // Move the blocking work into spawn_blocking
+    let mut first_progress_emitted = false;
+
     let install_result = tauri::async_runtime::spawn_blocking(move || {
         install_addon(url, path, |event| {
+            if let OperationEvent::Progress { .. } = event {
+                if !first_progress_emitted {
+                    let _ = app_handle.emit("addon-disk-updated", ()).map_err(|e| {
+                        eprintln!("Failed to emit addon-disk-updated: {e}");
+                    });
+                    first_progress_emitted = true;
+                }
+            }
             if let Err(e) = app_handle.emit(
                 "operation-event",
                 OperationEventPayload {
