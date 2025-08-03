@@ -23,18 +23,6 @@ const emit = defineEmits<{
 const showReadmeModal = ref(false)
 const readmeHtml = ref('')
 
-function handleReadmeLinks(e: MouseEvent) {
-    const target = e.target as HTMLElement | null
-    if (!target) return
-    // Only handle anchor tags
-    if (target.tagName === 'A') {
-        const href = (target as HTMLAnchorElement).getAttribute('href')
-        if (href && !href.startsWith('#')) {
-            e.preventDefault()
-            open(href)
-        }
-    }
-}
 function handleWebsite() {
     const url = props.repo.repoUrl.replace(/\.git$/, '')
     console.log('Open website', url)
@@ -337,11 +325,7 @@ const progressPercent = computed(() => {
             >
                 ✕
             </button>
-            <div
-                class="prose max-w-none"
-                v-html="readmeHtml"
-                @click="handleReadmeLinks"
-            ></div>
+            <div class="prose max-w-none" v-html="readmeHtml"></div>
         </div>
         <div class="modal-backdrop" @click="closeReadmeModal"></div>
     </div>
