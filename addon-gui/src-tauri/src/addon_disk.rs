@@ -175,10 +175,7 @@ fn get_branch_names(repo: &git2::Repository) -> Vec<String> {
     branch_names
 }
 
-/// Finds all sub-addons by searching for .toc files in the root directory and immediate subdirectories only.
-///
-/// This function does NOT recursively walk all subdirectories to find .toc files.
-/// It checks for .toc files in the root of the given path and in each immediate subdirectory (one level deep).
+/// Finds all sub-addons by searching for .toc files in the root directory and immediate subdirectories only
 pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<DiskAddon>, String> {
     let mut sub_addons = Vec::new();
 
