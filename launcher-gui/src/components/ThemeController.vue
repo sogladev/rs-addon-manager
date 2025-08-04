@@ -1,16 +1,12 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import { useGlobalError } from '@/composables/useGlobalError'
-
-const { addIssue } = useGlobalError()
 
 const THEME_INTERVAL_IN_MILLISECONDS = 5000
 
-// Disable some due to too many choices
 const themeList = [
     'default',
-    // 'abyss',
+    'abyss',
     'acid',
     'aqua',
     'autumn',
@@ -26,20 +22,20 @@ const themeList = [
     'dark',
     'dim',
     'dracula',
-    // 'emerald',
-    // 'fantasy',
+    'emerald',
+    'fantasy',
     'forest',
     'garden',
     'halloween',
     'lemonade',
     'light',
-    // 'lofi',
+    'lofi',
     'luxury',
     'night',
     'nord',
     'pastel',
     'retro',
-    // 'silk',
+    'silk',
     'sunset',
     'synthwave',
     'valentine',
