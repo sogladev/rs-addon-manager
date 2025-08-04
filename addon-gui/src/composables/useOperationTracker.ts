@@ -1,6 +1,5 @@
 import { reactive, computed, onMounted, ref } from 'vue'
 import { listen } from '@tauri-apps/api/event'
-import { invoke } from '@tauri-apps/api/core'
 import type { OperationKey } from '@bindings/OperationKey'
 import type { OperationEventPayload } from '@bindings/OperationEventPayload'
 import type { OperationType } from '@bindings/OperationType'
@@ -99,17 +98,36 @@ export function useOperationTracker() {
     }
 
     onMounted(async () => {
-        // Listen for operation events
         listen<OperationEventPayload>('operation-event', ({ payload }) => {
             const key = payload.key
             const keyString = createKeyString(key)
             const event = payload.event
 
-            if (event === 'completed') {
-                // Completed event
-                const current = operations.get(keyString) || { isActive: false }
+            // Handle different event types
+            if (typeof event === 'object' && 'error' in event) {
+                // Error event: mark inactive, update state, and push to recent events
+                const current = operations.get(keyString) || { isActive: true }
+                current.error = event.error
+                current.warning = undefined
                 current.isActive = false
-                current.progress = undefined
+                operations.set(keyString, current)
+                const repoName = extractRepoName(key.repoUrl)
+                recentlyCompleted.value.push({
+                    keyString,
+                    type: event.error,
+                    time: Date.now(),
+                    repoName,
+                })
+                setTimeout(() => {
+                    recentlyCompleted.value = recentlyCompleted.value.filter(
+                        (op) => op.keyString !== keyString
+                    )
+                }, 120000)
+                setTimeout(() => {
+                    operations.delete(keyString)
+                }, 2000)
+            } else if (event === 'completed') {
+                const current = operations.get(keyString) || { isActive: true }
                 current.status = 'Completed'
                 current.warning = undefined
                 current.error = undefined
@@ -135,34 +153,29 @@ export function useOperationTracker() {
                 setTimeout(() => {
                     operations.delete(keyString)
                 }, operationsCleanupDelay)
-            } else if ('started' in event) {
+            } else if (typeof event === 'object' && 'started' in event) {
                 operations.set(keyString, {
                     type: event.started.operation,
                     isActive: true,
                 })
-            } else if ('progress' in event) {
+            } else if (typeof event === 'object' && 'progress' in event) {
                 const current = operations.get(keyString) || { isActive: true }
                 current.progress = event.progress
                 current.status = undefined
                 current.warning = undefined
                 current.error = undefined
                 operations.set(keyString, current)
-            } else if ('status' in event) {
+            } else if (typeof event === 'object' && 'status' in event) {
                 const current = operations.get(keyString) || { isActive: true }
                 current.status = event.status
                 current.progress = undefined
                 current.warning = undefined
                 current.error = undefined
                 operations.set(keyString, current)
-            } else if ('warning' in event) {
+            } else if (typeof event === 'object' && 'warning' in event) {
                 const current = operations.get(keyString) || { isActive: true }
                 current.warning = event.warning
                 current.error = undefined
-                operations.set(keyString, current)
-            } else if ('error' in event) {
-                const current = operations.get(keyString) || { isActive: true }
-                current.error = event.error
-                current.warning = undefined
                 operations.set(keyString, current)
             }
         })

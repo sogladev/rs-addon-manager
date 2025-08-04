@@ -197,24 +197,38 @@ pub async fn install_addon_cmd(
     .await
     .map_err(|e| format!("Task join error: {e}"))?;
 
-    // Mark operation as completed and emit completion event
-    tracker.finish_operation(&operation_key_clone);
-
-    app_handle_clone
-        .emit(
-            "operation-event",
-            OperationEventPayload {
-                key: operation_key_clone.clone(),
-                event: OperationEvent::Completed,
-            },
-        )
-        .map_err(|e| format!("Failed to emit operation-completed: {e}"))?;
-
-    app_handle_clone
-        .emit("addon-data-updated", ())
-        .map_err(|e| format!("Failed to emit addon-data-updated: {e}"))?;
-
-    install_result
+    // After blocking install, check outcome: if error, reporter has emitted Error event
+    match install_result {
+        Ok(_) => {
+            tracker.finish_operation(&operation_key_clone);
+            app_handle_clone
+                .emit(
+                    "operation-event",
+                    OperationEventPayload {
+                        key: operation_key_clone.clone(),
+                        event: OperationEvent::Completed,
+                    },
+                )
+                .map_err(|e| format!("Failed to emit operation-completed: {e}"))?;
+            app_handle_clone
+                .emit("addon-data-updated", ())
+                .map_err(|e| format!("Failed to emit addon-data-updated: {e}"))?;
+            Ok(())
+        }
+        Err(err_msg) => {
+            tracker.finish_operation(&operation_key_clone);
+            app_handle_clone
+                .emit(
+                    "operation-event",
+                    OperationEventPayload {
+                        key: operation_key_clone.clone(),
+                        event: OperationEvent::Error(err_msg.clone()),
+                    },
+                )
+                .map_err(|e| format!("Failed to emit operation-error: {e}"))?;
+            Err(err_msg)
+        }
+    }
 }
 
 #[tauri::command]

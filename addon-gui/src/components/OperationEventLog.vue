@@ -9,13 +9,7 @@ function formatProgressPercent(progress?: {
     return `${percent}%`
 }
 import { OperationKey } from '@bindings/OperationKey'
-import {
-    Activity,
-    CheckCircle,
-    // AlertTriangle,
-    // XCircle,
-    Clock,
-} from 'lucide-vue-next'
+import { Activity, CheckCircle, XCircle, Clock } from 'lucide-vue-next'
 import { computed } from 'vue'
 
 interface OperationEvent {
@@ -83,7 +77,11 @@ function formatTimeSince(timestamp: number): string {
 }
 
 function getEventIcon(type: string) {
-    switch (type.toLowerCase()) {
+    const lower = type.toLowerCase()
+    if (lower.startsWith('failed') || lower.includes('error')) {
+        return XCircle
+    }
+    switch (lower) {
         case 'install':
         case 'clone':
             return CheckCircle
@@ -96,7 +94,11 @@ function getEventIcon(type: string) {
 }
 
 function getEventColor(type: string) {
-    switch (type.toLowerCase()) {
+    const lower = type.toLowerCase()
+    if (lower.startsWith('failed') || lower.includes('error')) {
+        return 'text-error'
+    }
+    switch (lower) {
         case 'install':
         case 'clone':
             return 'text-accent'
