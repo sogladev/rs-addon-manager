@@ -140,7 +140,7 @@ function getEventColor(type: string) {
 
         <div
             tabindex="0"
-            class="dropdown-content card card-compact w-80 p-2 shadow bg-base-100 z-[1]"
+            class="dropdown-content card card-compact w-80 p-2 shadow bg-base-100 z-[100]"
         >
             <div class="card-body">
                 <h3 class="card-title text-sm">
@@ -151,7 +151,7 @@ function getEventColor(type: string) {
                 <!-- Active Operations -->
                 <div v-if="activeOperationsList.length > 0" class="space-y-2">
                     <div
-                        class="text-xs font-medium text-base-content/70 flex items-center gap-1"
+                        class="text-xs font-medium text-base-content flex items-center gap-1"
                     >
                         <Clock class="w-3 h-3" />
                         Active ({{ activeCount }})

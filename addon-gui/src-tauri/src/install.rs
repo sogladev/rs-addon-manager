@@ -18,8 +18,7 @@ where
         "Starting addon installation...".to_string(),
     ));
 
-    let manager_dir = validate::ensure_manager_dir(dir)
-        .map_err(|e| e)?;
+    let manager_dir = validate::ensure_manager_dir(dir).map_err(|e| e)?;
 
     reporter(OperationEvent::Status("Cloning repository...".to_string()));
     let repo_name = url
@@ -43,7 +42,8 @@ where
                 reporter(OperationEvent::Progress { current, total });
             }
         }
-    }).map_err(|e| format!("Failed to clone repository from {url}: {e}"))?;
+    })
+    .map_err(|e| format!("Failed to clone repository from {url}: {e}"))?;
 
     let path = PathBuf::from(
         repo.workdir()
@@ -176,7 +176,6 @@ pub async fn install_addon_cmd(
     .await
     .map_err(|e| format!("Task join error: {e}"))?;
 
-    // After blocking install, check outcome: if error, reporter has emitted Error event
     match install_result {
         Ok(_) => {
             tracker.finish_operation(&operation_key_clone);

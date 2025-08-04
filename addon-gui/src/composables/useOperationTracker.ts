@@ -93,8 +93,7 @@ export function useOperationTracker() {
 
     function extractRepoName(repoUrl: string): string {
         const { repo } = extractOwnerRepoFromUrl(repoUrl) || {}
-        console.log('Extracted Repo Name:', repo)
-        return repo || 'Unknown'
+        return repo || 'Unknown repo'
     }
 
     onMounted(async () => {

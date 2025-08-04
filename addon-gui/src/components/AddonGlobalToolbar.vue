@@ -194,7 +194,7 @@ const saveLogAndClose = async () => {
 </script>
 
 <template>
-    <div class="sticky top-0 z-10 bg-base-200 flex flex-col gap-0">
+    <div class="sticky top-0 z-50 bg-base-200 flex flex-col gap-0">
         <div
             class="flex flex-wrap items-center gap-2 bg-base-200 pb-2 pt-2 px-2"
         >
