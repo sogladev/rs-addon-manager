@@ -124,16 +124,17 @@ export function useOperationTracker() {
                     repoName,
                 })
 
-                // Clean up old completed operations after 2 minutes
+                const recentlyCompletedDelay = 180000
                 setTimeout(() => {
                     recentlyCompleted.value = recentlyCompleted.value.filter(
                         (op) => op.keyString !== keyString
                     )
-                }, 120000)
+                }, recentlyCompletedDelay)
 
+                const operationsCleanupDelay = 3000
                 setTimeout(() => {
                     operations.delete(keyString)
-                }, 2000)
+                }, operationsCleanupDelay)
             } else if ('started' in event) {
                 operations.set(keyString, {
                     type: event.started.operation,
