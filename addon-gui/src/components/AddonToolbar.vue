@@ -16,12 +16,11 @@ import {
     Save,
 } from 'lucide-vue-next'
 import { ref } from 'vue'
-
-const { addIssue } = useGlobalError()
-
 import { OperationState } from '@/composables/useOperationTracker'
 import type { AddOnsFolder } from '@bindings/AddOnsFolder'
 import { OperationKey } from '@bindings/OperationKey'
+
+const { addIssue } = useGlobalError()
 
 const {
     search,
@@ -176,16 +175,17 @@ const saveToFile = async () => {
 
 const { getIssueLog, saveIssueLog } = useGlobalError()
 const showLog = ref(false)
+const issueLogText = ref(getIssueLog())
 
-// Copy log to clipboard and close modal
 const copyLogAndClose = async () => {
     try {
-        await navigator.clipboard.writeText(getIssueLog())
+        await navigator.clipboard.writeText(issueLogText.value)
     } catch (e) {
         console.error('Failed to copy log:', e)
     }
     showLog.value = false
 }
+
 // Save log and close modal
 const saveLogAndClose = async () => {
     await saveIssueLog()
@@ -428,14 +428,14 @@ const saveLogAndClose = async () => {
             <p class="mb-2 text-sm text-base-content">
                 This box displays issues that occur during the app. Copy the log
                 below when sharing it in a GitHub issue.
+                <textarea
+                    readonly
+                    placeholder="No issues logged yet :)"
+                    rows="10"
+                    class="textarea textarea-bordered w-full mb-4 font-mono text-xs"
+                    v-model="issueLogText"
+                ></textarea>
             </p>
-            <textarea
-                readonly
-                placeholder="No issues logged yet :)"
-                rows="10"
-                class="textarea textarea-bordered w-full mb-4 font-mono text-xs"
-                >{{ getIssueLog() }}</textarea
-            >
             <div class="modal-action flex gap-2">
                 <button class="btn btn-accent" @click="saveLogAndClose">
                     <Save />Save Log

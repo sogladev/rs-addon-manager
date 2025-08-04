@@ -77,9 +77,9 @@ const handleClone = async () => {
         isGitUrlValid.value = null
         directoryTouched.value = false
         errorMessage.value = ''
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('Failed to clone addon', err)
-        errorMessage.value = err.toString()
+        errorMessage.value = err instanceof Error ? err.message : String(err)
         addIssue('Failed to clone', err)
         // Reopen modal on error so user can retry
         emit('update:open', true)
