@@ -1,4 +1,13 @@
 <script setup lang="ts">
+// Helper to format progress as percentage
+function formatProgressPercent(progress?: {
+    current: number
+    total: number
+}): string {
+    if (!progress || progress.total === 0) return ''
+    const percent = Math.floor((progress.current / progress.total) * 100)
+    return `${percent}%`
+}
 import { computed } from 'vue'
 import {
     Activity,
@@ -119,7 +128,7 @@ const hasContent = computed(() => {
 </script>
 
 <template>
-    <div v-if="hasContent" class="dropdown dropdown-end">
+    <div class="dropdown dropdown-end">
         <div
             tabindex="0"
             role="button"
@@ -189,9 +198,7 @@ const hasContent = computed(() => {
                                     v-if="op.progress"
                                     class="text-base-content/60"
                                 >
-                                    {{ op.progress.current }}/{{
-                                        op.progress.total
-                                    }}
+                                    {{ formatProgressPercent(op.progress) }}
                                 </div>
                             </div>
                         </div>
@@ -249,7 +256,10 @@ const hasContent = computed(() => {
 
                 <!-- Empty state -->
                 <div
-                    v-if="!hasContent"
+                    v-if="
+                        activeOperationsList.length === 0 &&
+                        recentEvents.length === 0
+                    "
                     class="text-center text-base-content/60 text-xs py-4"
                 >
                     No recent activity
