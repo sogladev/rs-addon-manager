@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use tauri::Emitter;
 
-use crate::{clone, operation_tracker::*, validate};
+use crate::{addon_disk, clone, operation_tracker::*, validate};
 
 pub struct InstallReporter {
     pub event: Box<dyn FnMut(OperationEvent) + Send>,
@@ -18,15 +18,8 @@ where
         "Starting addon installation...".to_string(),
     ));
 
-    let manager_dir = match validate::ensure_manager_dir(dir) {
-        Ok(m) => m,
-        Err(e) => {
-            reporter(OperationEvent::Error(format!(
-                "Failed to ensure manager dir: {e}"
-            )));
-            return Err(e);
-        }
-    };
+    let manager_dir = validate::ensure_manager_dir(dir)
+        .map_err(|e| e)?;
 
     reporter(OperationEvent::Status("Cloning repository...".to_string()));
     let repo_name = url
@@ -42,7 +35,7 @@ where
 
     // Throttle progress events: only emit on 1% increments
     let mut last_percent: u32 = 0;
-    let repo = match clone::clone_git_repo(&url, manager_dir.clone(), &mut |current, total| {
+    let repo = clone::clone_git_repo(&url, manager_dir.clone(), &mut |current, total| {
         if total > 0 {
             let percent = ((current as u128 * 100) / total as u128) as u32;
             if percent != last_percent {
@@ -50,15 +43,8 @@ where
                 reporter(OperationEvent::Progress { current, total });
             }
         }
-    }) {
-        Ok(r) => r,
-        Err(e) => {
-            reporter(OperationEvent::Error(format!(
-                "Failed to clone repository from {url}: {e}"
-            )));
-            return Err(format!("Failed to clone repository from {url}: {e}"));
-        }
-    };
+    }).map_err(|e| format!("Failed to clone repository from {url}: {e}"))?;
+
     let path = PathBuf::from(
         repo.workdir()
             .expect("Repository has no workdir. It should not be bare"),
@@ -67,15 +53,8 @@ where
     reporter(OperationEvent::Status(
         "Discovering sub-addons...".to_string(),
     ));
-    let disk_repo = match crate::addon_disk::create_disk_addon_repository(&path) {
-        Ok(repo) => repo,
-        Err(e) => {
-            reporter(OperationEvent::Error(format!(
-                "Failed to discover sub-addons: {e}"
-            )));
-            return Err(format!("Failed to discover sub-addons: {e}"));
-        }
-    };
+    let disk_repo = addon_disk::create_disk_addon_repository(&path)
+        .map_err(|e| format!("Failed to discover sub-addons: {e}"))?;
 
     reporter(OperationEvent::Status(
         "Installing sub-addons (symlinking)...".to_string(),
@@ -89,7 +68,7 @@ where
 }
 
 pub fn install_sub_addons<F>(
-    addons: Vec<crate::addon_disk::DiskAddon>,
+    addons: Vec<addon_disk::DiskAddon>,
     repo_root: &Path,
     addons_dir: &Path,
     mut reporter: F,
@@ -331,7 +310,7 @@ mod tests {
         );
 
         // Verify that metadata was written correctly by scanning the directory
-        let disk_folder = crate::addon_disk::DiskAddOnsFolder::scan(addons_dir_str)
+        let disk_folder = addon_disk::DiskAddOnsFolder::scan(addons_dir_str)
             .expect("Failed to scan addons directory");
 
         let repo = disk_folder.repositories.iter().find(|r| r.repo_url == url);
