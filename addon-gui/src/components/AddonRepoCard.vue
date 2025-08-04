@@ -32,8 +32,7 @@ const handleWebsite = () => {
     openUrl(url)
 }
 
-const { isOperationActive, getOperationType, getProgress } =
-    useOperationTracker()
+const { isOperationActive, getOperationType } = useOperationTracker()
 
 async function handleToggleAddon(addon: Addon) {
     try {
@@ -147,8 +146,6 @@ const isOperating = computed(() => isOperationActive(repo.repoUrl, folderPath))
 
 const operationType = computed(() => getOperationType(repo.repoUrl, folderPath))
 
-const operationProgress = computed(() => getProgress(repo.repoUrl, folderPath))
-
 function handleBranchChange(e: Event) {
     const target = e.target as HTMLSelectElement | null
     if (!target) return
@@ -204,12 +201,6 @@ const buttonDisabled = computed(() => {
     // If installed, only allow update if update is available
     return !updateAvailable.value
 })
-
-const progressPercent = computed(() => {
-    if (!operationProgress.value) return 0
-    const { current, total } = operationProgress.value
-    return total > 0 ? (current / total) * 100 : 0
-})
 </script>
 
 <template>
@@ -263,7 +254,7 @@ const progressPercent = computed(() => {
             </div>
             <button
                 :class="[
-                    'btn btn-sm relative overflow-hidden w-20',
+                    'btn btn-sm w-20',
                     updateAvailable || !repo.repoRef
                         ? 'btn-primary'
                         : 'btn-primary',
@@ -271,12 +262,7 @@ const progressPercent = computed(() => {
                 @click="handleButtonClick"
                 :disabled="buttonDisabled"
             >
-                <span class="relative z-10">{{ buttonText }}</span>
-                <div
-                    v-if="isOperating && operationProgress"
-                    class="absolute left-0 top-0 h-full bg-primary/30 transition-all"
-                    :style="{ width: progressPercent + '%' }"
-                ></div>
+                {{ buttonText }}
             </button>
             <div class="dropdown dropdown-end">
                 <button tabindex="0" class="btn btn-sm btn-ghost">

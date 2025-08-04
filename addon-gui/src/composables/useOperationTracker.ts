@@ -1,4 +1,4 @@
-import { reactive, computed, onMounted } from 'vue'
+import { reactive, computed, onMounted, ref, watch } from 'vue'
 import { listen } from '@tauri-apps/api/event'
 import type { OperationKey } from '@bindings/OperationKey'
 // import type { OperationEvent } from '@bindings/OperationEvent'
@@ -17,6 +17,11 @@ export interface OperationState {
 export function useOperationTracker() {
     // Map of operation ID to operation state
     const operations = reactive<Map<string, OperationState>>(new Map())
+
+    // Recently completed operations tracking
+    const recentlyCompleted = ref<
+        { id: string; type: string; time: number; repoName: string }[]
+    >([])
 
     // Helper function to generate operation ID
     function getOperationId(key: OperationKey): string {
@@ -70,6 +75,17 @@ export function useOperationTracker() {
         return getOperationState(repoUrl, folderPath).progress
     }
 
+    // Helper function to extract repo name from URL
+    function extractRepoName(repoUrl: string): string {
+        try {
+            const url = new URL(repoUrl)
+            const pathParts = url.pathname.split('/').filter(Boolean)
+            return pathParts[pathParts.length - 1] || 'Unknown'
+        } catch {
+            return 'Unknown'
+        }
+    }
+
     onMounted(async () => {
         // Listen for operation events
         listen<OperationEventPayload>('operation-event', ({ payload }) => {
@@ -86,6 +102,24 @@ export function useOperationTracker() {
                 current.warning = undefined
                 current.error = undefined
                 operations.set(id, current)
+
+                // Add to recently completed
+                const [, repoUrl] = id.split(':')
+                const repoName = extractRepoName(repoUrl)
+                recentlyCompleted.value.push({
+                    id,
+                    type: current.type || 'unknown',
+                    time: Date.now(),
+                    repoName,
+                })
+
+                // Clean up old completed operations after 2 minutes
+                setTimeout(() => {
+                    recentlyCompleted.value = recentlyCompleted.value.filter(
+                        (op) => op.id !== id
+                    )
+                }, 120000)
+
                 setTimeout(() => {
                     operations.delete(id)
                 }, 2000)
@@ -130,5 +164,6 @@ export function useOperationTracker() {
         getOperationType,
         getProgress,
         getOperationState,
+        recentlyCompleted,
     }
 }

@@ -10,6 +10,7 @@ import {
 } from 'lucide-vue-next'
 import TimeoutButton from '@/components/TimeoutButton.vue'
 import ThemeController from '@/components/ThemeController.vue'
+import OperationEventLog from '@/components/OperationEventLog.vue'
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { save } from '@tauri-apps/plugin-dialog'
@@ -20,11 +21,27 @@ const { addIssue } = useGlobalError()
 
 import type { AddOnsFolder } from '@bindings/AddOnsFolder'
 
-const { search, hasUpdates, outOfDateCount, folders } = defineProps<{
+const {
+    search,
+    hasUpdates,
+    outOfDateCount,
+    folders,
+    operations,
+    activeOperationCount,
+    recentlyCompleted,
+} = defineProps<{
     search: string
     hasUpdates: boolean
     outOfDateCount: number
     folders: AddOnsFolder[]
+    operations?: Map<string, any>
+    activeOperationCount?: number
+    recentlyCompleted?: Array<{
+        id: string
+        type: string
+        time: number
+        repoName: string
+    }>
 }>()
 
 const emit = defineEmits<{
@@ -216,6 +233,12 @@ const saveLogAndClose = async () => {
                 <!-- <Plus /> -->
                 Install addon
             </button>
+            <OperationEventLog
+                v-if="operations && recentlyCompleted"
+                :activeOperations="operations"
+                :recentlyCompleted="recentlyCompleted"
+                :activeCount="activeOperationCount || 0"
+            />
             <div class="dropdown dropdown-end">
                 <button tabindex="0" class="btn btn-ghost btn-square">
                     <Menu />

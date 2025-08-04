@@ -2,10 +2,15 @@ import { ref, computed, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import type { AddOnsFolder } from '@bindings/AddOnsFolder'
+import { useOperationTracker } from './useOperationTracker'
 
 export function useAddonData() {
     const addonFolders = ref<AddOnsFolder[]>([])
     const folderPaths = computed(() => addonFolders.value.map((f) => f.path))
+
+    // Operation tracking - delegated to useOperationTracker
+    const { operations, hasActiveOperations, activeOperationCount } =
+        useOperationTracker()
 
     let refreshPending = false
     let lastRefreshTime = 0
@@ -79,10 +84,6 @@ export function useAddonData() {
 
         listen('addon-disk-updated', () => refreshDiskData())
 
-        listen<string>('update-all-complete', ({ payload }) => {
-            console.log('Update all completed:', payload)
-        })
-
         await refreshAddonData()
     })
 
@@ -91,5 +92,9 @@ export function useAddonData() {
         folderPaths,
         refreshAddonData,
         refreshDiskData,
+        // Operation tracking - delegated to useOperationTracker
+        operations,
+        hasActiveOperations,
+        activeOperationCount,
     }
 }

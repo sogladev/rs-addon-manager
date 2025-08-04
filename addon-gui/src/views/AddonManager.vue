@@ -8,13 +8,21 @@ import type { AddonRepository } from '@bindings/AddonRepository'
 
 import { useGlobalError } from '@/composables/useGlobalError'
 import { useAddonData } from '@/composables/useAddonData'
+import { useOperationTracker } from '@/composables/useOperationTracker'
 import AddonToolbar from '@/components/AddonToolbar.vue'
 import AddonCloneModal from '@/components/AddonCloneModal.vue'
 import AddonFolderList from '@/components/AddonFolderList.vue'
 import DeleteFolderModal from '@/components/DeleteFolderModal.vue'
 import DeleteAddonModal from '@/components/DeleteAddonModal.vue'
 
-const { addonFolders, folderPaths, refreshAddonData } = useAddonData()
+const {
+    addonFolders,
+    folderPaths,
+    refreshAddonData,
+    operations,
+    activeOperationCount,
+} = useAddonData()
+const { recentlyCompleted } = useOperationTracker()
 
 const showAddModal = ref(false)
 const search = ref('')
@@ -146,6 +154,9 @@ const outOfDateCount = computed(() =>
             :folders="addonFolders"
             :hasUpdates="hasUpdates"
             :outOfDateCount="outOfDateCount"
+            :operations="operations"
+            :activeOperationCount="activeOperationCount"
+            :recentlyCompleted="recentlyCompleted"
             @update-all="handleUpdateAll"
             @refresh="refreshAddonData(true)"
             @add-addon="showAddModal = true"

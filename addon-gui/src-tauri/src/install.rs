@@ -40,8 +40,16 @@ where
         std::fs::remove_dir_all(&repo_path).ok();
     }
 
+    // Throttle progress events: only emit on 1% increments
+    let mut last_percent: u32 = 0;
     let repo = match clone::clone_git_repo(&url, manager_dir.clone(), &mut |current, total| {
-        reporter(OperationEvent::Progress { current, total });
+        if total > 0 {
+            let percent = ((current as u128 * 100) / total as u128) as u32;
+            if percent != last_percent {
+                last_percent = percent;
+                reporter(OperationEvent::Progress { current, total });
+            }
+        }
     }) {
         Ok(r) => r,
         Err(e) => {
