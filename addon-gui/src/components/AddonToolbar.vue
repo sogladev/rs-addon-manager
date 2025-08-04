@@ -6,8 +6,10 @@ import {
     Info,
     Import,
     ArrowRightFromLine,
+    Palette,
 } from 'lucide-vue-next'
 import TimeoutButton from '@/components/TimeoutButton.vue'
+import ThemeController from '@/components/ThemeController.vue'
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { save } from '@tauri-apps/plugin-dialog'
@@ -34,6 +36,7 @@ const importText = ref('')
 const showExport = ref(false)
 const exportText = ref('')
 const showAbout = ref(false)
+const showTheme = ref(false)
 
 const confirmImport = () => {
     // Each line: <path> <addonName> *<gitUrl> <branch>
@@ -173,6 +176,15 @@ const saveToFile = async () => {
                 >
                     <li>
                         <button
+                            @click="showTheme = true"
+                            class="flex items-center gap-2"
+                        >
+                            <Palette class="w-4 h-4" />
+                            Theme
+                        </button>
+                    </li>
+                    <li>
+                        <button
                             @click="showImport = true"
                             class="flex items-center gap-2"
                         >
@@ -296,6 +308,24 @@ const saveToFile = async () => {
             </p>
             <div class="modal-action">
                 <button class="btn btn-primary" @click="showAbout = false">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Theme Modal -->
+    <div
+        v-if="showTheme"
+        class="modal modal-open"
+        @click.self="showTheme = false"
+    >
+        <div class="modal-box max-w-xs">
+            <h3 class="font-bold text-lg flex items-center gap-2">
+                <Palette class="w-6 h-6" /> Theme
+            </h3>
+            <ThemeController />
+            <div class="modal-action">
+                <button class="btn btn-primary" @click="showTheme = false">
                     Close
                 </button>
             </div>

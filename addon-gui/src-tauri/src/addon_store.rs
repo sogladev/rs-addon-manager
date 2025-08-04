@@ -91,4 +91,22 @@ pub struct AddOnsFolderUserMeta {
 pub struct AddOnsUserConfig {
     /// All managed AddOns directories and their metadata
     pub folders: Vec<AddOnsFolderUserMeta>,
+    /// Selected theme name
+    pub theme: Option<String>,
+}
+
+#[tauri::command]
+pub async fn save_theme(theme: String, app_handle: AppHandle) -> Result<(), String> {
+    let mut config = load_user_config(&app_handle)?;
+    config.theme = Some(theme.clone());
+    let store = app_handle.store(STORE_FILE).map_err(|e| e.to_string())?;
+    let value = serde_json::to_value(&config).map_err(|e| e.to_string())?;
+    store.set(STORE_KEY, value);
+    store.save().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn load_theme(app_handle: AppHandle) -> Result<String, String> {
+    let config = load_user_config(&app_handle)?;
+    Ok(config.theme.clone().unwrap_or_default())
 }

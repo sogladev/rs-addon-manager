@@ -9,4 +9,8 @@ export type AddOnsUserConfig = {
      * All managed AddOns directories and their metadata
      */
     folders: Array<AddOnsFolderUserMeta>
+    /**
+     * Selected theme name
+     */
+    theme: string | null
 }

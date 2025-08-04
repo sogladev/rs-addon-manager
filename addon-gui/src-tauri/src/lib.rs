@@ -23,19 +23,21 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .setup(|_app| Ok(()))
         .invoke_handler(tauri::generate_handler![
-            validate::is_valid_repo_url,
-            validate::is_valid_addons_folder_str,
-            install::install_addon_cmd,
-            install::create_addon_symlink,
-            install::remove_addon_symlink,
-            remove::delete_addon_cmd,
-            update::update_addon_cmd,
-            update::update_all_addons_cmd,
             addon_discovery::refresh_addon_data,
             addon_discovery::refresh_disk_data,
             addon_store::add_addon_directory,
             addon_store::delete_addon_directory,
-            permission_workaround::allow_file
+            addon_store::save_theme,
+            addon_store::load_theme,
+            install::create_addon_symlink,
+            install::install_addon_cmd,
+            install::remove_addon_symlink,
+            permission_workaround::allow_file,
+            remove::delete_addon_cmd,
+            update::update_addon_cmd,
+            update::update_all_addons_cmd,
+            validate::is_valid_addons_folder_str,
+            validate::is_valid_repo_url,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
