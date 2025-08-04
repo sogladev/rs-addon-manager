@@ -11,10 +11,11 @@ import { openUrl } from '@tauri-apps/plugin-opener'
 import { readTextFile } from '@tauri-apps/plugin-fs'
 import { marked } from 'marked'
 
-const props = defineProps<{
+const { repo, folderPath } = defineProps<{
     repo: AddonRepository & { latestRef?: string | null }
     folderPath: string
 }>()
+
 const emit = defineEmits<{
     delete: []
     'branch-change': [newBranch: string]
@@ -23,9 +24,9 @@ const emit = defineEmits<{
 const showReadmeModal = ref(false)
 const readmeHtml = ref('')
 
-function handleWebsite() {
-    const url = props.repo.repoUrl.replace(/\.git$/, '')
-    console.log('Open website', url)
+const handleWebsite = () => {
+    const url = repo.repoUrl.replace(/\.git$/, '')
+    console.debug('Open website', url)
     openUrl(url)
 }
 
@@ -36,41 +37,37 @@ function handleToggleAddon(addon: Addon) {
     // Symlink logic
     if (addon.isSymlinked) {
         invoke('create_addon_symlink', {
-            repoUrl: props.repo.repoUrl,
-            folderPath: props.folderPath,
+            repoUrl: repo.repoUrl,
+            folderPath: folderPath,
             addonName: addon.name,
         })
     } else {
         invoke('remove_addon_symlink', {
-            repoUrl: props.repo.repoUrl,
-            folderPath: props.folderPath,
+            repoUrl: repo.repoUrl,
+            folderPath: folderPath,
             addonName: addon.name,
         })
     }
 }
 
 function handleButtonClick() {
-    if (!props.repo.repoRef) {
+    if (!repo.repoRef) {
         invoke('install_addon_cmd', {
-            url: props.repo.repoUrl,
-            path: props.folderPath,
-            branch: props.repo.currentBranch,
+            url: repo.repoUrl,
+            path: folderPath,
+            branch: repo.currentBranch,
         }).catch((e) => console.error('Install failed:', e))
     } else {
         invoke('update_addon_cmd', {
-            url: props.repo.repoUrl,
-            path: props.folderPath,
-            branch: props.repo.currentBranch,
+            url: repo.repoUrl,
+            path: folderPath,
+            branch: repo.currentBranch,
         }).catch((e) => console.error('Update failed:', e))
     }
 }
 
 async function handleReadme() {
-    const basePath = await join(
-        props.folderPath,
-        '.addonmanager',
-        props.repo.repoName
-    )
+    const basePath = await join(folderPath, '.addonmanager', repo.repoName)
     const readmePaths = [
         await join(basePath, 'README.md'),
         await join(basePath, '.github', 'README.md'),
@@ -103,22 +100,22 @@ function closeReadmeModal() {
 }
 
 function handleRepair() {
-    console.log('Repair repo', props.repo.repoUrl)
+    console.log('Repair repo', repo.repoUrl)
     // re-install
     invoke('install_addon_cmd', {
-        url: props.repo.repoUrl,
-        path: props.folderPath,
-        branch: props.repo.currentBranch,
+        url: repo.repoUrl,
+        path: folderPath,
+        branch: repo.currentBranch,
     })
 }
 
 // Computed properties for operation state
 // Track selected branch and detect if changed from original
-const selectedBranch = ref(props.repo.currentBranch)
+const selectedBranch = ref(repo.currentBranch)
 const branchChanged = ref(false)
 // Reset branchChanged when repo.currentBranch prop updates
 watch(
-    () => props.repo.currentBranch,
+    () => repo.currentBranch,
     (newBranch) => {
         selectedBranch.value = newBranch
         branchChanged.value = false
@@ -126,17 +123,11 @@ watch(
 )
 
 // Computed properties for operation state
-const isOperating = computed(() =>
-    isOperationActive(props.repo.repoUrl, props.folderPath)
-)
+const isOperating = computed(() => isOperationActive(repo.repoUrl, folderPath))
 
-const operationType = computed(() =>
-    getOperationType(props.repo.repoUrl, props.folderPath)
-)
+const operationType = computed(() => getOperationType(repo.repoUrl, folderPath))
 
-const operationProgress = computed(() =>
-    getProgress(props.repo.repoUrl, props.folderPath)
-)
+const operationProgress = computed(() => getProgress(repo.repoUrl, folderPath))
 
 function handleBranchChange(e: Event) {
     const target = e.target as HTMLSelectElement | null
@@ -144,14 +135,14 @@ function handleBranchChange(e: Event) {
     const newBranch = target.value
     selectedBranch.value = newBranch
     // Enable update only when new branch differs from disk state
-    branchChanged.value = newBranch !== props.repo.currentBranch
+    branchChanged.value = newBranch !== repo.currentBranch
     emit('branch-change', newBranch)
 }
 
 const updateAvailable = computed(() => {
     // If branch was changed, always show update available
     if (branchChanged.value) return true
-    return props.repo.latestRef && props.repo.repoRef !== props.repo.latestRef
+    return repo.latestRef && repo.repoRef !== repo.latestRef
 })
 
 // Computed button text and state
@@ -168,7 +159,7 @@ const buttonText = computed(() => {
     }
 
     // If repo is not installed (no repoRef), show Install
-    if (!props.repo.repoRef) {
+    if (!repo.repoRef) {
         return 'Install'
     }
 
@@ -185,7 +176,7 @@ const buttonDisabled = computed(() => {
     if (isOperating.value) return true
 
     // If not installed, always allow install
-    if (!props.repo.repoRef) return false
+    if (!repo.repoRef) return false
 
     // If branch was changed, always enable update
     if (branchChanged.value) return false
@@ -316,7 +307,6 @@ const progressPercent = computed(() => {
         </div>
     </div>
 
-    <!-- README Modal -->
     <div v-if="showReadmeModal" class="modal modal-open">
         <div class="modal-box max-w-3xl">
             <button

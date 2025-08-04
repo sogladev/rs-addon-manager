@@ -8,7 +8,7 @@ import {
 } from 'lucide-vue-next'
 import TimeoutButton from '@/components/TimeoutButton.vue'
 
-const props = defineProps({
+const { path, isValid } = defineProps({
     path: { type: String, required: true },
     isValid: { type: Boolean, default: true },
 })
@@ -16,11 +16,11 @@ const emit = defineEmits(['open-folder', 'delete-folder'])
 
 const open = ref(true)
 
-function toggle() {
+const toggle = () => {
     open.value = !open.value
 }
-function onOpenFolder() {
-    emit('open-folder', props.path)
+const onOpenFolder = () => {
+    emit('open-folder', path)
 }
 </script>
 
@@ -37,7 +37,6 @@ function onOpenFolder() {
             class="flex items-center px-4 py-2 gap-4 font-mono bg-base-200/80"
             tabindex="0"
         >
-            <!-- select-none -->
             <span class="flex items-center gap-1 flex-1">
                 <span
                     v-if="isValid === false"
@@ -78,5 +77,3 @@ function onOpenFolder() {
         </div>
     </div>
 </template>
-
-<style scoped></style>

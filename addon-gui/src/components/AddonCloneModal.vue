@@ -2,7 +2,7 @@
 import { ref, watch, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 
-const props = defineProps<{
+const { open, folderPaths } = defineProps<{
     open: boolean
     folderPaths: string[]
 }>()
@@ -12,15 +12,15 @@ const emit = defineEmits<{ (event: 'update:open', value: boolean): void }>()
 const selectedDirectory = ref<string>('')
 
 watch(
-    () => props.open,
+    () => open,
     (open) => {
         if (open) {
-            if (props.folderPaths.length > 0) {
+            if (folderPaths.length > 0) {
                 if (
                     !selectedDirectory.value ||
-                    !props.folderPaths.includes(selectedDirectory.value)
+                    !folderPaths.includes(selectedDirectory.value)
                 ) {
-                    selectedDirectory.value = props.folderPaths[0]
+                    selectedDirectory.value = folderPaths[0]
                 }
             } else {
                 selectedDirectory.value = ''
@@ -59,7 +59,6 @@ const handleClone = async () => {
             path: selectedDirectory.value,
         })
         console.log('Addon cloned successfully')
-        // Reset form after successful clone
         gitUrl.value = ''
         isGitUrlValid.value = null
         directoryTouched.value = false
@@ -71,7 +70,6 @@ const handleClone = async () => {
 }
 </script>
 <template>
-    <!-- Add Addon Modal -->
     <dialog :open="open" class="modal">
         <div class="modal-box">
             <h3 class="font-bold text-lg mb-4">Clone Repository</h3>

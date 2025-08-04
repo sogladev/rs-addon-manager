@@ -6,7 +6,7 @@ import type { Addon } from '@bindings/Addon'
 import AddonCollapse from '@/components/AddonCollapse.vue'
 import AddonRepoCard from '@/components/AddonRepoCard.vue'
 
-const props = defineProps<{
+const { folders, search } = defineProps<{
     folders: AddOnsFolder[]
     search: string
 }>()
@@ -19,17 +19,15 @@ const emit = defineEmits<{
     'add-directory': []
 }>()
 
-// Compute filtered folders and their repositories based on search
 const filteredFolders = computed(() => {
-    const term = props.search.trim().toLowerCase()
+    const term = search.trim().toLowerCase()
     if (!term) {
-        return props.folders.map((folder) => ({
+        return folders.map((folder) => ({
             ...folder,
             repositories: folder.repositories,
         }))
     }
-    // For each folder, filter its repositories
-    return props.folders
+    return folders
         .map((folder) => {
             const filteredRepos = folder.repositories.filter(
                 (repo) =>
@@ -47,7 +45,7 @@ const filteredFolders = computed(() => {
         .filter((folder) => folder.repositories.length > 0)
 })
 
-function handleDeleteAddon(repo: AddonRepository, folderPath: string) {
+const handleDeleteAddon = (repo: AddonRepository, folderPath: string) => {
     emit('delete-addon', folderPath, repo)
 }
 </script>

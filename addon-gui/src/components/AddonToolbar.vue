@@ -15,7 +15,7 @@ import { writeTextFile } from '@tauri-apps/plugin-fs'
 
 import type { AddOnsFolder } from '@bindings/AddOnsFolder'
 
-const props = defineProps<{
+const { search, hasUpdates, outOfDateCount, folders } = defineProps<{
     search: string
     hasUpdates: boolean
     outOfDateCount: number
@@ -35,7 +35,7 @@ const showExport = ref(false)
 const exportText = ref('')
 const showAbout = ref(false)
 
-function confirmImport() {
+const confirmImport = () => {
     // Each line: <path> <addonName> *<gitUrl> <branch>
     // Skip header or comment lines
     if (!importText.value.trim()) return
@@ -53,9 +53,7 @@ function confirmImport() {
                 ? parts[2].slice(1)
                 : parts[2]
             const branch = parts[3]
-            const alreadyManaged = props.folders.some?.(
-                (f) => f.path === folderPath
-            )
+            const alreadyManaged = folders.some?.((f) => f.path === folderPath)
             if (alreadyManaged) {
                 invoke('install_addon_cmd', {
                     url: gitUrl,
@@ -83,11 +81,11 @@ function confirmImport() {
     showImport.value = false
 }
 
-function handleExport() {
-    // Generate export lines with header comment
+// Generate export lines with header comment
+const handleExport = () => {
     const header = '// Each line: <path> <addonName> *<gitUrl> <branch>'
     const lines: string[] = []
-    props.folders.forEach((folder) => {
+    folders.forEach((folder) => {
         folder.repositories.forEach((repo) => {
             const branch = repo.currentBranch || 'main'
             repo.addons.forEach((addon) => {
@@ -100,8 +98,9 @@ function handleExport() {
     exportText.value = [header, ...lines].join('\n')
     showExport.value = true
 }
+
 // Copy export text to clipboard and close modal
-function copyAndClose() {
+const copyAndClose = () => {
     navigator.clipboard
         .writeText(exportText.value)
         .then(() => {
@@ -109,6 +108,7 @@ function copyAndClose() {
         })
         .catch((err) => console.error('Copy failed:', err))
 }
+
 const saveToFile = async () => {
     try {
         const path = await save({
@@ -206,7 +206,7 @@ const saveToFile = async () => {
             update
         </span>
     </div>
-    <!-- Import/Addons Modal -->
+    <!-- Import Modal -->
     <div
         v-if="showImport"
         class="modal modal-open"
@@ -233,7 +233,7 @@ const saveToFile = async () => {
             </div>
         </div>
     </div>
-    <!-- Export/Addons Modal -->
+    <!-- Export Modal -->
     <div
         v-if="showExport"
         class="modal modal-open"

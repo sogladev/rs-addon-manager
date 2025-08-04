@@ -1,25 +1,24 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-const props = defineProps<{
-    /** Timeout duration in milliseconds before button can be clicked again */
+const { timeout, disabled } = defineProps<{
     timeout?: number
-    /** Whether the button is disabled */
     disabled?: boolean
 }>()
+
 const emit = defineEmits<{
     click: []
 }>()
 
 const isWaiting = ref(false)
 
-function handleClick() {
-    if (isWaiting.value || props.disabled) return
+const handleClick = () => {
+    if (isWaiting.value || disabled) return
 
     isWaiting.value = true
     emit('click')
 
-    const timeoutDuration = props.timeout ?? 500
+    const timeoutDuration = timeout ?? 500
     setTimeout(() => {
         isWaiting.value = false
     }, timeoutDuration)
