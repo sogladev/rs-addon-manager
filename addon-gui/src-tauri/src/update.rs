@@ -23,16 +23,19 @@ pub fn update_addon_repo(path: &str, url: &str, branch: &str) -> Result<(), Stri
     // Use HTTPS anonymous fetch for public repositories
     let mut fo = FetchOptions::new();
 
-    // Fetch the specified branch
+    // Sanitize branch name: strip 'origin/' prefix if present
+    let branch_name = branch.strip_prefix("origin/").unwrap_or(branch);
+
+    // Fetch the sanitized branch name
     let mut remote = repo
         .find_remote("origin")
         .map_err(|e| format!("Failed to find remote: {e}"))?;
     remote
-        .fetch(&[branch], Some(&mut fo), None)
+        .fetch(&[branch_name], Some(&mut fo), None)
         .map_err(|e| format!("Fetch failed: {e}"))?;
 
     // Get the fetched commit
-    let remote_ref = format!("refs/remotes/origin/{branch}");
+    let remote_ref = format!("refs/remotes/origin/{branch_name}");
     let commit = repo
         .find_reference(&remote_ref)
         .and_then(|r| r.peel_to_commit())
@@ -40,9 +43,18 @@ pub fn update_addon_repo(path: &str, url: &str, branch: &str) -> Result<(), Stri
     let oid = commit.id();
 
     // Update local branch ref
-    let local_ref = format!("refs/heads/{branch}");
+    let local_ref = format!("refs/heads/{branch_name}");
     repo.reference(&local_ref, oid, true, "force update")
         .map_err(|e| format!("Failed to update branch ref: {e}"))?;
+
+    // Checkout the branch so HEAD points to it
+    let obj = repo
+        .revparse_single(&local_ref)
+        .map_err(|e| format!("Failed to revparse branch for checkout: {e}"))?;
+    repo.checkout_tree(&obj, None)
+        .map_err(|e| format!("Failed to checkout tree: {e}"))?;
+    repo.set_head(&local_ref)
+        .map_err(|e| format!("Failed to set HEAD: {e}"))?;
 
     // Hard reset working tree
     repo.reset(commit.as_object(), ResetType::Hard, None)

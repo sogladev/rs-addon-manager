@@ -27,7 +27,7 @@ export function useAddonData() {
     async function refreshAddonData(force = false) {
         const now = Date.now()
         const timeSinceLast = now - lastRefreshTime
-        const refreshInterval = 10000 // 10 seconds
+        const refreshInterval = 5000
 
         if (refreshPending) {
             return
@@ -57,7 +57,7 @@ export function useAddonData() {
     async function refreshDiskData() {
         const now = Date.now()
         const timeSinceLast = now - lastDiskRefreshTime
-        const refreshInterval = 10000 // 10 seconds
+        const refreshInterval = 3000
 
         if (diskRefreshPending) {
             return

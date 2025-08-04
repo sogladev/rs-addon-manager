@@ -55,13 +55,13 @@ function handleButtonClick() {
         invoke('install_addon_cmd', {
             url: repo.repoUrl,
             path: folderPath,
-            branch: repo.currentBranch,
+            branch: selectedBranch.value,
         }).catch((e) => console.error('Install failed:', e))
     } else {
         invoke('update_addon_cmd', {
             url: repo.repoUrl,
             path: folderPath,
-            branch: repo.currentBranch,
+            branch: selectedBranch.value,
         }).catch((e) => console.error('Update failed:', e))
     }
 }

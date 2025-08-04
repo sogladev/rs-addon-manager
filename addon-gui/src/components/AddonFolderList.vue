@@ -73,7 +73,6 @@ const handleDeleteAddon = (repo: AddonRepository, folderPath: string) => {
                 />
             </div>
         </AddonCollapse>
-        <!-- Add addon directory entry -->
         <button
             class="btn btn-outline btn-accent mt-2 self-start"
             @click="emit('add-directory')"
