@@ -21,28 +21,29 @@ const emit = defineEmits<{
 
 const filteredFolders = computed(() => {
     const term = search.trim().toLowerCase()
-    if (!term) {
-        return folders.map((folder) => ({
-            ...folder,
-            repositories: folder.repositories,
-        }))
+    let foldersToShow = folders.map((folder) => ({
+        ...folder,
+        repositories: folder.repositories,
+    }))
+    if (term) {
+        foldersToShow = folders
+            .map((folder) => {
+                const filteredRepos = folder.repositories.filter(
+                    (repo) =>
+                        repo.repoName.toLowerCase().includes(term) ||
+                        repo.owner.toLowerCase().includes(term) ||
+                        repo.addons.some((addon) =>
+                            addon.name.toLowerCase().includes(term)
+                        )
+                )
+                return {
+                    ...folder,
+                    repositories: filteredRepos,
+                }
+            })
+            .filter((folder) => folder.repositories.length > 0)
     }
-    return folders
-        .map((folder) => {
-            const filteredRepos = folder.repositories.filter(
-                (repo) =>
-                    repo.repoName.toLowerCase().includes(term) ||
-                    repo.owner.toLowerCase().includes(term) ||
-                    repo.addons.some((addon) =>
-                        addon.name.toLowerCase().includes(term)
-                    )
-            )
-            return {
-                ...folder,
-                repositories: filteredRepos,
-            }
-        })
-        .filter((folder) => folder.repositories.length > 0)
+    return foldersToShow.sort((a, b) => a.path.localeCompare(b.path))
 })
 
 const handleDeleteAddon = (repo: AddonRepository, folderPath: string) => {
@@ -62,7 +63,9 @@ const handleDeleteAddon = (repo: AddonRepository, folderPath: string) => {
         >
             <div class="flex flex-col">
                 <AddonRepoCard
-                    v-for="repo in folder.repositories"
+                    v-for="repo in [...folder.repositories].sort((a, b) =>
+                        a.repoName.localeCompare(b.repoName)
+                    )"
                     :key="repo.repoUrl + (repo.currentBranch || '')"
                     :repo="repo"
                     :folderPath="folder.path"
