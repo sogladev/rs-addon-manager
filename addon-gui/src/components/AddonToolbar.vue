@@ -14,6 +14,7 @@ import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { save } from '@tauri-apps/plugin-dialog'
 import { writeTextFile } from '@tauri-apps/plugin-fs'
+import { useGlobalError } from '@/composables/useGlobalError'
 
 import type { AddOnsFolder } from '@bindings/AddOnsFolder'
 
@@ -139,6 +140,24 @@ const saveToFile = async () => {
         showExport.value = false
     }
 }
+
+const { getIssueLog, saveIssueLog } = useGlobalError()
+const showLog = ref(false)
+
+// Copy log to clipboard and close modal
+const copyLogAndClose = async () => {
+    try {
+        await navigator.clipboard.writeText(getIssueLog())
+    } catch (e) {
+        console.error('Failed to copy log:', e)
+    }
+    showLog.value = false
+}
+// Save log and close modal
+const saveLogAndClose = async () => {
+    await saveIssueLog()
+    showLog.value = false
+}
 </script>
 
 <template>
@@ -225,6 +244,15 @@ const saveToFile = async () => {
                         >
                             <Info class="w-4 h-4" />
                             About
+                        </button>
+                    </li>
+                    <li>
+                        <button
+                            @click="showLog = true"
+                            class="flex items-center gap-2"
+                        >
+                            <Copy class="w-4 h-4" />
+                            Logs
                         </button>
                     </li>
                 </ul>
@@ -349,6 +377,29 @@ const saveToFile = async () => {
             <ThemeController />
             <div class="modal-action">
                 <button class="btn btn-primary" @click="showTheme = false">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Logs Modal -->
+    <div v-if="showLog" class="modal modal-open" @click.self="showLog = false">
+        <div class="modal-box max-w-xl">
+            <h3 class="font-bold text-lg mb-2">Application Log</h3>
+            <textarea
+                readonly
+                rows="10"
+                class="textarea textarea-bordered w-full mb-4 font-mono text-xs"
+                >{{ getIssueLog() }}</textarea
+            >
+            <div class="modal-action flex gap-2">
+                <button class="btn btn-accent" @click="saveLogAndClose">
+                    <Save />Save Log
+                </button>
+                <button class="btn btn-primary" @click="copyLogAndClose">
+                    <Copy />Copy & Close
+                </button>
+                <button class="btn btn-outline" @click="showLog = false">
                     Close
                 </button>
             </div>

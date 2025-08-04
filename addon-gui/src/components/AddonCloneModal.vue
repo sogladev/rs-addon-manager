@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { useGlobalError } from '@/composables/useGlobalError'
+
+const { setError } = useGlobalError()
 
 const { open, folderPaths } = defineProps<{
     open: boolean
@@ -66,9 +69,10 @@ const handleClone = async () => {
         errorMessage.value = ''
     } catch (err: any) {
         console.error('Failed to clone addon', err)
-        errorMessage.value = err.toString()
+        // errorMessage.value = err.toString()
+        setError(err)
         // Reopen modal on error so user can retry
-        emit('update:open', true)
+        // emit('update:open', true)
     }
 }
 </script>

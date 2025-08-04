@@ -6,6 +6,7 @@ import { invoke } from '@tauri-apps/api/core'
 
 import type { AddonRepository } from '@bindings/AddonRepository'
 
+import { useGlobalError } from '@/composables/useGlobalError'
 import { useAddonData } from '@/composables/useAddonData'
 import AddonToolbar from '@/components/AddonToolbar.vue'
 import AddonCloneModal from '@/components/AddonCloneModal.vue'
@@ -17,6 +18,8 @@ const { addonFolders, folderPaths, refreshAddonData } = useAddonData()
 
 const showAddModal = ref(false)
 const search = ref('')
+
+const { globalErrorMessage, clearError } = useGlobalError()
 
 const addAddonDirectory = async () => {
     try {
@@ -136,6 +139,19 @@ const outOfDateCount = computed(() =>
             @refresh="refreshAddonData(true)"
             @add-addon="showAddModal = true"
         />
+
+        <!-- Global Error Bar -->
+        <div
+            v-if="globalErrorMessage"
+            class="alert alert-error fixed top-0 left-0 w-full z-50"
+        >
+            <div class="flex items-center justify-between">
+                <span>{{ globalErrorMessage }}</span>
+                <button class="btn btn-sm btn-outline ml-4" @click="clearError">
+                    Dismiss
+                </button>
+            </div>
+        </div>
 
         <AddonCloneModal
             v-model:open="showAddModal"
