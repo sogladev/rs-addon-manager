@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useGlobalError } from '@/composables/useGlobalError'
 
@@ -74,20 +74,6 @@ watch(currentTheme, async (newTheme) => {
     } catch (e) {
         console.error('Failed to save theme:', e)
         addIssue('Failed to save theme', e)
-    }
-})
-
-onMounted(async () => {
-    try {
-        const theme = await invoke('load_theme')
-        if (theme) {
-            document.documentElement.setAttribute('data-theme', theme)
-            const idx = themeList.indexOf(theme)
-            if (idx >= 0) currentThemeIndex.value = idx
-        }
-    } catch (e) {
-        console.warn('Failed to load saved theme:', e)
-        addIssue('Failed to load saved theme', e)
     }
 })
 </script>

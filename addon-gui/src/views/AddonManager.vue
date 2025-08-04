@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { revealItemInDir } from '@tauri-apps/plugin-opener'
 import { open } from '@tauri-apps/plugin-dialog'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 
 import type { AddonRepository } from '@bindings/AddonRepository'
@@ -20,6 +20,17 @@ const showAddModal = ref(false)
 const search = ref('')
 
 const { globalErrorMessage, clearError } = useGlobalError()
+
+onMounted(async () => {
+    try {
+        const theme = await invoke<string>('load_theme')
+        if (theme) {
+            document.documentElement.setAttribute('data-theme', theme)
+        }
+    } catch (err) {
+        console.error('Failed to load theme', err)
+    }
+})
 
 const addAddonDirectory = async () => {
     try {
