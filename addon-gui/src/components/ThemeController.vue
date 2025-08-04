@@ -2,12 +2,9 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 
-const THEME_INTERVAL_IN_MILLISECONDS = 5000
-
-// Disable some due to too many choices
 const themeList = [
     'default',
-    // 'abyss',
+    'abyss',
     'acid',
     'aqua',
     'autumn',
@@ -23,20 +20,20 @@ const themeList = [
     'dark',
     'dim',
     'dracula',
-    // 'emerald',
-    // 'fantasy',
+    'emerald',
+    'fantasy',
     'forest',
     'garden',
     'halloween',
     'lemonade',
     'light',
-    // 'lofi',
+    'lofi',
     'luxury',
     'night',
     'nord',
     'pastel',
     'retro',
-    // 'silk',
+    'silk',
     'sunset',
     'synthwave',
     'valentine',
@@ -55,10 +52,21 @@ function prevTheme() {
         (currentThemeIndex.value - 1 + themeList.length) % themeList.length
 }
 
+// Reset theme to default
+async function resetTheme() {
+    currentThemeIndex.value = 0
+    document.documentElement.setAttribute('data-theme', themeList[0])
+    try {
+        await invoke('save_theme', { theme: themeList[0] })
+    } catch (e) {
+        console.error('Failed to reset theme:', e)
+    }
+}
+
 watch(currentTheme, async (newTheme) => {
     document.documentElement.setAttribute('data-theme', newTheme)
     try {
-        await invoke('save_theme', newTheme)
+        await invoke('save_theme', { theme: newTheme })
     } catch (e) {
         console.error('Failed to save theme:', e)
     }
@@ -66,31 +74,35 @@ watch(currentTheme, async (newTheme) => {
 
 onMounted(async () => {
     try {
-        const theme = (await invoke) < String > 'load_theme'
+        const theme = await invoke('load_theme')
         if (theme) {
+            document.documentElement.setAttribute('data-theme', theme)
             const idx = themeList.indexOf(theme)
             if (idx >= 0) currentThemeIndex.value = idx
         }
     } catch (e) {
-        console.warning('Failed to load saved theme:', e)
+        console.warn('Failed to load saved theme:', e)
     }
-})
-
-onUnmounted(() => {
-    clearInterval(themeTimer)
 })
 </script>
 
 <template>
-    <div class="p-1 flex flex-col text-center font-mono text-sm">
+    <div class="p-2 flex flex-col items-center font-mono text-sm gap-2">
         <div>
             {{ currentTheme }} {{ currentThemeIndex + 1 }}/{{
                 themeList.length
             }}
         </div>
-        <div class="flex justify-center">
-            <button class="btn mx-1" @click="prevTheme">&lt;</button>
-            <button class="btn mx-1" @click="nextTheme">></button>
+        <div class="flex justify-center gap-2">
+            <button class="btn btn-sm" @click="prevTheme">&lt;</button>
+            <button class="btn btn-sm" @click="nextTheme">&gt;</button>
         </div>
+        <button
+            class="btn btn-sm btn-outline mt-2"
+            @click="resetTheme"
+            aria-label="Reset to default theme"
+        >
+            Default
+        </button>
     </div>
 </template>

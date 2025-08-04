@@ -78,10 +78,6 @@ onMounted(async () => {
     console.error('Failed to load saved theme:', e)
   }
 })
-
-onUnmounted(() => {
-  clearInterval(themeTimer)
-})
 </script>
 
 <template>

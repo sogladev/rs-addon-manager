@@ -37,51 +37,63 @@ const showExport = ref(false)
 const exportText = ref('')
 const showAbout = ref(false)
 const showTheme = ref(false)
+const isImporting = ref(false)
+const importProgress = ref({ current: 0, total: 0 })
 
-const confirmImport = () => {
+const confirmImport = async () => {
     // Each line: <path> <addonName> *<gitUrl> <branch>
     // Skip header or comment lines
-    if (!importText.value.trim()) return
-    importText.value.split(/\r?\n/).forEach((line) => {
-        if (
-            !line.trim() ||
-            line.trim().startsWith('//') ||
-            line.trim().startsWith('#')
-        )
-            return
-        const parts = line.trim().split(/\s+/)
-        if (parts.length >= 4) {
-            const folderPath = parts[0]
-            const gitUrl = parts[2].startsWith('*')
-                ? parts[2].slice(1)
-                : parts[2]
-            const branch = parts[3]
-            const alreadyManaged = folders.some?.((f) => f.path === folderPath)
-            if (alreadyManaged) {
-                invoke('install_addon_cmd', {
-                    url: gitUrl,
-                    path: folderPath,
-                    branch,
-                }).catch((e) => console.error('Import install failed:', e))
-            } else {
-                invoke('add_addon_directory', { path: folderPath })
-                    .then(() => {
-                        invoke('install_addon_cmd', {
-                            url: gitUrl,
-                            path: folderPath,
-                            branch,
-                        }).catch((e) =>
-                            console.error('Import install failed:', e)
-                        )
-                    })
-                    .catch((e) =>
-                        console.error('Failed to add addon directory:', e)
-                    )
-            }
-        }
+    if (!importText.value.trim() || isImporting.value) return
+
+    isImporting.value = true
+    const lines = importText.value.split(/\r?\n/).filter((line) => {
+        const trimmed = line.trim()
+        return trimmed && !trimmed.startsWith('//') && !trimmed.startsWith('#')
     })
-    importText.value = ''
-    showImport.value = false
+    importProgress.value = { current: 0, total: lines.length }
+
+    try {
+        // Process imports sequentially to avoid overwhelming the system
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i]
+            const parts = line.trim().split(/\s+/)
+            if (parts.length >= 4) {
+                const folderPath = parts[0]
+                const gitUrl = parts[2].startsWith('*')
+                    ? parts[2].slice(1)
+                    : parts[2]
+                const branch = parts[3]
+
+                try {
+                    const alreadyManaged = folders.some?.(
+                        (f) => f.path === folderPath
+                    )
+                    if (!alreadyManaged) {
+                        await invoke('add_addon_directory', {
+                            path: folderPath,
+                        })
+                    }
+
+                    await invoke('install_addon_cmd', {
+                        url: gitUrl,
+                        path: folderPath,
+                        branch,
+                    })
+
+                    // Small delay to prevent overwhelming the system
+                    await new Promise((resolve) => setTimeout(resolve, 100))
+                } catch (e) {
+                    console.error(`Import failed for ${gitUrl}:`, e)
+                }
+            }
+            importProgress.value.current = i + 1
+        }
+    } finally {
+        isImporting.value = false
+        importText.value = ''
+        showImport.value = false
+        importProgress.value = { current: 0, total: 0 }
+    }
 }
 
 // Generate export lines with header comment
@@ -233,12 +245,22 @@ const saveToFile = async () => {
                 placeholder="<path> <name> *<gitUrl> <branch>..."
             ></textarea>
             <div class="modal-action">
-                <button class="btn btn-primary" @click.prevent="confirmImport">
-                    Import
+                <button
+                    class="btn btn-primary flex items-center gap-2"
+                    @click.prevent="confirmImport"
+                    :disabled="isImporting"
+                >
+                    <span v-if="isImporting">
+                        <span class="loading loading-spinner loading-xs"></span>
+                        Importing {{ importProgress.current }} /
+                        {{ importProgress.total }}...
+                    </span>
+                    <span v-else>Import</span>
                 </button>
                 <button
                     class="btn btn-outline"
                     @click.prevent="showImport = false"
+                    :disabled="isImporting"
                 >
                     Cancel
                 </button>

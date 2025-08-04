@@ -126,14 +126,14 @@ const outOfDateCount = computed(() =>
 
 <template>
     <!-- gap-4 -->
-    <div class="flex flex-col h-full">
+    <div class="flex flex-col h-full z-10">
         <AddonToolbar
             v-model:search="search"
             :folders="addonFolders"
             :hasUpdates="hasUpdates"
             :outOfDateCount="outOfDateCount"
             @update-all="handleUpdateAll"
-            @refresh="refreshAddonData"
+            @refresh="refreshAddonData(true)"
             @add-addon="showAddModal = true"
         />
 
