@@ -193,7 +193,7 @@ const progressPercent = computed(() => {
 </script>
 
 <template>
-    <div class="card card-bordered bg-base-100 flex-row items-center p-2">
+    <div class="card card-bordered bg-base-100 flex-row items-center">
         <div class="flex flex-1 flex-col gap-1 p-2">
             <span class="font-semibold">{{ repo.repoName }}</span>
             <span class="text-xs text-base-content/60">{{ repo.owner }}</span>

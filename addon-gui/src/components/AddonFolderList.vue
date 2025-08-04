@@ -51,7 +51,7 @@ const handleDeleteAddon = (repo: AddonRepository, folderPath: string) => {
 </script>
 
 <template>
-    <div class="flex flex-col gap-4 overflow-y-auto p-4">
+    <div class="flex flex-col gap-4 overflow-y-auto p-2">
         <AddonCollapse
             v-for="folder in filteredFolders"
             :key="folder.path"
@@ -60,7 +60,7 @@ const handleDeleteAddon = (repo: AddonRepository, folderPath: string) => {
             @open-folder="emit('open-folder', $event)"
             @delete-folder="emit('delete-folder', $event)"
         >
-            <div class="flex flex-col gap-1.5 mt-2">
+            <div class="flex flex-col">
                 <AddonRepoCard
                     v-for="repo in folder.repositories"
                     :key="repo.repoUrl + (repo.currentBranch || '')"
