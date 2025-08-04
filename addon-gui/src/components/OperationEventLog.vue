@@ -8,7 +8,7 @@ function formatProgressPercent(progress?: {
     const percent = Math.floor((progress.current / progress.total) * 100)
     return `${percent}%`
 }
-import { computed } from 'vue'
+import { OperationKey } from '@bindings/OperationKey'
 import {
     Activity,
     CheckCircle,
@@ -16,7 +16,7 @@ import {
     // XCircle,
     Clock,
 } from 'lucide-vue-next'
-import { OperationKey } from '@bindings/OperationKey'
+import { computed } from 'vue'
 
 interface OperationEvent {
     keyString: string
@@ -34,13 +34,12 @@ interface OperationState {
     isActive: boolean
 }
 
-const props = defineProps<{
+const { activeOperations, recentlyCompleted, activeCount } = defineProps<{
     activeOperations: Map<string, OperationState>
     recentlyCompleted: OperationEvent[]
     activeCount: number
 }>()
 
-// Extract active operations with repo names (using stringified OperationKey)
 const activeOperationsList = computed(() => {
     const operations: Array<{
         keyString: string
@@ -50,14 +49,14 @@ const activeOperationsList = computed(() => {
         progress?: { current: number; total: number }
     }> = []
 
-    props.activeOperations.forEach((state, keyString) => {
+    activeOperations.forEach((state, keyString) => {
         if (state.isActive) {
             // Parse the keyString back to OperationKey to get repoUrl
             try {
                 const key: OperationKey = JSON.parse(keyString)
                 const repoUrl = key.repoUrl || ''
                 operations.push({
-                    keyString: keyString,
+                    keyString,
                     type: state.type || 'unknown',
                     repoName: repoUrl,
                     status: state.status,
@@ -73,8 +72,8 @@ const activeOperationsList = computed(() => {
 })
 
 const recentEvents = computed(() => {
-    return props.recentlyCompleted
-        .slice(-5) // Show last 5 events
+    return recentlyCompleted
+        .slice(-5)
         .reverse() // Most recent first
 })
 
