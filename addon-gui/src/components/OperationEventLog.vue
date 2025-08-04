@@ -72,9 +72,7 @@ const activeOperationsList = computed(() => {
 })
 
 const recentEvents = computed(() => {
-    return recentlyCompleted
-        .slice(-5)
-        .reverse() // Most recent first
+    return recentlyCompleted.slice(-5).reverse() // Most recent first
 })
 
 function formatTimeSince(timestamp: number): string {

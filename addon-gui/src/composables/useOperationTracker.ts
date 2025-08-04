@@ -85,7 +85,7 @@ export function useOperationTracker() {
             const segments = parsed.pathname.split('/').filter(Boolean)
             if (segments.length < 2) return null
             const owner = segments[segments.length - 2]
-            const repo = segments[segments.length - 1].replace(/\\.git$/, '')
+            const repo = segments[segments.length - 1].replace(/\.git$/, '')
             return { owner, repo }
         } catch {
             return null
@@ -94,6 +94,7 @@ export function useOperationTracker() {
 
     function extractRepoName(repoUrl: string): string {
         const { repo } = extractOwnerRepoFromUrl(repoUrl) || {}
+        console.log('Extracted Repo Name:', repo)
         return repo || 'Unknown'
     }
 
