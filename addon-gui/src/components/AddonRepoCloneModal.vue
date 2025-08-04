@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
 import { useGlobalError } from '@/composables/useGlobalError'
 import { AddOnsFolder } from '@bindings/AddOnsFolder'
+import { invoke } from '@tauri-apps/api/core'
+import { computed, ref, watch } from 'vue'
 
 const { addIssue } = useGlobalError()
 

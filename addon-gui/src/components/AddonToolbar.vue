@@ -3,6 +3,9 @@ import OperationEventLog from '@/components/OperationEventLog.vue'
 import ThemeController from '@/components/ThemeController.vue'
 import TimeoutButton from '@/components/TimeoutButton.vue'
 import { useGlobalError } from '@/composables/useGlobalError'
+import { OperationState } from '@/composables/useOperationTracker'
+import type { AddOnsFolder } from '@bindings/AddOnsFolder'
+import { OperationKey } from '@bindings/OperationKey'
 import { invoke } from '@tauri-apps/api/core'
 import { save } from '@tauri-apps/plugin-dialog'
 import { writeTextFile } from '@tauri-apps/plugin-fs'
@@ -16,9 +19,6 @@ import {
     Save,
 } from 'lucide-vue-next'
 import { ref } from 'vue'
-import { OperationState } from '@/composables/useOperationTracker'
-import type { AddOnsFolder } from '@bindings/AddOnsFolder'
-import { OperationKey } from '@bindings/OperationKey'
 
 const { addIssue } = useGlobalError()
 

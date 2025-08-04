@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { AddOnsFolder } from '@bindings/AddOnsFolder'
-import type { AddonRepository } from '@bindings/AddonRepository'
-import type { Addon } from '@bindings/Addon'
 import AddonFolderCollapse from '@/components/AddonFolderCollapse.vue'
 import AddonRepoCard from '@/components/AddonRepoCard.vue'
+import type { AddOnsFolder } from '@bindings/AddOnsFolder'
+import type { Addon } from '@bindings/Addon'
+import type { AddonRepository } from '@bindings/AddonRepository'
+import { computed } from 'vue'
 
 const { folders, search } = defineProps<{
     folders: AddOnsFolder[]

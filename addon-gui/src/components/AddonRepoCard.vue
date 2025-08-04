@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import type { AddonRepository } from '@bindings/AddonRepository'
-import type { Addon } from '@bindings/Addon'
-import { Ellipsis } from 'lucide-vue-next'
-import { FileText, Globe, Wrench, Trash2 } from 'lucide-vue-next'
-import { computed, ref, watch } from 'vue'
-import { useOperationTracker } from '@/composables/useOperationTracker'
-import { invoke } from '@tauri-apps/api/core'
-import { openUrl } from '@tauri-apps/plugin-opener'
-import { readTextFile } from '@tauri-apps/plugin-fs'
-import { marked } from 'marked'
 import { useGlobalError } from '@/composables/useGlobalError'
+import { useOperationTracker } from '@/composables/useOperationTracker'
+import type { Addon } from '@bindings/Addon'
+import type { AddonRepository } from '@bindings/AddonRepository'
+import { invoke } from '@tauri-apps/api/core'
+import { readTextFile } from '@tauri-apps/plugin-fs'
+import { openUrl } from '@tauri-apps/plugin-opener'
+import { Ellipsis, FileText, Globe, Trash2, Wrench } from 'lucide-vue-next'
+import { marked } from 'marked'
+import { computed, ref, watch } from 'vue'
 
 const { addIssue } = useGlobalError()
 

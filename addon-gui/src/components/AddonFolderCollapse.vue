@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import TimeoutButton from '@/components/TimeoutButton.vue'
 import {
     ChevronRight,
     FolderOpen,
-    Trash2,
     MessageSquareWarning,
+    Trash2,
 } from 'lucide-vue-next'
-import TimeoutButton from '@/components/TimeoutButton.vue'
+import { ref } from 'vue'
 
 const { path, isValid } = defineProps({
     path: { type: String, required: true },
