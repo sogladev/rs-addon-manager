@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { invoke } from '@tauri-apps/api/core'
-import { useGlobalError } from '@/composables/useGlobalError'
-const { addIssue } = useGlobalError()
+// ...existing code...
 
 // Helper to format progress as percentage
 function formatProgressPercent(progress?: {
@@ -16,10 +14,11 @@ import { computed } from 'vue'
 import {
     Activity,
     CheckCircle,
-    AlertTriangle,
-    XCircle,
+    // AlertTriangle,
+    // XCircle,
     Clock,
 } from 'lucide-vue-next'
+import { OperationKey } from '@bindings/OperationKey'
 
 interface OperationEvent {
     id: string
@@ -38,12 +37,12 @@ interface OperationState {
 }
 
 const props = defineProps<{
-    activeOperations: Map<string, OperationState>
+    activeOperations: Map<OperationKey, OperationState>
     recentlyCompleted: OperationEvent[]
     activeCount: number
 }>()
 
-// Extract active operations with repo names
+// Extract active operations with repo names (using OperationKey object)
 const activeOperationsList = computed(() => {
     const operations: Array<{
         id: string
@@ -53,16 +52,18 @@ const activeOperationsList = computed(() => {
         progress?: { current: number; total: number }
     }> = []
 
-    props.activeOperations.forEach(async (state, id) => {
+    // Since forEach cannot be async, we need to build a list synchronously and then resolve repo names asynchronously
+    // Instead, we can extract repoName synchronously if OperationKey has a repo_url property
+    props.activeOperations.forEach((state, key) => {
         if (state.isActive) {
-            // TODO FIX ME
-            // Extracting owner/repo from URL:"/home/jelle/Games/wow335/Interface/AddOns:https://gitlab.com/Tsoukie/compactraidframe-3.3.5.git"
-            const { repo } = await extractOwnerRepo(id)
-            const repoName = repo
+            // key is OperationKey object
+            // Use key.repo_url for repo extraction
+            const repoUrl = key.repoUrl || ''
+            // fallback to showing repoUrl directly if extraction fails
             operations.push({
-                id,
+                id: JSON.stringify(key),
                 type: state.type || 'unknown',
-                repoName,
+                repoName: repoUrl,
                 status: state.status,
                 progress: state.progress,
             })
@@ -79,22 +80,7 @@ const recentEvents = computed(() => {
         .reverse() // Most recent first
 })
 
-async function extractOwnerRepo(
-    repoUrl: string
-): Promise<{ owner: string; repo: string }> {
-    console.debug('Extracting owner/repo from URL:', repoUrl)
-    try {
-        const [owner, repo] = await invoke<[string, string]>(
-            'extract_owner_repo_from_url',
-            { url: repoUrl }
-        )
-        return { owner, repo }
-    } catch {
-        console.error('Failed to extract owner/repo from URL:', repoUrl)
-        addIssue(`Failed to extract owner/repo from URL: ${repoUrl}`)
-        return { owner: 'Unknown', repo: 'Unknown' }
-    }
-}
+// Removed unused extractOwnerRepo function
 
 // Format time since event
 function formatTimeSince(timestamp: number): string {

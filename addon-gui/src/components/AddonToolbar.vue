@@ -20,6 +20,8 @@ import { useGlobalError } from '@/composables/useGlobalError'
 const { addIssue } = useGlobalError()
 
 import type { AddOnsFolder } from '@bindings/AddOnsFolder'
+import { OperationKey } from '@bindings/OperationKey'
+import { OperationState } from '@/composables/useOperationTracker'
 
 const {
     search,
@@ -34,7 +36,7 @@ const {
     hasUpdates: boolean
     outOfDateCount: number
     folders: AddOnsFolder[]
-    operations?: Map<string, any>
+    operations: Map<OperationKey, OperationState>
     activeOperationCount?: number
     recentlyCompleted?: Array<{
         id: string
