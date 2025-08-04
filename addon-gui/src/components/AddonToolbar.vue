@@ -266,7 +266,7 @@ const saveLogAndClose = async () => {
                             class="flex items-center gap-2"
                         >
                             <Copy class="w-4 h-4" />
-                            Logs
+                            Report Issue
                         </button>
                     </li>
                 </ul>
@@ -396,12 +396,17 @@ const saveLogAndClose = async () => {
             </div>
         </div>
     </div>
-    <!-- Logs Modal -->
+    <!-- Report Issue Modal -->
     <div v-if="showLog" class="modal modal-open" @click.self="showLog = false">
         <div class="modal-box max-w-xl">
-            <h3 class="font-bold text-lg mb-2">Application Log</h3>
+            <h3 class="font-bold text-lg mb-2">Report Issue</h3>
+            <p class="mb-2 text-sm text-base-content">
+                This box displays issues that occur during the app. Copy the log
+                below when sharing it in a GitHub issue.
+            </p>
             <textarea
                 readonly
+                placeholder="No issues logged yet :)"
                 rows="10"
                 class="textarea textarea-bordered w-full mb-4 font-mono text-xs"
                 >{{ getIssueLog() }}</textarea
@@ -411,7 +416,7 @@ const saveLogAndClose = async () => {
                     <Save />Save Log
                 </button>
                 <button class="btn btn-primary" @click="copyLogAndClose">
-                    <Copy />Copy & Close
+                    <Copy />Copy Log & Close
                 </button>
                 <button class="btn btn-outline" @click="showLog = false">
                     Close
