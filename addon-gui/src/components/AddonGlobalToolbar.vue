@@ -35,10 +35,10 @@ const {
     hasUpdates: boolean
     outOfDateCount: number
     folders: AddOnsFolder[]
-    operations: Map<OperationKey, OperationState>
+    operations: Map<string, OperationState>
     activeOperationCount?: number
     recentlyCompleted?: Array<{
-        id: string
+        keyString: string
         type: string
         time: number
         repoName: string
