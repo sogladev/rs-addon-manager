@@ -15,6 +15,23 @@ const { open, folderPaths, addonFolders } = defineProps<{
 const emit = defineEmits<{ (event: 'update:open', value: boolean): void }>()
 
 const selectedDirectory = ref<string>('')
+
+watch(
+    () => [open, folderPaths],
+    ([modalOpen, paths]) => {
+        if (modalOpen) {
+            const arr = Array.isArray(paths) ? paths : []
+            if (
+                !selectedDirectory.value ||
+                !arr.includes(selectedDirectory.value)
+            ) {
+                selectedDirectory.value = arr.length > 0 ? arr[0] : ''
+            }
+        }
+    },
+    { immediate: true }
+)
+
 const existingRepoUrl = computed(() => {
     if (!selectedDirectory.value || !gitUrl.value) return false
     if (!Array.isArray(addonFolders) || !addonFolders.length) return false
