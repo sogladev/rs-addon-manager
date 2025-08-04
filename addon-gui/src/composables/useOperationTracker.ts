@@ -14,13 +14,18 @@ export interface OperationState {
 }
 
 export function useOperationTracker() {
-    // Map of OperationKey to operation state
-    const operations = reactive<Map<OperationKey, OperationState>>(new Map())
+    // Map of stringified OperationKey to operation state
+    const operations = reactive<Map<string, OperationState>>(new Map())
 
     // Recently completed operations tracking
     const recentlyCompleted = ref<
-        { id: string; type: string; time: number; repoName: string }[]
+        { keyString: string; type: string; time: number; repoName: string }[]
     >([])
+
+    // Helper to create string key from OperationKey
+    function createKeyString(key: OperationKey): string {
+        return JSON.stringify(key)
+    }
 
     // Get operation state for a specific repo
     function getOperationState(
@@ -28,7 +33,8 @@ export function useOperationTracker() {
         folderPath: string
     ): OperationState {
         const key: OperationKey = { repoUrl, folderPath }
-        return operations.get(key) || { isActive: false }
+        const keyString = createKeyString(key)
+        return operations.get(keyString) || { isActive: false }
     }
 
     // Check if any operation is active
@@ -84,22 +90,23 @@ export function useOperationTracker() {
         // Listen for operation events
         listen<OperationEventPayload>('operation-event', ({ payload }) => {
             const key = payload.key
+            const keyString = createKeyString(key)
             const event = payload.event
 
             if (event === 'completed') {
                 // Completed event
-                const current = operations.get(key) || { isActive: false }
+                const current = operations.get(keyString) || { isActive: false }
                 current.isActive = false
                 current.progress = undefined
                 current.status = 'Completed'
                 current.warning = undefined
                 current.error = undefined
-                operations.set(key, current)
+                operations.set(keyString, current)
 
                 // Add to recently completed
                 const repoName = extractRepoName(key.repoUrl)
                 recentlyCompleted.value.push({
-                    id: JSON.stringify(key),
+                    keyString: keyString,
                     type: current.type || 'unknown',
                     time: Date.now(),
                     repoName,
@@ -108,42 +115,42 @@ export function useOperationTracker() {
                 // Clean up old completed operations after 2 minutes
                 setTimeout(() => {
                     recentlyCompleted.value = recentlyCompleted.value.filter(
-                        (op) => op.id !== JSON.stringify(key)
+                        (op) => op.keyString !== keyString
                     )
                 }, 120000)
 
                 setTimeout(() => {
-                    operations.delete(key)
+                    operations.delete(keyString)
                 }, 2000)
             } else if ('started' in event) {
-                operations.set(key, {
+                operations.set(keyString, {
                     type: event.started.operation,
                     isActive: true,
                 })
             } else if ('progress' in event) {
-                const current = operations.get(key) || { isActive: true }
+                const current = operations.get(keyString) || { isActive: true }
                 current.progress = event.progress
                 current.status = undefined
                 current.warning = undefined
                 current.error = undefined
-                operations.set(key, current)
+                operations.set(keyString, current)
             } else if ('status' in event) {
-                const current = operations.get(key) || { isActive: true }
+                const current = operations.get(keyString) || { isActive: true }
                 current.status = event.status
                 current.progress = undefined
                 current.warning = undefined
                 current.error = undefined
-                operations.set(key, current)
+                operations.set(keyString, current)
             } else if ('warning' in event) {
-                const current = operations.get(key) || { isActive: true }
+                const current = operations.get(keyString) || { isActive: true }
                 current.warning = event.warning
                 current.error = undefined
-                operations.set(key, current)
+                operations.set(keyString, current)
             } else if ('error' in event) {
-                const current = operations.get(key) || { isActive: true }
+                const current = operations.get(keyString) || { isActive: true }
                 current.error = event.error
                 current.warning = undefined
-                operations.set(key, current)
+                operations.set(keyString, current)
             }
         })
     })

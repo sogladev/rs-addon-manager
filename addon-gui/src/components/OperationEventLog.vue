@@ -21,7 +21,7 @@ import {
 import { OperationKey } from '@bindings/OperationKey'
 
 interface OperationEvent {
-    id: string
+    keyString: string
     type: string
     time: number
     repoName: string
@@ -37,36 +37,37 @@ interface OperationState {
 }
 
 const props = defineProps<{
-    activeOperations: Map<OperationKey, OperationState>
+    activeOperations: Map<string, OperationState>
     recentlyCompleted: OperationEvent[]
     activeCount: number
 }>()
 
-// Extract active operations with repo names (using OperationKey object)
+// Extract active operations with repo names (using stringified OperationKey)
 const activeOperationsList = computed(() => {
     const operations: Array<{
-        id: string
+        keyString: string
         type: string
         repoName: string
         status?: string
         progress?: { current: number; total: number }
     }> = []
 
-    // Since forEach cannot be async, we need to build a list synchronously and then resolve repo names asynchronously
-    // Instead, we can extract repoName synchronously if OperationKey has a repo_url property
-    props.activeOperations.forEach((state, key) => {
+    props.activeOperations.forEach((state, keyString) => {
         if (state.isActive) {
-            // key is OperationKey object
-            // Use key.repo_url for repo extraction
-            const repoUrl = key.repoUrl || ''
-            // fallback to showing repoUrl directly if extraction fails
-            operations.push({
-                id: JSON.stringify(key),
-                type: state.type || 'unknown',
-                repoName: repoUrl,
-                status: state.status,
-                progress: state.progress,
-            })
+            // Parse the keyString back to OperationKey to get repoUrl
+            try {
+                const key: OperationKey = JSON.parse(keyString)
+                const repoUrl = key.repoUrl || ''
+                operations.push({
+                    keyString: keyString,
+                    type: state.type || 'unknown',
+                    repoName: repoUrl,
+                    status: state.status,
+                    progress: state.progress,
+                })
+            } catch (e) {
+                console.error('Failed to parse operation key:', keyString, e)
+            }
         }
     })
 
@@ -166,7 +167,7 @@ function getEventColor(type: string) {
                     <div class="space-y-1">
                         <div
                             v-for="op in activeOperationsList"
-                            :key="op.id"
+                            :key="op.keyString"
                             class="flex items-center gap-2 p-2 bg-base-200 rounded text-xs"
                         >
                             <div
@@ -222,7 +223,7 @@ function getEventColor(type: string) {
                     <div class="space-y-1">
                         <div
                             v-for="event in recentEvents"
-                            :key="event.id"
+                            :key="event.keyString"
                             class="flex items-center gap-2 p-2 bg-base-200 rounded text-xs"
                         >
                             <component
