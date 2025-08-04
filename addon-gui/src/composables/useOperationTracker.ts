@@ -1,5 +1,6 @@
 import { reactive, computed, onMounted, ref } from 'vue'
 import { listen } from '@tauri-apps/api/event'
+import { invoke } from '@tauri-apps/api/core'
 import type { OperationKey } from '@bindings/OperationKey'
 import type { OperationEventPayload } from '@bindings/OperationEventPayload'
 import type { OperationType } from '@bindings/OperationType'
@@ -75,15 +76,25 @@ export function useOperationTracker() {
         return getOperationState(repoUrl, folderPath).progress
     }
 
-    // Helper function to extract repo name from URL
-    function extractRepoName(repoUrl: string): string {
+    // copy of clone.rs `extract_owner_repo_from_url(url: &str) -> Result<(String, String), String>`
+    function extractOwnerRepoFromUrl(
+        url: string
+    ): { owner: string; repo: string } | null {
         try {
-            const url = new URL(repoUrl)
-            const pathParts = url.pathname.split('/').filter(Boolean)
-            return pathParts[pathParts.length - 1] || 'Unknown'
+            const parsed = new URL(url)
+            const segments = parsed.pathname.split('/').filter(Boolean)
+            if (segments.length < 2) return null
+            const owner = segments[segments.length - 2]
+            const repo = segments[segments.length - 1].replace(/\\.git$/, '')
+            return { owner, repo }
         } catch {
-            return 'Unknown'
+            return null
         }
+    }
+
+    function extractRepoName(repoUrl: string): string {
+        const { repo } = extractOwnerRepoFromUrl(repoUrl) || {}
+        return repo || 'Unknown'
     }
 
     onMounted(async () => {

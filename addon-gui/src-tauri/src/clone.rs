@@ -10,7 +10,6 @@ use url::Url;
 /// assert!(owner == "owner");
 /// assert!(repo == "repo");
 /// ```
-#[tauri::command]
 pub fn extract_owner_repo_from_url(url: &str) -> Result<(String, String), String> {
     let parsed_url = Url::parse(url).map_err(|e| e.to_string())?;
     let mut path_segments = parsed_url

@@ -29,7 +29,6 @@ pub fn run() {
             addon_store::delete_addon_directory,
             addon_store::load_theme,
             addon_store::save_theme,
-            clone::extract_owner_repo_from_url,
             install::create_addon_symlink,
             install::install_addon_cmd,
             install::remove_addon_symlink,

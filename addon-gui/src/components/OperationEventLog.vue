@@ -72,16 +72,12 @@ const activeOperationsList = computed(() => {
     return operations.slice(0, 5) // Limit for compact display
 })
 
-// Recent events (completed operations)
 const recentEvents = computed(() => {
     return props.recentlyCompleted
         .slice(-5) // Show last 5 events
         .reverse() // Most recent first
 })
 
-// Removed unused extractOwnerRepo function
-
-// Format time since event
 function formatTimeSince(timestamp: number): string {
     const seconds = Math.floor((Date.now() - timestamp) / 1000)
     if (seconds < 60) return `${seconds}s`
@@ -89,7 +85,6 @@ function formatTimeSince(timestamp: number): string {
     return `${Math.floor(seconds / 3600)}h`
 }
 
-// Get status icon and color
 function getEventIcon(type: string) {
     switch (type.toLowerCase()) {
         case 'install':
