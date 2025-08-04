@@ -159,7 +159,12 @@ const saveToFile = async () => {
                 :disabled="!hasUpdates"
                 @click="emit('update-all')"
             >
-                <span v-if="hasUpdates">Update All</span>
+                <span v-if="hasUpdates"
+                    >Update All
+                    <span v-if="outOfDateCount > 0"
+                        >({{ outOfDateCount }})</span
+                    >
+                </span>
                 <span v-else>Up-to-date</span>
             </TimeoutButton>
             <input
@@ -225,10 +230,6 @@ const saveToFile = async () => {
                 </ul>
             </div>
         </div>
-        <span v-if="outOfDateCount > 0" class="badge badge-warning">
-            {{ outOfDateCount }} addon{{ outOfDateCount > 1 ? 's' : '' }} need
-            update
-        </span>
     </div>
     <!-- Import Modal -->
     <div
