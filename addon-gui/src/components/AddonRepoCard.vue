@@ -128,11 +128,8 @@ function handleRepair() {
     })
 }
 
-// Computed properties for operation state
-// Track selected branch and detect if changed from original
 const selectedBranch = ref(repo.currentBranch)
 const branchChanged = ref(false)
-// Reset branchChanged when repo.currentBranch prop updates
 watch(
     () => repo.currentBranch,
     (newBranch) => {
@@ -141,11 +138,8 @@ watch(
     }
 )
 
-// Computed properties for operation state
 const isOperating = computed(() => isOperationActive(repo.repoUrl, folderPath))
-
 const operationType = computed(() => getOperationType(repo.repoUrl, folderPath))
-
 const operationProgress = computed(() => getProgress(repo.repoUrl, folderPath))
 
 function handleBranchChange(e: Event) {
@@ -177,12 +171,10 @@ const buttonText = computed(() => {
         }
     }
 
-    // If repo is not installed (no repoRef), show Install
     if (!repo.repoRef) {
         return 'Install'
     }
 
-    // If update is available, show Update
     if (updateAvailable.value) {
         return 'Update'
     }

@@ -9,7 +9,7 @@ import type { AddonRepository } from '@bindings/AddonRepository'
 import { useGlobalError } from '@/composables/useGlobalError'
 import { useAddonData } from '@/composables/useAddonData'
 import { useOperationTracker } from '@/composables/useOperationTracker'
-import AddonToolbar from '@/components/AddonToolbar.vue'
+import AddonGlobalToolbar from '@/components/AddonGlobalToolbar.vue'
 import AddonRepoCloneModal from '@/components/AddonRepoCloneModal.vue'
 import AddonFolderList from '@/components/AddonFolderList.vue'
 import AddonFolderDeleteModal from '@/components/AddonFolderDeleteModal.vue'
@@ -149,7 +149,7 @@ const outOfDateCount = computed(() =>
 <template>
     <!-- gap-4 -->
     <div class="flex flex-col h-full z-10">
-        <AddonToolbar
+        <AddonGlobalToolbar
             v-model:search="search"
             :folders="addonFolders"
             :hasUpdates="hasUpdates"
