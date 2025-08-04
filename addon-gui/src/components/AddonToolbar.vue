@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import {
-    Menu,
-    Copy,
-    Save,
-    Info,
-    Import,
-    ArrowRightFromLine,
-    Palette,
-} from 'lucide-vue-next'
-import TimeoutButton from '@/components/TimeoutButton.vue'
-import ThemeController from '@/components/ThemeController.vue'
 import OperationEventLog from '@/components/OperationEventLog.vue'
-import { ref } from 'vue'
+import ThemeController from '@/components/ThemeController.vue'
+import TimeoutButton from '@/components/TimeoutButton.vue'
+import { useGlobalError } from '@/composables/useGlobalError'
 import { invoke } from '@tauri-apps/api/core'
 import { save } from '@tauri-apps/plugin-dialog'
 import { writeTextFile } from '@tauri-apps/plugin-fs'
-import { useGlobalError } from '@/composables/useGlobalError'
+import {
+    ArrowRightFromLine,
+    Copy,
+    Import,
+    Info,
+    Menu,
+    Palette,
+    Save,
+} from 'lucide-vue-next'
+import { ref } from 'vue'
 
 const { addIssue } = useGlobalError()
 
+import { OperationState } from '@/composables/useOperationTracker'
 import type { AddOnsFolder } from '@bindings/AddOnsFolder'
 import { OperationKey } from '@bindings/OperationKey'
-import { OperationState } from '@/composables/useOperationTracker'
 
 const {
     search,
