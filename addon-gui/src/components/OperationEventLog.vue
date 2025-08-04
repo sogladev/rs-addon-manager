@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { invoke } from '@tauri-apps/api/core'
+import { useGlobalError } from '@/composables/useGlobalError'
+const { addIssue } = useGlobalError()
+
 // Helper to format progress as percentage
 function formatProgressPercent(progress?: {
     current: number
@@ -49,10 +53,12 @@ const activeOperationsList = computed(() => {
         progress?: { current: number; total: number }
     }> = []
 
-    props.activeOperations.forEach((state, id) => {
+    props.activeOperations.forEach(async (state, id) => {
         if (state.isActive) {
-            const [, repoUrl] = id.split(':')
-            const repoName = extractRepoName(repoUrl)
+            // TODO FIX ME
+            // Extracting owner/repo from URL:"/home/jelle/Games/wow335/Interface/AddOns:https://gitlab.com/Tsoukie/compactraidframe-3.3.5.git"
+            const { repo } = await extractOwnerRepo(id)
+            const repoName = repo
             operations.push({
                 id,
                 type: state.type || 'unknown',
@@ -73,14 +79,20 @@ const recentEvents = computed(() => {
         .reverse() // Most recent first
 })
 
-// Helper function to extract repo name from URL
-function extractRepoName(repoUrl: string): string {
+async function extractOwnerRepo(
+    repoUrl: string
+): Promise<{ owner: string; repo: string }> {
+    console.debug('Extracting owner/repo from URL:', repoUrl)
     try {
-        const url = new URL(repoUrl)
-        const pathParts = url.pathname.split('/').filter(Boolean)
-        return pathParts[pathParts.length - 1] || 'Unknown'
+        const [owner, repo] = await invoke<[string, string]>(
+            'extract_owner_repo_from_url',
+            { url: repoUrl }
+        )
+        return { owner, repo }
     } catch {
-        return 'Unknown'
+        console.error('Failed to extract owner/repo from URL:', repoUrl)
+        addIssue(`Failed to extract owner/repo from URL: ${repoUrl}`)
+        return { owner: 'Unknown', repo: 'Unknown' }
     }
 }
 
@@ -118,13 +130,6 @@ function getEventColor(type: string) {
             return 'text-success'
     }
 }
-
-// Determine if there's anything to show
-const hasContent = computed(() => {
-    return (
-        activeOperationsList.value.length > 0 || recentEvents.value.length > 0
-    )
-})
 </script>
 
 <template>

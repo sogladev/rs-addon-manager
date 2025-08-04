@@ -146,7 +146,10 @@ pub async fn install_addon_cmd(
     path: String,
 ) -> Result<(), String> {
     // Create operation key for tracking
-    let operation_key = OperationKey::new(url.clone(), path.clone());
+    let operation_key = OperationKey {
+        repo_url: url.clone(),
+        folder_path: path.clone(),
+    };
     let tracker = state.get_operation_tracker();
 
     // Mark operation as started

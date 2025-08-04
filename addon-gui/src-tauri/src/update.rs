@@ -72,7 +72,10 @@ pub async fn update_addon_cmd(
     branch: String,
 ) -> Result<(), String> {
     // Create operation key for tracking
-    let operation_key = OperationKey::new(url.clone(), path.clone());
+    let operation_key = OperationKey {
+        repo_url: url.clone(),
+        folder_path: path.clone(),
+    };
     let tracker = state.get_operation_tracker();
 
     // Mark operation as started

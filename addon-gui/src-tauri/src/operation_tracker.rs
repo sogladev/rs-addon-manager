@@ -24,26 +24,12 @@ pub enum OperationEvent {
     Completed,
 }
 
-#[derive(Debug, Serialize, Clone, TS)]
+#[derive(Debug, Serialize, Clone, TS, PartialEq, Eq, Hash)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct OperationKey {
     pub repo_url: String,
     pub folder_path: String,
-}
-
-impl OperationKey {
-    pub fn new(repo_url: String, folder_path: String) -> Self {
-        Self {
-            repo_url,
-            folder_path,
-        }
-    }
-
-    /// Generate a unique identifier for frontend tracking
-    pub fn to_id(&self) -> String {
-        format!("{}:{}", self.folder_path, self.repo_url)
-    }
 }
 
 #[derive(Debug, Serialize, Clone, TS)]
@@ -56,7 +42,7 @@ pub struct OperationEventPayload {
 
 /// Global operation tracker for managing ongoing install/update operations
 pub struct OperationTracker {
-    active_operations: Arc<Mutex<HashMap<String, OperationType>>>,
+    active_operations: Arc<Mutex<HashMap<OperationKey, OperationType>>>,
 }
 
 impl OperationTracker {
@@ -68,19 +54,19 @@ impl OperationTracker {
 
     pub fn start_operation(&self, key: &OperationKey, operation: OperationType) {
         if let Ok(mut ops) = self.active_operations.lock() {
-            ops.insert(key.to_id(), operation);
+            ops.insert(key.clone(), operation);
         }
     }
 
     pub fn finish_operation(&self, key: &OperationKey) {
         if let Ok(mut ops) = self.active_operations.lock() {
-            ops.remove(&key.to_id());
+            ops.remove(key);
         }
     }
 
     pub fn is_active(&self, key: &OperationKey) -> bool {
         if let Ok(ops) = self.active_operations.lock() {
-            ops.contains_key(&key.to_id())
+            ops.contains_key(key)
         } else {
             false
         }
@@ -88,7 +74,7 @@ impl OperationTracker {
 
     pub fn get_operation_type(&self, key: &OperationKey) -> Option<OperationType> {
         if let Ok(ops) = self.active_operations.lock() {
-            ops.get(&key.to_id()).cloned()
+            ops.get(key).cloned()
         } else {
             None
         }
