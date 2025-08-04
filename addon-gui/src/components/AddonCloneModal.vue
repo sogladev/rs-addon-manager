@@ -31,6 +31,7 @@ watch(
 
 const gitUrl = ref('')
 const isGitUrlValid = ref<boolean | null>(null)
+const errorMessage = ref('')
 
 watch(gitUrl, async () => {
     if (!trimmedGitUrl.value) {
@@ -62,8 +63,10 @@ const handleClone = async () => {
         gitUrl.value = ''
         isGitUrlValid.value = null
         directoryTouched.value = false
-    } catch (err) {
+        errorMessage.value = ''
+    } catch (err: any) {
         console.error('Failed to clone addon', err)
+        errorMessage.value = err.toString()
         // Reopen modal on error so user can retry
         emit('update:open', true)
     }
@@ -119,6 +122,9 @@ const handleClone = async () => {
                 >
                     Please select an install directory.
                 </div>
+            </div>
+            <div v-if="errorMessage" class="text-error text-xs mt-1">
+                {{ errorMessage }}
             </div>
             <div class="modal-action">
                 <button
