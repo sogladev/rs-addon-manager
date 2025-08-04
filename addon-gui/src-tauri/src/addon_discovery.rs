@@ -107,6 +107,7 @@ pub fn refresh_addon_data(
                         available_branches: disk_repo.available_branches,
                         repo_ref: disk_repo.repo_ref,
                         latest_ref: disk_repo.latest_ref,
+                        readme: disk_repo.readme,
                         addons,
                     }
                 })
@@ -196,6 +197,7 @@ pub fn refresh_disk_data(
                         available_branches: disk_repo.available_branches,
                         repo_ref: disk_repo.repo_ref,
                         latest_ref: disk_repo.latest_ref,
+                        readme: disk_repo.readme,
                         addons,
                     }
                 })

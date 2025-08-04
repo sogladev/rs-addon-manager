@@ -16,6 +16,8 @@ import { save } from '@tauri-apps/plugin-dialog'
 import { writeTextFile } from '@tauri-apps/plugin-fs'
 import { useGlobalError } from '@/composables/useGlobalError'
 
+const { addIssue } = useGlobalError()
+
 import type { AddOnsFolder } from '@bindings/AddOnsFolder'
 
 const { search, hasUpdates, outOfDateCount, folders } = defineProps<{
@@ -84,6 +86,18 @@ const confirmImport = async () => {
                     // Small delay to prevent overwhelming the system
                     await new Promise((resolve) => setTimeout(resolve, 100))
                 } catch (e) {
+                    addIssue(
+                        `Import failed on line ${i + 1}: "${line}"\nGit URL: ${gitUrl}\nError: ${e instanceof Error ? e.message : String(e)}`,
+                        {
+                            lineNumber: i + 1,
+                            lineContent: line,
+                            gitUrl,
+                            branch,
+                            folderPath,
+                            error: e,
+                            stack: e instanceof Error ? e.stack : undefined,
+                        }
+                    )
                     console.error(`Import failed for ${gitUrl}:`, e)
                 }
             }

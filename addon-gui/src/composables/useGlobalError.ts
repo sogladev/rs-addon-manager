@@ -63,5 +63,6 @@ export function useGlobalError() {
         issues,
         getIssueLog,
         saveIssueLog,
+        addIssue,
     }
 }

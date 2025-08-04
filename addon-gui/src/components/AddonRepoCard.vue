@@ -10,6 +10,9 @@ import { join } from '@tauri-apps/api/path'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { readTextFile } from '@tauri-apps/plugin-fs'
 import { marked } from 'marked'
+import { useGlobalError } from '@/composables/useGlobalError'
+
+const { addIssue } = useGlobalError()
 
 const { repo, folderPath } = defineProps<{
     repo: AddonRepository & { latestRef?: string | null }
@@ -33,20 +36,24 @@ const handleWebsite = () => {
 const { isOperationActive, getOperationType, getProgress } =
     useOperationTracker()
 
-function handleToggleAddon(addon: Addon) {
-    // Symlink logic
-    if (addon.isSymlinked) {
-        invoke('create_addon_symlink', {
-            repoUrl: repo.repoUrl,
-            folderPath: folderPath,
-            addonName: addon.name,
-        })
-    } else {
-        invoke('remove_addon_symlink', {
-            repoUrl: repo.repoUrl,
-            folderPath: folderPath,
-            addonName: addon.name,
-        })
+async function handleToggleAddon(addon: Addon) {
+    try {
+        if (addon.isSymlinked) {
+            await invoke('create_addon_symlink', {
+                repoUrl: repo.repoUrl,
+                folderPath: folderPath,
+                addonName: addon.name,
+            })
+        } else {
+            await invoke('remove_addon_symlink', {
+                repoUrl: repo.repoUrl,
+                folderPath: folderPath,
+                addonName: addon.name,
+            })
+        }
+    } catch (e) {
+        console.error('Symlink operation failed:', e)
+        addIssue(`Failed to toggle symlink for addon: ${addon.name}`, e)
     }
 }
 
@@ -56,36 +63,50 @@ function handleButtonClick() {
             url: repo.repoUrl,
             path: folderPath,
             branch: selectedBranch.value,
-        }).catch((e) => console.error('Install failed:', e))
+        }).catch((e) => {
+            console.error('Install failed:', e)
+            addIssue(
+                `Failed to install addon install_addon_cmd: ${repo.repoName}`,
+                e?.message || String(e)
+            )
+        })
     } else {
         invoke('update_addon_cmd', {
             url: repo.repoUrl,
             path: folderPath,
             branch: selectedBranch.value,
-        }).catch((e) => console.error('Update failed:', e))
+        }).catch((e) => {
+            console.error('Update failed:', e)
+            addIssue(
+                `Failed to update addon update_addon_cmd: ${repo.repoName}`,
+                e?.message || String(e)
+            )
+        })
     }
 }
 
 async function handleReadme() {
-    const basePath = await join(folderPath, '.addonmanager', repo.repoName)
-    const readmePaths = [
-        await join(basePath, 'README.md'),
-        await join(basePath, '.github', 'README.md'),
-    ]
     let content = ''
+    const path = repo.readme
 
-    for (const path of readmePaths) {
-        try {
-            await invoke('allow_file', { path })
-            content = await readTextFile(path)
-            break
-        } catch (e) {
-            console.debug(`No README found at ${path}`, e)
-        }
+    if (!path) {
+        console.warn('No README path provided for', repo.repoName)
+        return
+    }
+
+    try {
+        await invoke('allow_file', { path })
+        content = await readTextFile(path)
+    } catch (e) {
+        console.error(`No README found at ${path}`, e)
+        addIssue(
+            `No README found at ${path} for ${repo.repoName} ${repo.repoUrl}`,
+            e
+        )
     }
 
     if (!content) {
-        console.warn('No README found in', basePath)
+        console.warn('No README content found at', path)
         return
     }
 
@@ -266,38 +287,33 @@ const progressPercent = computed(() => {
                     tabindex="0"
                     class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-44"
                 >
-                    <li>
+                    <li
+                        :class="{ 'menu-disabled': !repo.readme }"
+                        @click="handleReadme"
+                    >
                         <button
                             class="flex items-center gap-2"
-                            @click="handleReadme"
+                            :disabled="!repo.readme"
+                            tabindex="-1"
                         >
                             <FileText class="w-4 h-4" />
                             Readme
                         </button>
                     </li>
-                    <li>
-                        <button
-                            class="flex items-center gap-2"
-                            @click="handleWebsite"
-                        >
+                    <li @click="handleWebsite">
+                        <button class="flex items-center gap-2">
                             <Globe class="w-4 h-4" />
                             Website
                         </button>
                     </li>
-                    <li>
-                        <button
-                            class="flex items-center gap-2"
-                            @click="handleRepair"
-                        >
+                    <li @click="handleRepair">
+                        <button class="flex items-center gap-2">
                             <Wrench class="w-4 h-4" />
                             Repair
                         </button>
                     </li>
-                    <li>
-                        <button
-                            class="flex items-center gap-2 text-error"
-                            @click="emit('delete')"
-                        >
+                    <li @click="emit('delete')">
+                        <button class="flex items-center gap-2 text-error">
                             <Trash2 class="w-4 h-4" />
                             Delete
                         </button>

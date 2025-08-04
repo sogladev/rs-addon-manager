@@ -123,6 +123,7 @@ pub struct DiskAddonRepository {
     pub repo_ref: Option<String>, // local HEAD commit hash or tag
     pub latest_ref: Option<String>,
     pub addons: Vec<DiskAddon>,
+    pub readme: Option<String>,
 }
 
 /// Check if addons are symlinked in the AddOns directory
@@ -145,6 +146,8 @@ pub fn create_disk_addon_repository(repo_path: &Path) -> Result<DiskAddonReposit
     let addons = find_all_sub_addons(&repo_path.to_path_buf())
         .map_err(|e| format!("Failed to discover sub-addons: {e}"))?;
 
+    let readme = find_readme(repo_path);
+
     Ok(DiskAddonRepository {
         repo_url,
         repo_name: repo_path
@@ -157,6 +160,7 @@ pub fn create_disk_addon_repository(repo_path: &Path) -> Result<DiskAddonReposit
         repo_ref,
         latest_ref,
         addons,
+        readme,
     })
 }
 
@@ -168,7 +172,7 @@ pub fn create_disk_addon_repository_disk_only(
     let repo = git2::Repository::open(repo_path)
         .map_err(|e| format!("Failed to open git repo {}: {e}", repo_path.display()))?;
 
-    let (repo_url, current_branch, repo_ref, available_branches, owner, latest_ref) =
+    let (repo_url, current_branch, repo_ref, available_branches, owner, latest_ref, readme) =
         extract_repo_metadata_disk_only(&repo);
     let addons = find_all_sub_addons(&repo_path.to_path_buf())
         .map_err(|e| format!("Failed to discover sub-addons: {e}"))?;
@@ -185,6 +189,7 @@ pub fn create_disk_addon_repository_disk_only(
         repo_ref,
         latest_ref,
         addons,
+        readme,
     })
 }
 
@@ -240,6 +245,29 @@ pub fn extract_repo_metadata(
     )
 }
 
+// Helper to find the README in a directory
+fn find_readme(dir_path: &std::path::Path) -> Option<String> {
+    let readme_names = [
+        "README.md",
+        "readme.md",
+        "README.txt",
+        "readme.txt",
+        "README",
+        "readme",
+        ".github/README.md",
+        ".github/readme.md",
+        ".github/README.txt",
+        ".github/readme.txt",
+    ];
+    for name in &readme_names {
+        let candidate = dir_path.join(name);
+        if candidate.exists() {
+            return Some(candidate.to_string_lossy().to_string());
+        }
+    }
+    None
+}
+
 /// Extract git repository metadata without remote operations (disk-only)
 pub fn extract_repo_metadata_disk_only(
     repo: &git2::Repository,
@@ -249,6 +277,7 @@ pub fn extract_repo_metadata_disk_only(
     Option<String>,
     Vec<String>,
     String,
+    Option<String>,
     Option<String>,
 ) {
     let repo_url = repo
@@ -278,6 +307,8 @@ pub fn extract_repo_metadata_disk_only(
     // For disk-only mode, don't fetch remote refs - use None for latest_ref
     let latest_ref = None;
 
+    let readme = find_readme(repo.path());
+
     (
         repo_url,
         current_branch,
@@ -285,6 +316,7 @@ pub fn extract_repo_metadata_disk_only(
         available_branches,
         owner,
         latest_ref,
+        readme,
     )
 }
 
@@ -313,13 +345,17 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<DiskAddon>, String> {
     fn extract_notes(toc_path: &std::path::Path) -> Option<String> {
         if let Ok(content) = std::fs::read_to_string(toc_path) {
             for line in content.lines() {
-                if let Some(rest) = line.strip_prefix("## Notes:") {
-                    return Some(rest.trim().to_string());
+                if let Some(notes) = line
+                    .strip_prefix("## Notes:")
+                    .or_else(|| line.strip_prefix("##Notes:"))
+                {
+                    return Some(notes.trim().to_string());
                 }
             }
         }
         None
     }
+
     let mut sub_addons = Vec::new();
 
     // Helper to process a directory and collect .toc files

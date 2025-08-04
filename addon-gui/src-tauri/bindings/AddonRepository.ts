@@ -9,5 +9,6 @@ export type AddonRepository = {
     availableBranches: Array<string>
     repoRef: string | null
     latestRef: string | null
+    readme: string | null
     addons: Array<Addon>
 }
