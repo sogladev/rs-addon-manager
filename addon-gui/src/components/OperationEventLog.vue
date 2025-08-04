@@ -1,15 +1,6 @@
 <script setup lang="ts">
-// Helper to format progress as percentage
-function formatProgressPercent(progress?: {
-    current: number
-    total: number
-}): string {
-    if (!progress || progress.total === 0) return ''
-    const percent = Math.floor((progress.current / progress.total) * 100)
-    return `${percent}%`
-}
 import { OperationKey } from '@bindings/OperationKey'
-import { Activity, CheckCircle, XCircle, Clock } from 'lucide-vue-next'
+import { Activity, CheckCircle, XCircle, Clock, X } from 'lucide-vue-next'
 import { computed } from 'vue'
 
 interface OperationEvent {
@@ -109,6 +100,19 @@ function getEventColor(type: string) {
             return 'text-success'
     }
 }
+
+function formatProgressPercent(progress?: {
+    current: number
+    total: number
+}): string {
+    if (!progress || progress.total === 0) return ''
+    const percent = Math.floor((progress.current / progress.total) * 100)
+    return `${percent}%`
+}
+
+function clearActivity() {
+    recentlyCompleted.splice(0, recentlyCompleted.length)
+}
 </script>
 
 <template>
@@ -143,10 +147,20 @@ function getEventColor(type: string) {
             class="dropdown-content card card-compact w-80 p-2 shadow bg-base-100 z-[100]"
         >
             <div class="card-body">
-                <h3 class="card-title text-sm">
-                    <Activity class="w-4 h-4" />
-                    Operation Log
-                </h3>
+                <div class="flex items-center justify-between">
+                    <h3 class="card-title text-sm flex items-center gap-2">
+                        <Activity class="w-4 h-4" />
+                        Operation Log
+                    </h3>
+                    <button
+                        class="btn btn-xs btn-ghost"
+                        @click="clearActivity"
+                        title="Clear notifications"
+                    >
+                        <X class="w-4 h-4" />
+                        <!-- Clear -->
+                    </button>
+                </div>
 
                 <!-- Active Operations -->
                 <div v-if="activeOperationsList.length > 0" class="space-y-2">

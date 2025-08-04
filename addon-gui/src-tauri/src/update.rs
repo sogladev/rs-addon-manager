@@ -6,27 +6,23 @@ use crate::{addon_discovery::AppState, clone, operation_tracker::*, validate};
 
 /// Perform a forced update of the repository at the given path and branch.
 /// Fetches from origin, force resets local branch to remote HEAD.
-pub fn update_addon_repo(path: &str, url: &str, branch: &str) -> Result<(), String> {
-    // Ensure manager dir exists
+fn update_addon_repo(path: &str, url: &str, branch: &str) -> Result<(), String> {
     let addons_dir = Path::new(path);
     let manager_dir = validate::ensure_manager_dir(addons_dir)
         .map_err(|e| format!("Failed to ensure manager dir: {e}"))?;
-    // Determine repo name from URL
+
     let (_owner, repo_name) =
         clone::extract_owner_repo_from_url(url).map_err(|e| format!("Invalid repo URL: {e}"))?;
     let repo_dir = manager_dir.join(&repo_name);
 
-    // Open existing repo
     let repo = Repository::open(&repo_dir)
         .map_err(|e| format!("Failed to open repo {}: {e}", repo_dir.display()))?;
 
     // Use HTTPS anonymous fetch for public repositories
     let mut fo = FetchOptions::new();
 
-    // Sanitize branch name: strip 'origin/' prefix if present
     let branch_name = branch.strip_prefix("origin/").unwrap_or(branch);
 
-    // Fetch the sanitized branch name
     let mut remote = repo
         .find_remote("origin")
         .map_err(|e| format!("Failed to find remote: {e}"))?;
@@ -42,7 +38,6 @@ pub fn update_addon_repo(path: &str, url: &str, branch: &str) -> Result<(), Stri
         .map_err(|e| format!("Failed to get remote HEAD: {e}"))?;
     let oid = commit.id();
 
-    // Update local branch ref
     let local_ref = format!("refs/heads/{branch_name}");
     repo.reference(&local_ref, oid, true, "force update")
         .map_err(|e| format!("Failed to update branch ref: {e}"))?;
@@ -63,28 +58,20 @@ pub fn update_addon_repo(path: &str, url: &str, branch: &str) -> Result<(), Stri
     Ok(())
 }
 
-#[tauri::command]
-pub async fn update_addon_cmd(
-    app_handle: AppHandle,
-    state: tauri::State<'_, AppState>,
+async fn perform_update_op(
+    app_handle: &AppHandle,
+    state: &tauri::State<'_, AppState>,
     url: String,
     path: String,
     branch: String,
 ) -> Result<(), String> {
-    // Create operation key for tracking
     let operation_key = OperationKey {
         repo_url: url.clone(),
         folder_path: path.clone(),
     };
     let tracker = state.get_operation_tracker();
 
-    // Mark operation as started
     tracker.start_operation(&operation_key, OperationType::Update);
-
-    let app_clone = app_handle.clone();
-    let operation_key_clone = operation_key.clone();
-
-    // Emit started event
     app_handle
         .emit(
             "operation-event",
@@ -97,37 +84,45 @@ pub async fn update_addon_cmd(
         )
         .map_err(|e| format!("Failed to emit operation-event: {e}"))?;
 
-    // Move the blocking work into spawn_blocking
-    let update_result =
+    let result =
         tauri::async_runtime::spawn_blocking(move || update_addon_repo(&path, &url, &branch))
             .await
             .map_err(|e| format!("Task join error: {e}"))?;
 
-    // Mark operation as completed
-    tracker.finish_operation(&operation_key_clone);
+    tracker.finish_operation(&operation_key);
 
-    // Emit completion event
-    let completion_event = match update_result {
-        Ok(()) => OperationEvent::Completed,
-        Err(ref e) => OperationEvent::Error(e.clone()),
+    let completion_event = match &result {
+        Ok(_) => OperationEvent::Completed,
+        Err(e) => OperationEvent::Error(e.clone()),
     };
-
-    app_clone
+    app_handle
         .emit(
             "operation-event",
             OperationEventPayload {
-                key: operation_key_clone.clone(),
+                key: operation_key,
                 event: completion_event,
             },
         )
         .map_err(|e| format!("Failed to emit operation-event: {e}"))?;
 
-    // Signal frontend to refresh data
-    app_clone
+    result
+}
+
+#[tauri::command]
+pub async fn update_addon_cmd(
+    app_handle: AppHandle,
+    state: tauri::State<'_, AppState>,
+    url: String,
+    path: String,
+    branch: String,
+) -> Result<(), String> {
+    let result = perform_update_op(&app_handle, &state, url, path, branch).await;
+
+    app_handle
         .emit("addon-data-updated", ())
         .map_err(|e| format!("Failed to emit addon-data-updated: {e}"))?;
 
-    update_result
+    result
 }
 
 /// Tauri command to update all addons across all folders
@@ -136,8 +131,6 @@ pub async fn update_all_addons_cmd(
     app_handle: AppHandle,
     state: tauri::State<'_, AppState>,
 ) -> Result<(), String> {
-    let app_clone = app_handle.clone();
-
     let update_tasks = {
         let disk_state = state.get_disk_state()?;
         let mut tasks = Vec::new();
@@ -160,34 +153,23 @@ pub async fn update_all_addons_cmd(
         tasks
     };
 
-    // @todo: Add concurrency here
-    let mut updated_count = 0;
     let total_count = update_tasks.len();
+    let mut updated_count = 0;
 
     for (path, url, branch) in update_tasks {
-        let update_result = tauri::async_runtime::spawn_blocking({
-            let path = path.clone();
-            let url = url.clone();
-            let branch = branch.clone();
-            move || update_addon_repo(&path, &url, &branch)
-        })
-        .await
-        .map_err(|e| format!("Task join error: {e}"))?;
-
-        if let Err(e) = update_result {
-            eprintln!("Update failed for {}: {e}", url);
-        } else {
+        let result = perform_update_op(&app_handle, &state, url.clone(), path, branch).await;
+        if let Ok(()) = result {
             updated_count += 1;
+        } else if let Err(e) = result {
+            eprintln!("Update failed for {}: {e}", url);
         }
     }
 
-    // Signal frontend to refresh data
-    app_clone
+    app_handle
         .emit("addon-data-updated", ())
         .map_err(|e| format!("Failed to emit addon-data-updated: {e}"))?;
 
-    // Emit summary
-    app_clone
+    app_handle
         .emit(
             "update-all-complete",
             format!("Updated {}/{} addons", updated_count, total_count),
