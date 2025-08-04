@@ -93,7 +93,7 @@ const handleClone = async () => {
                     <code>.git</code>
                 </div>
             </div>
-            <div class="form-control mb-4">
+            <div class="form-control mb-2">
                 <label class="label">
                     <span class="label-text">Install Directory</span>
                 </label>
@@ -117,16 +117,13 @@ const handleClone = async () => {
                 </select>
                 <div
                     :class="{
-                        visible: directoryTouched && !selectedDirectory,
-                        invisible: selectedDirectory || !directoryTouched,
+                        visible: existingRepoUrl === true,
+                        invisible: !existingRepoUrl || existingRepoUrl !== true,
                     }"
                     class="text-error text-xs mt-1"
                 >
-                    Please select an install directory.
-                </div>
-                <div v-if="existingRepoUrl" class="text-error text-xs mt-1">
                     An addon with this repository URL already exists in the
-                    selected directory.
+                    selected directory
                 </div>
             </div>
             <div v-if="errorMessage" class="text-error text-xs mt-1">
