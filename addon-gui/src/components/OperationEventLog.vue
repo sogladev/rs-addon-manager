@@ -1,6 +1,4 @@
 <script setup lang="ts">
-// ...existing code...
-
 // Helper to format progress as percentage
 function formatProgressPercent(progress?: {
     current: number
@@ -71,7 +69,7 @@ const activeOperationsList = computed(() => {
         }
     })
 
-    return operations.slice(0, 3) // Limit to 3 for compact display
+    return operations.slice(0, 5) // Limit for compact display
 })
 
 // Recent events (completed operations)
