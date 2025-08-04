@@ -156,6 +156,7 @@ const outOfDateCount = computed(() =>
         <AddonCloneModal
             v-model:open="showAddModal"
             :folderPaths="folderPaths"
+            :addonFolders="addonFolders"
         />
 
         <DeleteFolderModal

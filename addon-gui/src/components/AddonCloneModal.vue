@@ -2,35 +2,28 @@
 import { ref, watch, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useGlobalError } from '@/composables/useGlobalError'
+import { AddOnsFolder } from '@bindings/AddOnsFolder'
 
 const { addIssue } = useGlobalError()
 
-const { open, folderPaths } = defineProps<{
+const { open, folderPaths, addonFolders } = defineProps<{
     open: boolean
     folderPaths: string[]
+    addonFolders: AddOnsFolder[]
 }>()
 
 const emit = defineEmits<{ (event: 'update:open', value: boolean): void }>()
 
 const selectedDirectory = ref<string>('')
-
-watch(
-    () => open,
-    (open) => {
-        if (open) {
-            if (folderPaths.length > 0) {
-                if (
-                    !selectedDirectory.value ||
-                    !folderPaths.includes(selectedDirectory.value)
-                ) {
-                    selectedDirectory.value = folderPaths[0]
-                }
-            } else {
-                selectedDirectory.value = ''
-            }
-        }
-    }
-)
+const existingRepoUrl = computed(() => {
+    if (!selectedDirectory.value || !gitUrl.value) return false
+    if (!Array.isArray(addonFolders) || !addonFolders.length) return false
+    const folder = addonFolders.find((f) => f.path === selectedDirectory.value)
+    if (!folder || !Array.isArray(folder.repositories)) return false
+    return folder.repositories.some(
+        (repo) => repo.repoUrl === gitUrl.value.trim()
+    )
+})
 
 const gitUrl = ref('')
 const isGitUrlValid = ref<boolean | null>(null)
@@ -106,11 +99,16 @@ const handleClone = async () => {
                 </label>
                 <select
                     v-model="selectedDirectory"
-                    class="select select-bordered w-full"
+                    :class="[
+                        'select select-bordered w-full',
+                        existingRepoUrl ? 'border-error' : '',
+                    ]"
                 >
                     <option value="" disabled>Select directory</option>
                     <option
-                        v-for="path in folderPaths"
+                        v-for="path in [...folderPaths].sort((a, b) =>
+                            a.localeCompare(b)
+                        )"
                         :key="path"
                         :value="path"
                     >
@@ -126,6 +124,10 @@ const handleClone = async () => {
                 >
                     Please select an install directory.
                 </div>
+                <div v-if="existingRepoUrl" class="text-error text-xs mt-1">
+                    An addon with this repository URL already exists in the
+                    selected directory.
+                </div>
             </div>
             <div v-if="errorMessage" class="text-error text-xs mt-1">
                 {{ errorMessage }}
@@ -134,7 +136,9 @@ const handleClone = async () => {
                 <button
                     class="btn btn-primary"
                     @click="handleClone"
-                    :disabled="!isGitUrlValid || !selectedDirectory"
+                    :disabled="
+                        !isGitUrlValid || !selectedDirectory || existingRepoUrl
+                    "
                 >
                     Clone
                 </button>
