@@ -10,10 +10,10 @@ import { useGlobalError } from '@/composables/useGlobalError'
 import { useAddonData } from '@/composables/useAddonData'
 import { useOperationTracker } from '@/composables/useOperationTracker'
 import AddonToolbar from '@/components/AddonToolbar.vue'
-import AddonCloneModal from '@/components/AddonCloneModal.vue'
+import AddonRepoCloneModal from '@/components/AddonRepoCloneModal.vue'
 import AddonFolderList from '@/components/AddonFolderList.vue'
-import DeleteFolderModal from '@/components/DeleteFolderModal.vue'
-import DeleteAddonModal from '@/components/DeleteAddonModal.vue'
+import AddonFolderDeleteModal from '@/components/AddonFolderDeleteModal.vue'
+import AddonRepoDeleteModal from '@/components/AddonRepoDeleteModal.vue'
 
 const {
     addonFolders,
@@ -175,20 +175,20 @@ const outOfDateCount = computed(() =>
             </div>
         </div>
 
-        <AddonCloneModal
+        <AddonRepoCloneModal
             v-model:open="showAddModal"
             :folderPaths="folderPaths"
             :addonFolders="addonFolders"
         />
 
-        <DeleteFolderModal
+        <AddonFolderDeleteModal
             :open="showDeleteModal"
             :folderPath="folderToDelete"
             @confirm="confirmDeleteAddonDirectory"
             @cancel="cancelDeleteFolder"
         />
 
-        <DeleteAddonModal
+        <AddonRepoDeleteModal
             :open="showAddonDeleteModal"
             :addon="addonToDelete"
             :folderPath="folderOfAddonToDelete"

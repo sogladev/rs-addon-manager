@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import type { AddOnsFolder } from '@bindings/AddOnsFolder'
 import type { AddonRepository } from '@bindings/AddonRepository'
 import type { Addon } from '@bindings/Addon'
-import AddonCollapse from '@/components/AddonCollapse.vue'
+import AddonFolderCollapse from '@/components/AddonFolderCollapse.vue'
 import AddonRepoCard from '@/components/AddonRepoCard.vue'
 
 const { folders, search } = defineProps<{
@@ -53,7 +53,7 @@ const handleDeleteAddon = (repo: AddonRepository, folderPath: string) => {
 
 <template>
     <div class="flex flex-col gap-4 overflow-y-auto p-2">
-        <AddonCollapse
+        <AddonFolderCollapse
             v-for="folder in filteredFolders"
             :key="folder.path"
             :path="folder.path"
@@ -72,7 +72,7 @@ const handleDeleteAddon = (repo: AddonRepository, folderPath: string) => {
                     @delete="handleDeleteAddon(repo, folder.path)"
                 />
             </div>
-        </AddonCollapse>
+        </AddonFolderCollapse>
         <button
             class="btn btn-outline btn-accent mt-2 self-start"
             @click="emit('add-directory')"
