@@ -131,7 +131,7 @@ const confirmImport = async () => {
 
 // Generate export lines with header comment
 const handleExport = () => {
-    const header = '// Each line: <path> <addonName> *<gitUrl> <branch>'
+    const header = '# <path> <addonName> *<gitUrl> <branch>'
     const lines: string[] = []
     folders.forEach((folder) => {
         folder.repositories.forEach((repo) => {
