@@ -101,9 +101,6 @@ const confirmImport = async () => {
                         path: folderPath,
                         branch,
                     })
-
-                    // Small delay to prevent overwhelming the system
-                    await new Promise((resolve) => setTimeout(resolve, 100))
                 } catch (e) {
                     addIssue(
                         `Import failed on line ${i + 1}: "${line}"\nGit URL: ${gitUrl}\nError: ${e instanceof Error ? e.message : String(e)}`,
@@ -300,7 +297,7 @@ const saveLogAndClose = async () => {
         </div>
     </div>
     <!-- Import Modal -->
-    <div
+    <dialog
         v-if="showImport"
         class="modal modal-open"
         @click.self="showImport = false"
@@ -317,7 +314,7 @@ const saveLogAndClose = async () => {
                 class="textarea textarea-bordered w-full mt-2"
                 placeholder="<path> <name> *<gitUrl> <branch>..."
             ></textarea>
-            <div class="modal-action">
+            <form method="dialog" class="modal-action flex gap-2">
                 <button
                     class="btn btn-primary flex items-center gap-2"
                     @click.prevent="confirmImport"
@@ -337,11 +334,11 @@ const saveLogAndClose = async () => {
                 >
                     Cancel
                 </button>
-            </div>
+            </form>
         </div>
-    </div>
+    </dialog>
     <!-- Export Modal -->
-    <div
+    <dialog
         v-if="showExport"
         class="modal modal-open"
         @click.self="showExport = false"
@@ -354,7 +351,7 @@ const saveLogAndClose = async () => {
                 class="textarea textarea-bordered w-full mt-2"
                 readonly
             ></textarea>
-            <div class="modal-action flex gap-2">
+            <form method="dialog" class="modal-action flex gap-2">
                 <button class="btn btn-accent" @click.prevent="saveToFile">
                     <Save />Save to File
                 </button>
@@ -367,11 +364,11 @@ const saveLogAndClose = async () => {
                 >
                     Close
                 </button>
-            </div>
+            </form>
         </div>
-    </div>
+    </dialog>
     <!-- About Modal -->
-    <div
+    <dialog
         v-if="showAbout"
         class="modal modal-open"
         @click.self="showAbout = false"
@@ -401,15 +398,15 @@ const saveLogAndClose = async () => {
                     >Sogladev</a
                 >
             </p>
-            <div class="modal-action">
+            <form method="dialog" class="modal-action">
                 <button class="btn btn-primary" @click="showAbout = false">
                     Close
                 </button>
-            </div>
+            </form>
         </div>
-    </div>
+    </dialog>
     <!-- Theme Modal -->
-    <div
+    <dialog
         v-if="showTheme"
         class="modal modal-open"
         @click.self="showTheme = false"
@@ -419,15 +416,19 @@ const saveLogAndClose = async () => {
                 <Palette class="w-6 h-6" /> Theme
             </h3>
             <ThemeController />
-            <div class="modal-action">
+            <form method="dialog" class="modal-action">
                 <button class="btn btn-primary" @click="showTheme = false">
                     Close
                 </button>
-            </div>
+            </form>
         </div>
-    </div>
+    </dialog>
     <!-- Report Issue Modal -->
-    <div v-if="showLog" class="modal modal-open" @click.self="showLog = false">
+    <dialog
+        v-if="showLog"
+        class="modal modal-open"
+        @click.self="showLog = false"
+    >
         <div class="modal-box max-w-xl">
             <h3 class="font-bold text-lg mb-2">Report Issue</h3>
             <p class="mb-2 text-sm text-base-content">
@@ -441,7 +442,7 @@ const saveLogAndClose = async () => {
                     v-model="issueLogText"
                 ></textarea>
             </p>
-            <div class="modal-action flex gap-2">
+            <form method="dialog" class="modal-action flex gap-2">
                 <button class="btn btn-accent" @click="saveLogAndClose">
                     <Save />Save Log
                 </button>
@@ -451,7 +452,7 @@ const saveLogAndClose = async () => {
                 <button class="btn btn-outline" @click="showLog = false">
                     Close
                 </button>
-            </div>
+            </form>
         </div>
-    </div>
+    </dialog>
 </template>
