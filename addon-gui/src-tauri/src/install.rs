@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use tauri::Emitter;
+use tauri::{AppHandle, Emitter};
 
 use crate::{addon_disk, clone, operation_tracker::*, validate};
 
@@ -211,62 +211,164 @@ pub async fn install_addon_cmd(
 
 #[tauri::command]
 pub async fn create_addon_symlink(
+    app_handle: AppHandle,
     folder_path: String,
     repo_url: String,
     addon_name: String,
     state: tauri::State<'_, crate::addon_discovery::AppState>,
 ) -> Result<(), String> {
-    // Find repo directory
-    let disk_state = state
-        .get_disk_state()
-        .map_err(|e| format!("Disk state error: {e}"))?;
-    let folder = disk_state.get(&folder_path).ok_or("Folder not found")?;
-    let repo = folder
-        .repositories
-        .iter()
-        .find(|r| r.repo_url == repo_url)
-        .ok_or("Repo not found")?;
-    let addon = repo
-        .addons
-        .iter()
-        .find(|a| a.name == addon_name)
-        .ok_or("Addon not found")?;
-    let repo_root = Path::new(&folder_path)
-        .join(".addonmanager")
-        .join(&repo.repo_name);
-    let addons_dir = Path::new(&folder_path);
-    let symlink_name = &addon.name;
-    let target_dir = if addon.dir == "." {
-        repo_root.to_path_buf()
-    } else {
-        repo_root.join(&addon.dir)
+    let operation_key = OperationKey {
+        repo_url: repo_url.clone(),
+        folder_path: folder_path.clone(),
     };
-    let symlink_path = addons_dir.join(symlink_name);
-    // Remove any existing symlink or directory
-    if symlink_path.exists() {
-        std::fs::remove_file(&symlink_path)
-            .or_else(|_| std::fs::remove_dir_all(&symlink_path))
-            .ok();
+    let tracker = state.get_operation_tracker();
+
+    tracker.start_operation(&operation_key, OperationType::Install);
+    app_handle
+        .emit(
+            "operation-event",
+            OperationEventPayload {
+                key: operation_key.clone(),
+                event: OperationEvent::Started {
+                    operation: OperationType::Install,
+                },
+            },
+        )
+        .map_err(|e| format!("Failed to emit operation-event: {e}"))?;
+
+    app_handle
+        .emit(
+            "operation-event",
+            OperationEventPayload {
+                key: operation_key.clone(),
+                event: OperationEvent::Status(format!("Creating symlink for '{}'", addon_name)),
+            },
+        )
+        .map_err(|e| format!("Failed to emit operation-event: {e}"))?;
+
+    let result: Result<(), String> = async {
+        // Find repo directory
+        let disk_state = state
+            .get_disk_state()
+            .map_err(|e| format!("Disk state error: {e}"))?;
+        let folder = disk_state.get(&folder_path).ok_or("Folder not found")?;
+        let repo = folder
+            .repositories
+            .iter()
+            .find(|r| r.repo_url == repo_url)
+            .ok_or("Repo not found")?;
+        let addon = repo
+            .addons
+            .iter()
+            .find(|a| a.name == addon_name)
+            .ok_or("Addon not found")?;
+        let repo_root = Path::new(&folder_path)
+            .join(".addonmanager")
+            .join(&repo.repo_name);
+        let addons_dir = Path::new(&folder_path);
+        let symlink_name = &addon.name;
+        let target_dir = if addon.dir == "." {
+            repo_root.to_path_buf()
+        } else {
+            repo_root.join(&addon.dir)
+        };
+        let symlink_path = addons_dir.join(symlink_name);
+        // Remove any existing symlink or directory
+        if symlink_path.exists() {
+            std::fs::remove_file(&symlink_path)
+                .or_else(|_| std::fs::remove_dir_all(&symlink_path))
+                .ok();
+        }
+        crate::symlink::create_symlink(&target_dir, &symlink_path)
+            .map_err(|e| format!("Failed to create symlink: {e}"))
     }
-    crate::symlink::create_symlink(&target_dir, &symlink_path)
-        .map_err(|e| format!("Failed to create symlink: {e}"))
+    .await;
+
+    tracker.finish_operation(&operation_key);
+
+    let completion_event = match &result {
+        Ok(_) => OperationEvent::Completed,
+        Err(e) => OperationEvent::Error(e.clone()),
+    };
+    app_handle
+        .emit(
+            "operation-event",
+            OperationEventPayload {
+                key: operation_key,
+                event: completion_event,
+            },
+        )
+        .map_err(|e| format!("Failed to emit operation-event: {e}"))?;
+
+    result
 }
 
 #[tauri::command]
 pub async fn remove_addon_symlink(
+    app_handle: AppHandle,
     folder_path: String,
-    _repo_url: String,
+    repo_url: String,
     addon_name: String,
-    _state: tauri::State<'_, crate::addon_discovery::AppState>,
+    state: tauri::State<'_, crate::addon_discovery::AppState>,
 ) -> Result<(), String> {
-    let addons_dir = Path::new(&folder_path);
-    let symlink_path = addons_dir.join(&addon_name);
-    if symlink_path.exists() {
-        std::fs::remove_file(&symlink_path)
-            .or_else(|_| std::fs::remove_dir_all(&symlink_path))
-            .ok();
+    let operation_key = OperationKey {
+        repo_url: repo_url.clone(),
+        folder_path: folder_path.clone(),
+    };
+    let tracker = state.get_operation_tracker();
+
+    tracker.start_operation(&operation_key, OperationType::Delete);
+    app_handle
+        .emit(
+            "operation-event",
+            OperationEventPayload {
+                key: operation_key.clone(),
+                event: OperationEvent::Started {
+                    operation: OperationType::Delete,
+                },
+            },
+        )
+        .map_err(|e| format!("Failed to emit operation-event: {e}"))?;
+
+    app_handle
+        .emit(
+            "operation-event",
+            OperationEventPayload {
+                key: operation_key.clone(),
+                event: OperationEvent::Status(format!("Removing symlink for '{}'", addon_name)),
+            },
+        )
+        .map_err(|e| format!("Failed to emit operation-event: {e}"))?;
+
+    let result: Result<(), String> = async {
+        let addons_dir = Path::new(&folder_path);
+        let symlink_path = addons_dir.join(&addon_name);
+        if symlink_path.exists() {
+            std::fs::remove_file(&symlink_path)
+                .or_else(|_| std::fs::remove_dir_all(&symlink_path))
+                .map_err(|e| format!("Failed to remove symlink: {e}"))?;
+        }
+        Ok(())
     }
-    Ok(())
+    .await;
+
+    tracker.finish_operation(&operation_key);
+
+    let completion_event = match &result {
+        Ok(_) => OperationEvent::Completed,
+        Err(e) => OperationEvent::Error(e.clone()),
+    };
+    app_handle
+        .emit(
+            "operation-event",
+            OperationEventPayload {
+                key: operation_key,
+                event: completion_event,
+            },
+        )
+        .map_err(|e| format!("Failed to emit operation-event: {e}"))?;
+
+    result
 }
 
 #[cfg(test)]
