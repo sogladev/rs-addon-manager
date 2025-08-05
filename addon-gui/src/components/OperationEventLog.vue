@@ -86,18 +86,23 @@ function getEventIcon(type: string) {
 
 function getEventColor(type: string) {
     const lower = type.toLowerCase()
-    if (lower.startsWith('failed') || lower.includes('error')) {
+    if (
+        lower.startsWith('failed') ||
+        lower.includes('error') ||
+        lower === 'delete' ||
+        lower === 'remove'
+    ) {
         return 'text-error'
     }
     switch (lower) {
         case 'install':
         case 'clone':
-            return 'text-accent'
+            return 'text-success'
         case 'update':
         case 'pull':
             return 'text-primary'
         default:
-            return 'text-success'
+            return 'text-accent'
     }
 }
 
@@ -144,7 +149,7 @@ function clearActivity() {
 
         <div
             tabindex="0"
-            class="dropdown-content card card-compact w-80 p-2 shadow bg-base-100 z-[100]"
+            class="dropdown-content card card-compact w-80 shadow bg-base-100 z-[100]"
         >
             <div class="card-body">
                 <div class="flex items-center justify-between">
@@ -158,7 +163,6 @@ function clearActivity() {
                         title="Clear notifications"
                     >
                         <X class="w-4 h-4" />
-                        <!-- Clear -->
                     </button>
                 </div>
 
