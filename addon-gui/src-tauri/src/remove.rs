@@ -1,6 +1,8 @@
 use std::{fs, path::PathBuf};
 
-use tauri::Emitter;
+use tauri::{AppHandle, Emitter};
+
+use crate::{addon_discovery::AppState, operation_tracker::*};
 
 /// Deletes addon repo and symlinks by repo URL and AddOns path
 pub fn delete_addon_files(url: &str, path: &str) -> Result<(), String> {
@@ -35,17 +37,68 @@ pub fn delete_addon_files(url: &str, path: &str) -> Result<(), String> {
     Ok(())
 }
 
-#[tauri::command]
-pub async fn delete_addon_cmd(
-    app_handle: tauri::AppHandle,
+async fn perform_delete_op(
+    app_handle: &AppHandle,
+    state: &tauri::State<'_, AppState>,
     url: String,
     path: String,
 ) -> Result<(), String> {
-    delete_addon_files(&url, &path)?;
+    let operation_key = OperationKey {
+        repo_url: url.clone(),
+        folder_path: path.clone(),
+    };
+    let tracker = state.get_operation_tracker();
+
+    tracker.start_operation(&operation_key, OperationType::Delete);
+    app_handle
+        .emit(
+            "operation-event",
+            OperationEventPayload {
+                key: operation_key.clone(),
+                event: OperationEvent::Started {
+                    operation: OperationType::Delete,
+                },
+            },
+        )
+        .map_err(|e| format!("Failed to emit operation-event: {e}"))?;
+
+    let result = tauri::async_runtime::spawn_blocking(move || delete_addon_files(&url, &path))
+        .await
+        .map_err(|e| format!("Task join error: {e}"))?;
+
+    tracker.finish_operation(&operation_key);
+
+    let completion_event = match &result {
+        Ok(_) => OperationEvent::Completed,
+        Err(e) => OperationEvent::Error(e.clone()),
+    };
+    app_handle
+        .emit(
+            "operation-event",
+            OperationEventPayload {
+                key: operation_key,
+                event: completion_event,
+            },
+        )
+        .map_err(|e| format!("Failed to emit operation-event: {e}"))?;
+
+    result
+}
+
+#[tauri::command]
+pub async fn delete_addon_cmd(
+    app_handle: AppHandle,
+    state: tauri::State<'_, AppState>,
+    url: String,
+    path: String,
+) -> Result<(), String> {
+    let result = perform_delete_op(&app_handle, &state, url, path).await;
+
     app_handle
         .emit("addon-data-updated", ())
-        .map_err(|e| e.to_string())?;
-    Ok(())
+        .map_err(|e| format!("Failed to emit addon-data-updated: {e}"))?;
+
+    result
 }
 
 #[cfg(test)]

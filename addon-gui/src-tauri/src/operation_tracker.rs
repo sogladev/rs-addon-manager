@@ -10,6 +10,7 @@ use ts_rs::TS;
 pub enum OperationType {
     Install,
     Update,
+    Delete,
 }
 
 #[derive(Debug, Serialize, Clone, TS)]
