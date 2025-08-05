@@ -1,7 +1,5 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-
 const THEME_INTERVAL_IN_MILLISECONDS = 5000
 
 const themeList = [
@@ -49,32 +47,27 @@ const currentTheme = computed(() => themeList[currentThemeIndex.value])
 function nextTheme() {
     currentThemeIndex.value = (currentThemeIndex.value + 1) % themeList.length
 }
+
 function prevTheme() {
     currentThemeIndex.value =
         (currentThemeIndex.value - 1 + themeList.length) % themeList.length
 }
 
-// persist whenever theme changes
-watch(currentTheme, async (newTheme) => {
+watch(currentTheme, (newTheme) => {
     document.documentElement.setAttribute('data-theme', newTheme)
-    try {
-        await invoke('save_theme', newTheme)
-    } catch (e) {
-        console.error('Failed to save theme:', e)
-    }
 })
 
-// load saved theme on mount
-onMounted(async () => {
-    try {
-        const config = (await invoke) < AddOnsUserConfig > 'load_user_config'
-        if (config.theme) {
-            const idx = themeList.indexOf(config.theme)
-            if (idx >= 0) currentThemeIndex.value = idx
-        }
-    } catch (e) {
-        console.error('Failed to load saved theme:', e)
-    }
+// Timer to increment the theme index
+let themeTimer
+
+onMounted(() => {
+    //   themeTimer = setInterval(() => {
+    // nextTheme();
+    //   }, THEME_INTERVAL_IN_MILLISECONDS);
+})
+
+onUnmounted(() => {
+    clearInterval(themeTimer)
 })
 </script>
 
@@ -86,7 +79,7 @@ onMounted(async () => {
             }}
         </div>
         <div class="flex justify-center">
-            <button class="btn mx-1" @click="prevTheme">&lt;</button>
+            <button class="btn mx-1" @click="prevTheme"><</button>
             <button class="btn mx-1" @click="nextTheme">></button>
         </div>
     </div>
