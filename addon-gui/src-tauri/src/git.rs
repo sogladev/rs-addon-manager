@@ -5,7 +5,7 @@ use url::Url;
 /// Extracts the owner and repository name from a Git URL.
 // This assumes the URL is in the format: https://github.com/owner/repo.git
 /// ```
-/// use addon_gui_lib::clone::extract_owner_repo_from_url;
+/// use addon_gui_lib::git::extract_owner_repo_from_url;
 /// let (owner, repo) = extract_owner_repo_from_url("https://github.com/owner/repo.git").unwrap();
 /// assert!(owner == "owner");
 /// assert!(repo == "repo");
@@ -31,7 +31,7 @@ pub fn extract_owner_repo_from_url(url: &str) -> Result<(String, String), String
 ///
 /// ```
 /// use tempfile::tempdir;
-/// use addon_gui_lib::clone::clone_git_repo;
+/// use addon_gui_lib::git::clone_git_repo;
 ///
 /// let temp = tempdir().unwrap();
 /// let base_path = temp.path().to_path_buf();
