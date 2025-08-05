@@ -1,7 +1,7 @@
 pub mod addon_discovery;
 pub mod addon_disk;
 pub mod addon_store;
-pub mod clone;
+pub mod git;
 pub mod install;
 pub mod operation_tracker;
 pub mod permission_workaround;
