@@ -21,11 +21,8 @@ where
     let manager_dir = validate::ensure_manager_dir(dir)?;
 
     reporter(OperationEvent::Status("Cloning repository...".to_string()));
-    let repo_name = url
-        .split('/')
-        .last()
-        .and_then(|s| s.strip_suffix(".git"))
-        .unwrap_or("repo");
+    let (_owner, repo_name) =
+        clone::extract_owner_repo_from_url(&url).map_err(|e| format!("Invalid repo URL: {e}"))?;
     let repo_path = manager_dir.join(repo_name);
 
     if repo_path.exists() {
