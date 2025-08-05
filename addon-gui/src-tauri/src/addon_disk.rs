@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::{ffi::OsStr, path::PathBuf};
 
 use crate::clone;
+use crate::symlink;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -126,8 +127,8 @@ pub struct DiskAddonRepository {
 /// Updates the is_symlinked field for each addon
 pub fn check_addon_symlinks(addons: &mut [DiskAddon], addons_dir: &Path) {
     for addon in addons {
-        let symlink_path = addons_dir.join(&addon.name);
-        addon.is_symlinked = symlink_path.exists() && symlink_path.is_symlink();
+        let path = addons_dir.join(&addon.name);
+        addon.is_symlinked = symlink::is_addon_symlinked(path);
     }
 }
 
