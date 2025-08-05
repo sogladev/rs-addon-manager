@@ -139,7 +139,7 @@ export function useOperationTracker() {
                     )
                 }, recentlyCompletedDelay)
 
-                const operationsCleanupDelay = 3000
+                const operationsCleanupDelay = 1000
                 setTimeout(() => {
                     operations.delete(keyString)
                 }, operationsCleanupDelay)
