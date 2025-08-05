@@ -4,21 +4,21 @@ on:
     workflow_dispatch:
         inputs:
             version:
-                description: 'desired version'
+                description: 'Desired version tag'
                 required: true
                 default: 'v0.2.7'
             build_cli:
-                description: 'Build CLI only'
+                description: 'Build CLI binaries'
                 required: false
                 type: boolean
-                default: true
+                default: false
             build_demo:
-                description: 'Build Demo (includes CLI)'
+                description: 'Build Demo package (includes CLI)'
                 required: false
                 type: boolean
                 default: false
             build_gui:
-                description: 'Build GUI (includes Demo and CLI)'
+                description: 'Build GUI application (includes Demo and CLI)'
                 required: false
                 type: boolean
                 default: false
@@ -259,11 +259,7 @@ jobs:
             fail-fast: false
             matrix:
                 include:
-                    - platform: 'macos-latest' # for Arm based macs (M1 and above).
-                      args: '--target aarch64-apple-darwin'
-                    - platform: 'macos-latest' # for Intel based macs.
-                      args: '--target x86_64-apple-darwin'
-                    - platform: 'ubuntu-22.04' # for Tauri v1 you could replace this with ubuntu-20.04.
+                    - platform: 'ubuntu-24.04'
                       args: ''
                     - platform: 'windows-latest'
                       args: ''
