@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use tauri::{AppHandle, Emitter};
 
-use crate::{addon_disk, clone, operation_tracker::*, validate};
+use crate::{addon_disk, git, operation_tracker::*, validate};
 
 pub struct InstallReporter {
     pub event: Box<dyn FnMut(OperationEvent) + Send>,
@@ -22,7 +22,7 @@ where
 
     reporter(OperationEvent::Status("Cloning repository...".to_string()));
     let (_owner, repo_name) =
-        clone::extract_owner_repo_from_url(&url).map_err(|e| format!("Invalid repo URL: {e}"))?;
+        git::extract_owner_repo_from_url(&url).map_err(|e| format!("Invalid repo URL: {e}"))?;
     let repo_path = manager_dir.join(repo_name);
 
     if repo_path.exists() {
@@ -31,7 +31,7 @@ where
 
     // Throttle progress events: only emit on 1% increments
     let mut last_percent: u32 = 0;
-    let repo = clone::clone_git_repo(&url, manager_dir.clone(), &mut |current, total| {
+    let repo = git::clone_git_repo(&url, manager_dir.clone(), &mut |current, total| {
         if total > 0 {
             let percent = ((current as u128 * 100) / total as u128) as u32;
             if percent != last_percent {

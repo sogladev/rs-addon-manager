@@ -4,7 +4,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::{ffi::OsStr, path::PathBuf};
 
-use crate::clone;
+use crate::git;
 use crate::symlink;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -171,7 +171,7 @@ fn create_disk_addon_repository_inner(
         .ok()
         .and_then(|h| h.target().map(|oid| oid.to_string()));
     let available_branches = get_branch_names(&repo);
-    let (owner, _) = clone::extract_owner_repo_from_url(&repo_url)
+    let (owner, _) = git::extract_owner_repo_from_url(&repo_url)
         .unwrap_or_else(|_| ("Unknown owner".to_string(), "Unknown repo".to_string()));
 
     let latest_ref = if disk_only {

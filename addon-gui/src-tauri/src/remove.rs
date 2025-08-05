@@ -2,14 +2,14 @@ use std::{fs, path::PathBuf};
 
 use tauri::{AppHandle, Emitter};
 
-use crate::{addon_discovery::AppState, operation_tracker::*};
+use crate::{addon_discovery::AppState, git, operation_tracker::*};
 
 /// Deletes addon repo and symlinks by repo URL and AddOns path
 pub fn delete_addon_files(url: &str, path: &str) -> Result<(), String> {
     let addons_dir = PathBuf::from(path);
     let manager_root = addons_dir.join(".addonmanager");
-    let (_owner, repo_name) = crate::clone::extract_owner_repo_from_url(url)
-        .map_err(|e| format!("Invalid repo URL: {e}"))?;
+    let (_owner, repo_name) =
+        git::extract_owner_repo_from_url(url).map_err(|e| format!("Invalid repo URL: {e}"))?;
 
     // Remove any symlinks in AddOns whose target is inside this repo
     let repo_dir = manager_root.join(&repo_name);
@@ -103,7 +103,7 @@ pub async fn delete_addon_cmd(
 mod tests {
     use super::*;
     use crate::addon_disk;
-    use crate::clone;
+    use crate::git;
     use crate::install;
     use crate::test_utils::{print_dir_tree, setup_addons_dir};
     use crate::validate;
@@ -173,7 +173,7 @@ mod tests {
 
         // Validate installed repo directory
         let manager_dir = validate::ensure_manager_dir(&addons_dir).unwrap();
-        let (_owner, repo_name) = clone::extract_owner_repo_from_url(&url).unwrap();
+        let (_owner, repo_name) = git::extract_owner_repo_from_url(&url).unwrap();
         let repo_dir = manager_dir.join(&repo_name);
         assert!(
             repo_dir.exists(),

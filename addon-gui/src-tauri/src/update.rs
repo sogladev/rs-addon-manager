@@ -2,7 +2,7 @@ use git2::{FetchOptions, Repository, ResetType};
 use std::path::Path;
 use tauri::{AppHandle, Emitter};
 
-use crate::{addon_discovery::AppState, clone, operation_tracker::*, validate};
+use crate::{addon_discovery::AppState, git, operation_tracker::*, validate};
 
 /// Perform a forced update of the repository at the given path and branch.
 /// Fetches from origin, force resets local branch to remote HEAD.
@@ -12,7 +12,7 @@ fn update_addon_repo(path: &str, url: &str, branch: &str) -> Result<(), String> 
         .map_err(|e| format!("Failed to ensure manager dir: {e}"))?;
 
     let (_owner, repo_name) =
-        clone::extract_owner_repo_from_url(url).map_err(|e| format!("Invalid repo URL: {e}"))?;
+        git::extract_owner_repo_from_url(url).map_err(|e| format!("Invalid repo URL: {e}"))?;
     let repo_dir = manager_dir.join(&repo_name);
 
     let repo = Repository::open(&repo_dir)
