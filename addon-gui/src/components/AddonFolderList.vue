@@ -77,7 +77,7 @@ const handleDeleteAddon = (repo: AddonRepository, folderPath: string) => {
             class="btn btn-outline btn-accent mt-2 self-start"
             @click="emit('add-directory')"
         >
-            Add addon directory
+            Add AddOns directory
         </button>
     </div>
 </template>
