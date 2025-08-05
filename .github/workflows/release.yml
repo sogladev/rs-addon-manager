@@ -7,25 +7,37 @@ on:
                 description: 'Desired version tag'
                 required: true
                 default: 'v0.2.7'
-            build_cli:
-                description: 'Build CLI binaries'
-                required: false
-                type: boolean
-                default: false
-            build_demo:
-                description: 'Build Demo package (includes CLI)'
-                required: false
-                type: boolean
-                default: false
-            build_gui:
-                description: 'Build GUI application (includes Demo and CLI)'
-                required: false
-                type: boolean
-                default: false
+            release_type:
+                description: 'Type of release to build'
+                required: true
+                type: choice
+                options:
+                    - production
+                    - demo
+                    - gui
+                    - addon-manager
+                default: 'production'
+
+# Production Release (release_type: production):
+# Builds CLI epoch patcher (production version)
+# Builds addon manager
+# Uses tag: v0.2.7
+#
+# Demo Release (release_type: demo):
+# Builds creates demo packages
+# Uses tag: v0.2.7-demo
+#
+# Demo GUI Release (release_type: gui):
+# Builds launcher GUI (Tauri app)
+# Uses tag: v0.2.7-demo
+#
+# Addon Manager Release (release_type: addon-manager):
+# Builds only the addon manager
+# Uses tag: v0.2.7
 
 jobs:
     build-cli-all-platforms:
-        if: ${{ github.event.inputs.build_cli == 'true' || github.event.inputs.build_demo == 'true' || github.event.inputs.build_gui == 'true' }}
+        if: ${{ github.event.inputs.release_type == 'production' || github.event.inputs.release_type == 'demo' || github.event.inputs.release_type == 'gui' }}
         strategy:
             matrix:
                 include:
@@ -113,7 +125,7 @@ jobs:
                   retention-days: 3
 
     build-manifest-cdn-all-platforms:
-        if: ${{ github.event.inputs.build_cli == 'true' || github.event.inputs.build_demo == 'true' || github.event.inputs.build_gui == 'true' }}
+        if: ${{ github.event.inputs.release_type == 'demo' }}
         strategy:
             matrix:
                 include:
@@ -175,7 +187,7 @@ jobs:
                   retention-days: 3
 
     publish-production:
-        if: ${{ github.event.inputs.build_cli == 'true' }}
+        if: ${{ github.event.inputs.release_type == 'production' }}
         needs: build-cli-all-platforms
         runs-on: ubuntu-24.04
         steps:
@@ -209,12 +221,11 @@ jobs:
                       dist/cli/epoch_patcher-cli-${{ github.event.inputs.version }}-windows-x86_64.exe
                       dist/cli/epoch_patcher-cli-${{ github.event.inputs.version }}-macos-x86_64
                       dist/cli/epoch_patcher-cli-${{ github.event.inputs.version }}-macos-aarch64
-                      LICENSE
                       README.md
 
     publish-demo:
-        if: ${{ github.event.inputs.build_demo == 'true' || github.event.inputs.build_gui == 'true' }}
-        needs: build-cli-all-platforms
+        if: ${{ github.event.inputs.release_type == 'demo' }}
+        needs: [build-cli-all-platforms, build-manifest-cdn-all-platforms]
         runs-on: ubuntu-24.04
         steps:
             - name: Checkout
@@ -232,6 +243,57 @@ jobs:
                   name: cli-artifacts-macos
                   path: dist/cli/
 
+            - name: Download manifest-cdn Linux and Windows Artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: manifest-cdn-artifacts
+                  path: dist/manifest-cdn/
+
+            - name: Download manifest-cdn macOS Artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: manifest-cdn-artifacts-macos
+                  path: dist/manifest-cdn/
+
+            - name: Create Demo Package Structure
+              run: |
+                  # Create demo package directories
+                  mkdir -p dist/demo-package/linux/downloader
+                  mkdir -p dist/demo-package/linux/server
+                  mkdir -p dist/demo-package/windows/downloader
+                  mkdir -p dist/demo-package/windows/server
+                  mkdir -p dist/demo-package/macos/downloader
+                  mkdir -p dist/demo-package/macos/server
+
+                  # Copy CLI binaries to downloader directory
+                  cp dist/cli/downloader-cli-${{ github.event.inputs.version }}-linux-x86_64 dist/demo-package/linux/downloader/
+                  cp dist/cli/downloader-cli-${{ github.event.inputs.version }}-windows-x86_64.exe dist/demo-package/windows/downloader/
+                  cp dist/cli/downloader-cli-${{ github.event.inputs.version }}-macos-x86_64 dist/demo-package/macos/downloader/
+                  cp dist/cli/downloader-cli-${{ github.event.inputs.version }}-macos-aarch64 dist/demo-package/macos/downloader/
+
+                  # Copy manifest-cdn binaries to server directory
+                  cp dist/manifest-cdn/manifest-cdn-${{ github.event.inputs.version }}-linux-x86_64 dist/demo-package/linux/server/
+                  cp dist/manifest-cdn/manifest-cdn-${{ github.event.inputs.version }}-windows-x86_64.exe dist/demo-package/windows/server/
+                  cp dist/manifest-cdn/manifest-cdn-${{ github.event.inputs.version }}-macos-x86_64 dist/demo-package/macos/server/
+                  cp dist/manifest-cdn/manifest-cdn-${{ github.event.inputs.version }}-macos-aarch64 dist/demo-package/macos/server/
+
+                  # Copy manifest-cdn files to server directory
+                  cp -r manifest-cdn/files dist/demo-package/linux/server/
+                  cp -r manifest-cdn/files dist/demo-package/windows/server/
+                  cp -r manifest-cdn/files dist/demo-package/macos/server/
+
+                  # Generate manifest.json
+                  cd dist/demo-package/linux/server && chmod +x ./manifest-cdn-${{ github.event.inputs.version }}-linux-x86_64 && ./manifest-cdn-${{ github.event.inputs.version }}-linux-x86_64 --create
+                  cp manifest.json ../../windows/server
+                  cp manifest.json ../../macos/server
+                  cd ../../../..
+
+                  # Create archives
+                  cd dist/demo-package/linux && tar -czf ../../demo-package-${{ github.event.inputs.version }}-linux-x86_64.tar.gz downloader/ server/
+                  cd ../windows && zip -r ../../demo-package-${{ github.event.inputs.version }}-windows-x86_64.zip downloader/ server/
+                  cd ../macos && tar -czf ../../demo-package-${{ github.event.inputs.version }}-macos.tar.gz downloader/ server/
+                  cd ../../..
+
             - name: Create Demo Release
               id: create_demo_release
               uses: softprops/action-gh-release@v2
@@ -243,15 +305,13 @@ jobs:
                   draft: true
                   prerelease: true
                   files: |
-                      dist/cli/downloader-cli-${{ github.event.inputs.version }}-linux-x86_64
-                      dist/cli/downloader-cli-${{ github.event.inputs.version }}-windows-x86_64.exe
-                      dist/cli/downloader-cli-${{ github.event.inputs.version }}-macos-x86_64
-                      dist/cli/downloader-cli-${{ github.event.inputs.version }}-macos-aarch64
-                      LICENSE
+                      dist/demo-package-${{ github.event.inputs.version }}-linux-x86_64.tar.gz
+                      dist/demo-package-${{ github.event.inputs.version }}-windows-x86_64.zip
+                      dist/demo-package-${{ github.event.inputs.version }}-macos.tar.gz
                       README.md
 
     publish-demo-tauri:
-        if: ${{ github.event.inputs.build_gui == 'true' }}
+        if: ${{ github.event.inputs.release_type == 'gui' }}
         needs: build-cli-all-platforms # only build the GUI once all CLI artifacts are ready
         permissions:
             contents: write
@@ -273,10 +333,9 @@ jobs:
             - name: install Rust stable
               uses: dtolnay/rust-toolchain@stable
               with:
-                  # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
                   targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
             - name: install dependencies (ubuntu only)
-              if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
+              if: matrix.platform == 'ubuntu-24.04'
               run: |
                   sudo apt-get update
                   sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
@@ -296,4 +355,52 @@ jobs:
                   releaseBody: 'Demo version - For testing purposes only. See the assets to download this version and install.'
                   releaseDraft: true
                   prerelease: true
+                  args: ${{ matrix.args }}
+
+    publish-addon-manager:
+        if: ${{ github.event.inputs.release_type == 'addon-manager' || github.event.inputs.release_type == 'production' }}
+        permissions:
+            contents: write
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - platform: 'ubuntu-24.04'
+                      args: ''
+                    - platform: 'windows-latest'
+                      args: ''
+                    - platform: 'macos-latest'
+                      args: '--target aarch64-apple-darwin'
+        runs-on: ${{ matrix.platform }}
+        steps:
+            - uses: actions/checkout@v4
+            - name: setup node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: lts/*
+            - name: install Rust stable
+              uses: dtolnay/rust-toolchain@stable
+              with:
+                  targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+            - name: install dependencies (ubuntu only)
+              if: matrix.platform == 'ubuntu-24.04'
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+            - name: Install Bun
+              uses: oven-sh/setup-bun@v2
+            - name: Install frontend dependencies
+              run: |
+                  cd addon-gui
+                  bun install
+            - uses: tauri-apps/tauri-action@v0
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  projectPath: addon-gui
+                  tagName: ${{ github.event.inputs.version }}
+                  releaseName: 'Addon Manager v${{ github.event.inputs.version }}'
+                  releaseBody: 'Production release of the Addon Manager application.'
+                  releaseDraft: true
+                  prerelease: false
                   args: ${{ matrix.args }}
