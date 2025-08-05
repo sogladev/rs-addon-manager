@@ -135,11 +135,56 @@ pub fn check_addon_symlinks(addons: &mut [DiskAddon], addons_dir: &Path) {
 /// Create a DiskAddonRepository from a repository path
 /// This is used by both scan and install operations
 pub fn create_disk_addon_repository(repo_path: &Path) -> Result<DiskAddonRepository, String> {
+    create_disk_addon_repository_inner(repo_path, false)
+}
+
+/// Create a DiskAddonRepository from a repository path (disk-only, no remote operations)
+/// This is used for fast disk-only scans
+pub fn create_disk_addon_repository_disk_only(
+    repo_path: &Path,
+) -> Result<DiskAddonRepository, String> {
+    create_disk_addon_repository_inner(repo_path, true)
+}
+
+fn create_disk_addon_repository_inner(
+    repo_path: &Path,
+    disk_only: bool,
+) -> Result<DiskAddonRepository, String> {
     let repo = git2::Repository::open(repo_path)
         .map_err(|e| format!("Failed to open git repo {}: {e}", repo_path.display()))?;
 
-    let (repo_url, current_branch, repo_ref, available_branches, owner, latest_ref) =
-        extract_repo_metadata(&repo);
+    let repo_url = repo
+        .find_remote("origin")
+        .and_then(|r| {
+            r.url()
+                .map(|s| s.to_string())
+                .ok_or(git2::Error::from_str("no url"))
+        })
+        .unwrap_or_default();
+
+    let current_branch = repo
+        .head()
+        .ok()
+        .and_then(|h| h.shorthand().map(String::from));
+    let repo_ref = repo
+        .head()
+        .ok()
+        .and_then(|h| h.target().map(|oid| oid.to_string()));
+    let available_branches = get_branch_names(&repo);
+    let (owner, _) = clone::extract_owner_repo_from_url(&repo_url)
+        .unwrap_or_else(|_| ("Unknown owner".to_string(), "Unknown repo".to_string()));
+
+    let latest_ref = if disk_only {
+        None
+    } else {
+        current_branch.as_ref().and_then(|branch| {
+            let refname = format!("refs/remotes/origin/{branch}");
+            repo.find_reference(&refname)
+                .ok()
+                .and_then(|r| r.target().map(|oid| oid.to_string()))
+        })
+    };
+
     let addons = find_all_sub_addons(&repo_path.to_path_buf())
         .map_err(|e| format!("Failed to discover sub-addons: {e}"))?;
 
@@ -159,87 +204,6 @@ pub fn create_disk_addon_repository(repo_path: &Path) -> Result<DiskAddonReposit
         addons,
         readme,
     })
-}
-
-/// Create a DiskAddonRepository from a repository path (disk-only, no remote operations)
-/// This is used for fast disk-only scans
-pub fn create_disk_addon_repository_disk_only(
-    repo_path: &Path,
-) -> Result<DiskAddonRepository, String> {
-    let repo = git2::Repository::open(repo_path)
-        .map_err(|e| format!("Failed to open git repo {}: {e}", repo_path.display()))?;
-
-    let (repo_url, current_branch, repo_ref, available_branches, owner, latest_ref, readme) =
-        extract_repo_metadata_disk_only(&repo);
-    let addons = find_all_sub_addons(&repo_path.to_path_buf())
-        .map_err(|e| format!("Failed to discover sub-addons: {e}"))?;
-
-    Ok(DiskAddonRepository {
-        repo_url,
-        repo_name: repo_path
-            .file_name()
-            .map(|f| f.to_string_lossy().to_string())
-            .unwrap_or_default(),
-        owner,
-        current_branch,
-        available_branches,
-        repo_ref,
-        latest_ref,
-        addons,
-        readme,
-    })
-}
-
-/// Extract git repository metadata
-pub fn extract_repo_metadata(
-    repo: &git2::Repository,
-) -> (
-    String,
-    Option<String>,
-    Option<String>,
-    Vec<String>,
-    String,
-    Option<String>,
-) {
-    let repo_url = repo
-        .find_remote("origin")
-        .and_then(|r| {
-            r.url()
-                .map(|s| s.to_string())
-                .ok_or(git2::Error::from_str("no url"))
-        })
-        .unwrap_or_default();
-
-    let current_branch = repo
-        .head()
-        .ok()
-        .and_then(|h| h.shorthand().map(|s| s.to_string()));
-
-    let repo_ref = repo
-        .head()
-        .ok()
-        .and_then(|h| h.target().map(|oid| oid.to_string()));
-
-    let available_branches = get_branch_names(repo);
-
-    let (owner, _) = clone::extract_owner_repo_from_url(&repo_url)
-        .unwrap_or_else(|_| ("Unknown owner".to_string(), "Unknown repo".to_string()));
-
-    let latest_ref = current_branch.as_ref().and_then(|branch| {
-        let refname = format!("refs/remotes/origin/{}", branch);
-        repo.find_reference(&refname)
-            .ok()
-            .and_then(|r| r.target().map(|oid| oid.to_string()))
-    });
-
-    (
-        repo_url,
-        current_branch,
-        repo_ref,
-        available_branches,
-        owner,
-        latest_ref,
-    )
 }
 
 // Helper to find the README in a directory
@@ -263,58 +227,6 @@ fn find_readme(dir_path: &std::path::Path) -> Option<String> {
         }
     }
     None
-}
-
-/// Extract git repository metadata without remote operations (disk-only)
-pub fn extract_repo_metadata_disk_only(
-    repo: &git2::Repository,
-) -> (
-    String,
-    Option<String>,
-    Option<String>,
-    Vec<String>,
-    String,
-    Option<String>,
-    Option<String>,
-) {
-    let repo_url = repo
-        .find_remote("origin")
-        .and_then(|r| {
-            r.url()
-                .map(|s| s.to_string())
-                .ok_or(git2::Error::from_str("no url"))
-        })
-        .unwrap_or_default();
-
-    let current_branch = repo
-        .head()
-        .ok()
-        .and_then(|h| h.shorthand().map(|s| s.to_string()));
-
-    let repo_ref = repo
-        .head()
-        .ok()
-        .and_then(|h| h.target().map(|oid| oid.to_string()));
-
-    let available_branches = get_branch_names(repo);
-
-    let (owner, _) = clone::extract_owner_repo_from_url(&repo_url)
-        .unwrap_or_else(|_| ("Unknown owner".to_string(), "Unknown repo".to_string()));
-
-    // For disk-only mode, don't fetch remote refs - use None for latest_ref
-    let latest_ref = None;
-
-    let readme = find_readme(repo.path());
-
-    (
-        repo_url,
-        current_branch,
-        repo_ref,
-        available_branches,
-        owner,
-        latest_ref,
-        readme,
-    )
 }
 
 fn get_branch_names(repo: &git2::Repository) -> Vec<String> {
