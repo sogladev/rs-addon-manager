@@ -104,7 +104,7 @@ To set up formatting and the pre-commit hook:
 
 ```bash
 bun add -D prettier @vue/eslint-config-prettier
-bunx eslint --ext .ts,.vue addon-gui/src/
+bunx eslint --ext .ts,.vue addon-manager-gui/src/
 ```
 
 ### Local CDN

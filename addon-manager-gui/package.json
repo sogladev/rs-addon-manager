@@ -1,5 +1,5 @@
 {
-    "name": "addon-gui",
+    "name": "addon-manager-gui",
     "private": true,
     "version": "0.2.7",
     "type": "module",

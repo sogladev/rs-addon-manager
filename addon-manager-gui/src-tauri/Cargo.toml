@@ -1,8 +1,8 @@
 [package]
-name = "addon-gui"
+name = "addon-manager-gui"
 version = "0.2.7"
-description = "A Tauri App"
-authors = ["you"]
+description = "A cross-platform addon manager for installing, updating, and managing addons using Git."
+authors = ["sogladev"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
