@@ -52,7 +52,7 @@ const handleDeleteAddon = (repo: AddonRepository, folderPath: string) => {
 </script>
 
 <template>
-    <div class="flex flex-col gap-4 overflow-y-auto p-2">
+    <div class="flex flex-col gap-4 p-2">
         <AddonFolderCollapse
             v-for="folder in filteredFolders"
             :key="folder.path"
