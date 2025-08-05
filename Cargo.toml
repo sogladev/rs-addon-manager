@@ -5,7 +5,7 @@ members = [
     "downloader-cli",
     "launcher-gui/src-tauri",
     "manifest-cdn",
-    "addon-gui/src-tauri"
+    "addon-manager-gui/src-tauri"
 ]
 
 [profile.release]

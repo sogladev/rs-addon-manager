@@ -3,15 +3,15 @@ name: Build Addon GUI
 on:
     pull_request:
         paths:
-            - 'addon-gui/**'
+            - 'addon-manager-gui/**'
             - 'downloader-core/**'
-            - '.github/workflows/build-addon-gui.yml'
+            - '.github/workflows/build-addon-manager-gui.yml'
     push:
         branches: ['main']
         paths:
-            - 'addon-gui/**'
+            - 'addon-manager-gui/**'
             - 'downloader-core/**'
-            - '.github/workflows/build-addon-gui.yml'
+            - '.github/workflows/build-addon-manager-gui.yml'
 
 # This workflow will build your tauri app without uploading it anywhere.
 
@@ -20,7 +20,7 @@ concurrency:
     cancel-in-progress: true
 
 jobs:
-    test-tauri-addon-gui:
+    test-tauri-addon-manager-gui:
         runs-on: ubuntu-24.04
         steps:
             - uses: actions/checkout@v4
@@ -38,10 +38,10 @@ jobs:
                   sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
             - name: Install frontend dependencies
               run: |
-                  cd addon-gui
+                  cd addon-manager-gui
                   bun install
             - uses: tauri-apps/tauri-action@v0
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
-                  projectPath: addon-gui
+                  projectPath: addon-manager-gui

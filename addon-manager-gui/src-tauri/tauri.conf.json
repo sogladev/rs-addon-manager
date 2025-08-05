@@ -1,8 +1,8 @@
 {
     "$schema": "https://schema.tauri.app/config/2",
-    "productName": "launcher-gui",
+    "productName": "addon-manager",
     "version": "0.2.7",
-    "identifier": "com.launcher-gui.app",
+    "identifier": "sogladev.addon-manager",
     "build": {
         "beforeDevCommand": "bun run dev",
         "devUrl": "http://localhost:1420",
@@ -12,16 +12,13 @@
     "app": {
         "windows": [
             {
-                "title": "launcher-gui",
+                "title": "Addon Manager",
                 "width": 800,
-                "height": 600,
-                "minWidth": 800,
-                "minHeight": 600
+                "height": 600
             }
         ],
         "security": {
-            "csp": "default-src 'self'; connect-src 'self' http://localhost:8080",
-            "capabilities": []
+            "csp": null
         }
     },
     "bundle": {

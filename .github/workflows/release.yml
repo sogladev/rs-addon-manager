@@ -391,13 +391,13 @@ jobs:
               uses: oven-sh/setup-bun@v2
             - name: Install frontend dependencies
               run: |
-                  cd addon-gui
+                  cd addon-manager-gui
                   bun install
             - uses: tauri-apps/tauri-action@v0
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
-                  projectPath: addon-gui
+                  projectPath: addon-manager-gui
                   tagName: ${{ github.event.inputs.version }}
                   releaseName: 'Addon Manager v${{ github.event.inputs.version }}'
                   releaseBody: 'Production release of the Addon Manager application.'
