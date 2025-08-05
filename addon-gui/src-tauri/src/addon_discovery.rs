@@ -131,7 +131,6 @@ pub fn refresh_disk_data(
     app: AppHandle,
     state: tauri::State<AppState>,
 ) -> Result<Vec<view_models::AddOnsFolder>, String> {
-    // Read configured addon directories
     let config = crate::addon_store::load_user_config(&app)?;
 
     // Scan folders and stash in‐mem disk data (disk-only)

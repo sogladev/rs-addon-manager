@@ -3,13 +3,11 @@ use std::path::Path;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::{ffi::OsStr, path::PathBuf};
-use ts_rs::TS;
 
 use crate::clone;
 
-#[derive(Debug, Serialize, Deserialize, Clone, TS)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-// #[ts(export)]
 pub struct DiskAddOnsFolder {
     /// Absolute path to the AddOns directory
     pub path: String,
@@ -98,9 +96,8 @@ impl DiskAddOnsFolder {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, TS)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-// #[ts(export)]
 /// Folder must contain a .toc file, sometimes multiple
 pub struct DiskAddon {
     pub name: String,
@@ -110,9 +107,8 @@ pub struct DiskAddon {
     pub notes: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, TS)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-// #[ts(export)]
 /// Folder with a .git subdirectory
 pub struct DiskAddonRepository {
     pub repo_url: String,
@@ -193,7 +189,7 @@ pub fn create_disk_addon_repository_disk_only(
     })
 }
 
-/// Extract git repository metadata (URL, branches, current ref, etc.)
+/// Extract git repository metadata
 pub fn extract_repo_metadata(
     repo: &git2::Repository,
 ) -> (
@@ -337,6 +333,9 @@ fn get_branch_names(repo: &git2::Repository) -> Vec<String> {
     let mut branch_names = get_branch_names(git2::BranchType::Local);
     branch_names.extend(get_branch_names(git2::BranchType::Remote));
     branch_names
+        .into_iter()
+        .filter(|name| name != "origin/main" && name != "origin/HEAD" && name != "origin/master")
+        .collect()
 }
 
 /// Finds all sub-addons by searching for .toc files in the root directory and immediate subdirectories only
