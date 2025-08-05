@@ -3,7 +3,7 @@ build = "build.rs"
 name = "downloader-cli"
 description = "patch download utility"
 homepage = "https://github.com/sogladev/rs-game-launcher"
-version = "0.2.6"
+version = "0.2.7"
 edition = "2021"
 
 [dependencies]

@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "addon-gui"
-version = "0.1.0"
+version = "0.2.7"
 dependencies = [
  "chrono",
  "git2",
@@ -1022,7 +1022,7 @@ checksum = "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2"
 
 [[package]]
 name = "downloader-cli"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "clap",
  "colored",
@@ -1036,7 +1036,7 @@ dependencies = [
 
 [[package]]
 name = "downloader-core"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "clap",
  "colored",
@@ -2384,7 +2384,7 @@ dependencies = [
 
 [[package]]
 name = "launcher-gui"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "downloader-core",
  "futures",
@@ -2565,7 +2565,7 @@ checksum = "c41e0c4fef86961ac6d6f8a82609f55f31b05e4fce149ac5710e439df7619ba4"
 
 [[package]]
 name = "manifest-cdn"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "clap",
  "downloader-core",
