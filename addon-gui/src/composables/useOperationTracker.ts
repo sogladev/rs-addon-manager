@@ -40,7 +40,6 @@ export function useOperationTracker() {
         return false
     })
 
-    // Get count of active operations
     const activeOperationCount = computed(() => {
         let count = 0
         for (const state of operations.values()) {

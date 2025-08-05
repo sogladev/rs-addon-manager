@@ -58,7 +58,6 @@ function handleOpenPath(path: string) {
     revealItemInDir(path)
 }
 
-// Modal state
 const showDeleteModal = ref(false)
 const folderToDelete = ref<string | null>(null)
 const showAddonDeleteModal = ref(false)
@@ -142,7 +141,6 @@ const outOfDateCount = computed(() =>
 </script>
 
 <template>
-    <!-- gap-4 -->
     <div class="flex flex-col h-full z-10">
         <AddonGlobalToolbar
             v-model:search="search"
