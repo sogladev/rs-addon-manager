@@ -318,7 +318,7 @@ const saveLogAndClose = async () => {
                     @click.prevent="confirmImport"
                     :disabled="isImporting"
                 >
-                    <span v-if="isImporting">
+                    <span v-if="isImporting" class="flex items-center gap-2">
                         <span class="loading loading-spinner loading-xs"></span>
                         Importing {{ importProgress.current }} /
                         {{ importProgress.total }}...
