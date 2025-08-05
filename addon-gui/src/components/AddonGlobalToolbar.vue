@@ -17,6 +17,7 @@ import {
     Menu,
     Palette,
     Save,
+    Turtle,
 } from 'lucide-vue-next'
 import { ref } from 'vue'
 
@@ -306,6 +307,10 @@ const saveLogAndClose = async () => {
     >
         <div class="modal-box">
             <h3 class="font-bold text-lg">Import Addons</h3>
+            <div class="flex items-center gap-2 mt-2 mb-2">
+                <Turtle class="w-5 h-5" />
+                <span>This may take a while for many addons</span>
+            </div>
             <textarea
                 v-model="importText"
                 rows="6"
