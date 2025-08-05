@@ -7,6 +7,8 @@ use tauri::AppHandle;
 use tauri::Emitter;
 use tauri_plugin_store::StoreExt;
 
+use crate::operation_tracker::{OperationEvent, OperationEventPayload, OperationKey};
+
 const STORE_FILE: &str = "addon-manager.json";
 const STORE_KEY: &str = "addon-directories";
 
@@ -20,6 +22,30 @@ pub fn load_user_config(app: &AppHandle) -> Result<AddOnsUserConfig, String> {
 #[tauri::command]
 pub async fn add_addon_directory(path: String, app_handle: AppHandle) -> Result<(), String> {
     println!("Adding addon directory: {path}");
+
+    // Check if directory exists first
+    if !std::path::Path::new(&path).exists() {
+        let error_msg = format!("Directory does not exist: {path}");
+
+        // Emit operation error event to frontend
+        let operation_key = OperationKey {
+            repo_url: String::new(), // No repo URL for directory operations
+            folder_path: path.clone(),
+        };
+
+        app_handle
+            .emit(
+                "operation-event",
+                OperationEventPayload {
+                    key: operation_key,
+                    event: OperationEvent::Error(error_msg.clone()),
+                },
+            )
+            .map_err(|e| format!("Failed to emit operation-event: {e}"))?;
+
+        return Err(error_msg);
+    }
+
     let store = app_handle.store(STORE_FILE).map_err(|e| e.to_string())?;
     let raw = store.get(STORE_KEY).unwrap_or_default();
     let mut config: AddOnsUserConfig = serde_json::from_value(raw).unwrap_or_default();
