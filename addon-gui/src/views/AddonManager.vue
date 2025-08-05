@@ -1,19 +1,16 @@
 <script setup lang="ts">
-import { revealItemInDir } from '@tauri-apps/plugin-opener'
-import { open } from '@tauri-apps/plugin-dialog'
-import { ref, computed, onMounted } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-
-import type { AddonRepository } from '@bindings/AddonRepository'
-
-import { useGlobalError } from '@/composables/useGlobalError'
-import { useAddonData } from '@/composables/useAddonData'
-import { useOperationTracker } from '@/composables/useOperationTracker'
+import AddonFolderDeleteModal from '@/components/AddonFolderDeleteModal.vue'
+import AddonFolderList from '@/components/AddonFolderList.vue'
 import AddonGlobalToolbar from '@/components/AddonGlobalToolbar.vue'
 import AddonRepoCloneModal from '@/components/AddonRepoCloneModal.vue'
-import AddonFolderList from '@/components/AddonFolderList.vue'
-import AddonFolderDeleteModal from '@/components/AddonFolderDeleteModal.vue'
 import AddonRepoDeleteModal from '@/components/AddonRepoDeleteModal.vue'
+import { useAddonData } from '@/composables/useAddonData'
+import { useOperationTracker } from '@/composables/useOperationTracker'
+import type { AddonRepository } from '@bindings/AddonRepository'
+import { invoke } from '@tauri-apps/api/core'
+import { open } from '@tauri-apps/plugin-dialog'
+import { revealItemInDir } from '@tauri-apps/plugin-opener'
+import { computed, onMounted, ref } from 'vue'
 
 const {
     addonFolders,
@@ -26,8 +23,6 @@ const { recentlyCompleted } = useOperationTracker()
 
 const showAddModal = ref(false)
 const search = ref('')
-
-const { globalErrorMessage, clearError } = useGlobalError()
 
 onMounted(async () => {
     try {
@@ -161,19 +156,6 @@ const outOfDateCount = computed(() =>
             @refresh="refreshAddonData(true)"
             @add-addon="showAddModal = true"
         />
-
-        <!-- Global Error Bar -->
-        <div
-            v-if="globalErrorMessage"
-            class="alert alert-error fixed top-0 left-0 w-full z-50"
-        >
-            <div class="flex items-center justify-between">
-                <span>{{ globalErrorMessage }}</span>
-                <button class="btn btn-sm btn-outline ml-4" @click="clearError">
-                    Dismiss
-                </button>
-            </div>
-        </div>
 
         <AddonRepoCloneModal
             v-model:open="showAddModal"

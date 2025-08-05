@@ -14,20 +14,16 @@ export interface OperationState {
 }
 
 export function useOperationTracker() {
-    // Map of stringified OperationKey to operation state
     const operations = reactive<Map<string, OperationState>>(new Map())
 
-    // Recently completed operations tracking
     const recentlyCompleted = ref<
         { keyString: string; type: string; time: number; repoName: string }[]
     >([])
 
-    // Helper to create string key from OperationKey
     function createKeyString(key: OperationKey): string {
         return JSON.stringify(key)
     }
 
-    // Get operation state for a specific repo
     function getOperationState(
         repoUrl: string,
         folderPath: string
@@ -37,7 +33,6 @@ export function useOperationTracker() {
         return operations.get(keyString) || { isActive: false }
     }
 
-    // Check if any operation is active
     const hasActiveOperations = computed(() => {
         for (const state of operations.values()) {
             if (state.isActive) return true
@@ -54,12 +49,10 @@ export function useOperationTracker() {
         return count
     })
 
-    // Check if a specific repo has an active operation
     function isOperationActive(repoUrl: string, folderPath: string): boolean {
         return getOperationState(repoUrl, folderPath).isActive
     }
 
-    // Get operation type for a specific repo
     function getOperationType(
         repoUrl: string,
         folderPath: string
@@ -67,7 +60,6 @@ export function useOperationTracker() {
         return getOperationState(repoUrl, folderPath).type
     }
 
-    // Get progress for a specific repo
     function getProgress(
         repoUrl: string,
         folderPath: string
@@ -102,9 +94,7 @@ export function useOperationTracker() {
             const keyString = createKeyString(key)
             const event = payload.event
 
-            // Handle different event types
             if (typeof event === 'object' && 'error' in event) {
-                // Error event: mark inactive, update state, and push to recent events
                 const current = operations.get(keyString) || { isActive: true }
                 current.error = event.error
                 current.warning = undefined
@@ -117,14 +107,16 @@ export function useOperationTracker() {
                     time: Date.now(),
                     repoName,
                 })
+                const recentlyCompletedCleanupDelay = 120000
                 setTimeout(() => {
                     recentlyCompleted.value = recentlyCompleted.value.filter(
                         (op) => op.keyString !== keyString
                     )
-                }, 120000)
+                }, recentlyCompletedCleanupDelay)
+                const operationsCleanupDelay = 2000
                 setTimeout(() => {
                     operations.delete(keyString)
-                }, 2000)
+                }, operationsCleanupDelay)
             } else if (event === 'completed') {
                 const current = operations.get(keyString) || { isActive: true }
                 current.status = 'Completed'
@@ -132,7 +124,6 @@ export function useOperationTracker() {
                 current.error = undefined
                 operations.set(keyString, current)
 
-                // Add to recently completed
                 const repoName = extractRepoName(key.repoUrl)
                 recentlyCompleted.value.push({
                     keyString: keyString,

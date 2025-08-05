@@ -8,7 +8,6 @@ export function useAddonData() {
     const addonFolders = ref<AddOnsFolder[]>([])
     const folderPaths = computed(() => addonFolders.value.map((f) => f.path))
 
-    // Operation tracking - delegated to useOperationTracker
     const { operations, hasActiveOperations, activeOperationCount } =
         useOperationTracker()
 
@@ -92,7 +91,6 @@ export function useAddonData() {
         folderPaths,
         refreshAddonData,
         refreshDiskData,
-        // Operation tracking - delegated to useOperationTracker
         operations,
         hasActiveOperations,
         activeOperationCount,

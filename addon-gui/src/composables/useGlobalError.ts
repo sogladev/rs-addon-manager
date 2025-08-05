@@ -5,7 +5,7 @@ import { writeTextFile } from '@tauri-apps/plugin-fs'
 interface Issue {
     timestamp: string
     message: string
-    details?: unknown // Optional: Add more details as needed
+    details?: unknown
 }
 
 const globalErrorMessage = ref<string | null>(null)
