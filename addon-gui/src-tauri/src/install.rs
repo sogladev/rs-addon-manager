@@ -18,7 +18,7 @@ where
         "Starting addon installation...".to_string(),
     ));
 
-    let manager_dir = validate::ensure_manager_dir(dir).map_err(|e| e)?;
+    let manager_dir = validate::ensure_manager_dir(dir)?;
 
     reporter(OperationEvent::Status("Cloning repository...".to_string()));
     let repo_name = url
@@ -241,7 +241,7 @@ pub async fn create_addon_symlink(
             "operation-event",
             OperationEventPayload {
                 key: operation_key.clone(),
-                event: OperationEvent::Status(format!("Creating symlink for '{}'", addon_name)),
+                event: OperationEvent::Status(format!("Creating symlink for '{addon_name}'")),
             },
         )
         .map_err(|e| format!("Failed to emit operation-event: {e}"))?;
@@ -335,7 +335,7 @@ pub async fn remove_addon_symlink(
             "operation-event",
             OperationEventPayload {
                 key: operation_key.clone(),
-                event: OperationEvent::Status(format!("Removing symlink for '{}'", addon_name)),
+                event: OperationEvent::Status(format!("Removing symlink for '{addon_name}'")),
             },
         )
         .map_err(|e| format!("Failed to emit operation-event: {e}"))?;

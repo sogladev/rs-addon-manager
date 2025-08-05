@@ -157,7 +157,7 @@ pub async fn update_all_addons_cmd(
         let result = perform_update_op(&app_handle, &state, url.clone(), path, branch).await;
         if let Ok(()) = result {
         } else if let Err(e) = result {
-            eprintln!("Update failed for {}: {e}", url);
+            eprintln!("Update failed for {url}: {e}");
         }
     }
 
