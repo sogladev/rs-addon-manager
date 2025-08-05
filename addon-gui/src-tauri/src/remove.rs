@@ -15,15 +15,13 @@ pub fn delete_addon_files(url: &str, path: &str) -> Result<(), String> {
     let repo_dir = manager_root.join(&repo_name);
     if let Ok(entries) = fs::read_dir(&addons_dir) {
         for entry in entries.flatten() {
-            let p = entry.path();
-            if p.symlink_metadata()
-                .map(|m| m.file_type().is_symlink())
-                .unwrap_or(false)
-            {
-                if let Ok(target) = fs::read_link(&p) {
-                    // Delete symlink if it points into the repo directory
-                    if target.starts_with(&repo_dir) {
-                        let _ = fs::remove_file(&p);
+            if let Ok(file_type) = entry.file_type() {
+                if file_type.is_symlink() {
+                    let p = entry.path();
+                    if let Ok(target) = fs::read_link(&p) {
+                        if target.starts_with(&repo_dir) {
+                            let _ = fs::remove_file(&p);
+                        }
                     }
                 }
             }

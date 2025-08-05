@@ -360,7 +360,7 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<DiskAddon>, String> {
 
     // Helper to process a directory and collect .toc files
     fn collect_toc_files(dir: &Path) -> Result<Vec<String>, String> {
-        let let_toc_files = std::fs::read_dir(dir)
+        let toc_files = std::fs::read_dir(dir)
             .map_err(|e| format!("Failed to read dir: {e}"))?
             .filter_map(|entry| {
                 let path = entry.ok()?.path();
@@ -371,7 +371,7 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<DiskAddon>, String> {
                 }
             })
             .collect();
-        Ok(let_toc_files)
+        Ok(toc_files)
     }
 
     /// This is to handle cases where multiple .toc files exist in the root with multiple base names
