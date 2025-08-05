@@ -153,13 +153,9 @@ pub async fn update_all_addons_cmd(
         tasks
     };
 
-    let total_count = update_tasks.len();
-    let mut updated_count = 0;
-
     for (path, url, branch) in update_tasks {
         let result = perform_update_op(&app_handle, &state, url.clone(), path, branch).await;
         if let Ok(()) = result {
-            updated_count += 1;
         } else if let Err(e) = result {
             eprintln!("Update failed for {}: {e}", url);
         }
@@ -168,13 +164,6 @@ pub async fn update_all_addons_cmd(
     app_handle
         .emit("addon-data-updated", ())
         .map_err(|e| format!("Failed to emit addon-data-updated: {e}"))?;
-
-    app_handle
-        .emit(
-            "update-all-complete",
-            format!("Updated {}/{} addons", updated_count, total_count),
-        )
-        .map_err(|e| format!("Failed to emit update-all-complete: {e}"))?;
 
     Ok(())
 }
