@@ -102,6 +102,11 @@ To set up formatting and the pre-commit hook:
     chmod +x .git/hooks/pre-commit
     ```
 
+```bash
+bun add -D prettier @vue/eslint-config-prettier
+bunx eslint --ext .ts,.vue addon-gui/src/
+```
+
 ### Local CDN
 
 The local CDN serves patch files and the manifest for both the CLI and GUI. Run these commands from the project root:

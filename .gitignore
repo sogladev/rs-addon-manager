@@ -1,4 +1,5 @@
 .idea
 target
 downloader-cli/files
+.github/daisyui.instructions.md
 node_modules
