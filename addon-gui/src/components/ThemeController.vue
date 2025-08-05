@@ -1,7 +1,7 @@
 <script setup>
 import { useGlobalError } from '@/composables/useGlobalError'
 import { invoke } from '@tauri-apps/api/core'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 const { addIssue } = useGlobalError()
 
@@ -54,6 +54,16 @@ function prevTheme() {
     currentThemeIndex.value =
         (currentThemeIndex.value - 1 + themeList.length) % themeList.length
 }
+
+onMounted(() => {
+    const docTheme = document.documentElement.getAttribute('data-theme')
+    if (docTheme) {
+        const idx = themeList.indexOf(docTheme)
+        if (idx !== -1) {
+            currentThemeIndex.value = idx
+        }
+    }
+})
 
 // Reset theme to default
 async function resetTheme() {
