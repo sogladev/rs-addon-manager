@@ -1,44 +1,44 @@
-# Rs Game Launcher
+# Rs Game Suite
 
-This monorepo contains a cross-platform (Windows + Linux + MacOS) game launcher in 2 forms: minimal CLI downloader (Rust) and a GUI launcher (Tauri + Vue.js). It is designed to manage patch updates using a manifest. The launcher displays a transaction overview, detailed progress, and only overwrites files listed in the manifest. It can also remove deprecated files specified by the manifest.
+This monorepo contains cross-platform (Windows + Linux + MacOS) tools:
 
-The project is designed for easy extension with minimal dependencies, utilizing shared Rust libraries for backend operations while keeping the front-end lightweight.
+- A GUI launcher (Tauri + Vue.js) that includes patching
+- A CLI patcher (Rust)
+- A GUI addon manager (Tauri + Vue.js) to manage addons with git
 
-![Socials](images/socials.png)
+Note that the patcher includes support for [Project Epoch](https://www.project-epoch.net/play/) via `epoch_patcher-cli`. See releases for binaries or build it yourself with `-features production`
 
-## How to Use
+![Socials Launcher](images/socials-launcher.png)
 
-### CLI
+![Socials Addon Manager](images/socials-addon-manager.png)
 
-- Download the CLI binary for your platform from the release
-- Place the binary in your WoW folder (where `Wow.exe` is located)
-- Run the CLI binary to apply patches
+## Addon Manager
 
-### GUI
+| Feature                                  | Supported         |
+| ---------------------------------------- | ----------------- |
+| Windows, Linux, MacOS                    | Yes               |
+| Install, Remove, Update addons           | Yes               |
+| git sources GitHub, GitLab, etc          | Yes               |
+| Install all                              | Yes               |
+| Update all                               | Yes               |
+| Multiple addon directories               | Yes               |
+| Import / Export addon list               | Yes               |
+| Switch Git branches                      | Yes               |
+| Manage subaddons                         | Yes               |
+| Install via Git (HTTPS)                  | Yes               |
+| Install via Git (SSH)                    | Not planned       |
+| Install from GitHub Releases or Packages | Not yet supported |
+| Manage non-Git addons                    | Not yet supported |
 
-- Download the GUI binary for your platform from the release
-- Install the GUI application before launching it. This does not need to be your game folder
-- Upon first launch, select your WoW game folder
-    - The selected folder will be stored in:
-        - Windows: `%appdata%`
-        - Linux: `$XDG_CONFIG_HOME` or `~/.local/share`
-        - MacOS: `~/Library/Application Support`
-- After patching is complete, the launcher can start the game executable.
-  note: On non-Windows platforms, Wine will use the `.wine` directory located in the game folder by default. This behavior can be overridden by setting the `WINEPREFIX` environment variable before launching the GUI.
+![Clone](images/addon-manager/clone.png)
+![Menu](images/addon-manager/main-menu.png)
+<video controls src="images/addon-manager/import-video.mp4" title="Title"></video>
 
-## Tech Stack
+```
+C:\Games\wow335\Interface\AddOns AdiBags *https://github.com/Sattva-108/AdiBags.git main
+```
 
-[![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org)
-[![Vue.js](https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vue.js&logoColor=4FC08D)](https://vuejs.org)
-[![Tauri](https://img.shields.io/badge/Tauri-24C8D8?style=for-the-badge&logo=tauri&logoColor=white)](https://tauri.app)
-[![DaisyUI](https://img.shields.io/badge/DaisyUI-5A0EF8?style=for-the-badge&logo=daisyui&logoColor=white)](https://daisyui.com)
-
-### Core Technologies
-
-- **CLI:** Rust-based command line interface
-- **GUI:** Tauri + Vue.js application with DaisyUI components
-
-## Feature Comparison
+## Patcher
 
 | Feature                                 | CLI (Rust)     | GUI (Tauri + Vue.js)   |
 | --------------------------------------- | -------------- | ---------------------- |
@@ -52,13 +52,27 @@ The project is designed for easy extension with minimal dependencies, utilizing 
 | Client download                         | Not planned    | Not yet supported      |
 | Manage addons                           | Not planned    | Not planned            |
 
-## CLI Details
+### CLI
+
+- Download the CLI binary for your platform from the release
+- Place the binary in your WoW folder (where `Wow.exe` is located)
+- Run the CLI binary to apply patches
 
 A lightweight Rust-based terminal CLI for basic patching. It downloads patches from a `manifest.json`
 
 ![CLI](images/rs_patcher.gif)
 
-## GUI Details
+### GUI
+
+- Download the GUI binary for your platform from the release
+- Install the GUI application before launching it. This does not need to be your game folder
+- Upon first launch, select your WoW game folder
+    - The selected folder will be stored in:
+        - Windows: `%appdata%`
+        - Linux: `$XDG_CONFIG_HOME` or `~/.local/share`
+        - MacOS: `~/Library/Application Support`
+- After patching is complete, the launcher can start the game executable.
+  note: On non-Windows platforms, Wine will use the `.wine` directory located in the game folder by default. This behavior can be overridden by setting the `WINEPREFIX` environment variable before launching the GUI.
 
 A Tauri + Vue.js wrapper around the same Rust libraries:
 
@@ -69,6 +83,18 @@ A Tauri + Vue.js wrapper around the same Rust libraries:
 ![Launcher Dark](images/tauri_game_launcher_dark.png)
 
 https://github.com/user-attachments/assets/7c642947-a57c-46b0-aab9-eeb456b6e115
+
+## Tech Stack
+
+[![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org)
+[![Vue.js](https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vue.js&logoColor=4FC08D)](https://vuejs.org)
+[![Tauri](https://img.shields.io/badge/Tauri-24C8D8?style=for-the-badge&logo=tauri&logoColor=white)](https://tauri.app)
+[![DaisyUI](https://img.shields.io/badge/DaisyUI-5A0EF8?style=for-the-badge&logo=daisyui&logoColor=white)](https://daisyui.com)
+
+### Core Technologies
+
+- **CLI:** Rust-based command line interface
+- **GUI:** Tauri + Vue.js application with DaisyUI components
 
 ## Local Development
 
@@ -133,7 +159,7 @@ From project root
     cargo run --features production --bin downloader-cli
     ```
 
-2. Build
+1. Build
 
     ```sh
     # Demo build (default)
@@ -149,13 +175,13 @@ From project root
 
 From `launcher-gui/`
 
-2. Install dependencies:
+1. Install dependencies:
 
     ```sh
-    bun install
+     bun install
     ```
 
-3. Start the development server
+1. Start the development server
 
     ```sh
     # Demo mode (default)
@@ -165,7 +191,7 @@ From `launcher-gui/`
     bun run tauri dev --features production
     ```
 
-4. Build the project
+1. Build the project
 
     ```sh
     # Demo build (default)
@@ -175,7 +201,7 @@ From `launcher-gui/`
     bun run tauri build --features production
     ```
 
-#### Fake client directory
+#### Fake client directory setup
 
 The downloader CLI does not do any client validation.
 
