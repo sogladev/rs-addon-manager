@@ -52,7 +52,8 @@ How to use:
 
 ![Clone](images/addon-manager/clone.png)
 ![Menu](images/addon-manager/main-menu.png)
-<video controls src="images/addon-manager/import-video.mp4" title="Title"></video>
+
+https://github.com/user-attachments/assets/2491b729-0b62-41d4-bf91-dabb3065cbea
 
 import format:
 
