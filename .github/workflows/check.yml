@@ -1,9 +1,21 @@
 name: Check
 
 on:
+    pull_request:
+        paths:
+            - 'manifest-cdn/**'
+            - 'downloader-core/**'
+            - 'addon-manager-gui/src-tauri**'
+            - 'launcher-gui/src-tauri**'
+            - '.github/workflows/check.yml'
     push:
         branches: ['main']
-    pull_request:
+        paths:
+            - 'manifest-cdn/**'
+            - 'downloader-core/**'
+            - 'addon-manager-gui/src-tauri**'
+            - 'launcher-gui/src-tauri**'
+            - '.github/workflows/check.yml'
     workflow_dispatch:
 
 jobs:

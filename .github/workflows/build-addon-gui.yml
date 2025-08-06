@@ -3,13 +3,13 @@ name: Build Addon GUI
 on:
     pull_request:
         paths:
-            - 'addon-manager-gui/**'
+            - 'addon-manager-gui/src-tauri**'
             - 'downloader-core/**'
             - '.github/workflows/build-addon-manager-gui.yml'
     push:
         branches: ['main']
         paths:
-            - 'addon-manager-gui/**'
+            - 'addon-manager-gui/src-tauri**'
             - 'downloader-core/**'
             - '.github/workflows/build-addon-manager-gui.yml'
 
