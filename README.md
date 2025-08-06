@@ -22,6 +22,7 @@ Note that the patcher includes support for [Project Epoch](https://www.project-e
     - [GUI Launcher](#gui)
 - [Tech Stack](#tech-stack)
 - [Local Development](#local-development)
+- [Acknowledgements](#Acknowledgements)
 
 ## Addon Manager
 
@@ -41,9 +42,18 @@ Note that the patcher includes support for [Project Epoch](https://www.project-e
 | Install from GitHub Releases or Packages | Not yet supported |
 | Manage non-Git addons                    | Not yet supported |
 
+How to use:
+
+- Download the GUI binary for your platform from the release
+- Install the GUI application before launching it. This does not need to be your game folder
+- Upon first launch, select the AddOns folder in your WoW game folder
+- Install addons via their HTTPS git URL
+
 ![Clone](images/addon-manager/clone.png)
 ![Menu](images/addon-manager/main-menu.png)
 <video controls src="images/addon-manager/import-video.mp4" title="Title"></video>
+
+import format:
 
 ```
 C:\Games\wow335\Interface\AddOns AdiBags *https://github.com/Sattva-108/AdiBags.git main
@@ -67,8 +77,10 @@ C:\Games\wow335\Interface\AddOns AdiBags *https://github.com/Sattva-108/AdiBags.
 
 A lightweight Rust-based terminal CLI for basic patching. It downloads patches from a `manifest.json`
 
+How to use:
+
 - Download the CLI binary for your platform from the release
-- Place the binary in your WoW folder (where `Wow.exe` is located)
+- Place the binary in your WoW folder where `Wow.exe` is located
 - Run the CLI binary to apply patches
 
 ### GUI
@@ -83,13 +95,11 @@ A Tauri + Vue.js wrapper around the same Rust libraries:
 
 https://github.com/user-attachments/assets/7c642947-a57c-46b0-aab9-eeb456b6e115
 
+How to use:
+
 - Download the GUI binary for your platform from the release
 - Install the GUI application before launching it. This does not need to be your game folder
 - Upon first launch, select your WoW game folder
-    - The selected folder will be stored in:
-        - Windows: `%appdata%`
-        - Linux: `$XDG_CONFIG_HOME` or `~/.local/share`
-        - MacOS: `~/Library/Application Support`
 - After patching is complete, the launcher can start the game executable.
   note: On non-Windows platforms, Wine will use the `.wine` directory located in the game folder by default. This behavior can be overridden by setting the `WINEPREFIX` environment variable before launching the GUI.
 
@@ -137,10 +147,10 @@ To set up formatting and the pre-commit hook:
     chmod +x .git/hooks/pre-commit
     ```
 
-```bash
-bun add -D prettier @vue/eslint-config-prettier
-bunx eslint --ext .ts,.vue addon-manager-gui/src/
-```
+3. Run manually
+    ```sh
+    bunx eslint --ext .ts,.vue addon-manager-gui/src/
+    ```
 
 ### Local CDN
 
@@ -220,5 +230,9 @@ touch client/Battle.net.dll
 touch client/Data/lichking.MPQ
 touch client/Data/patch-3.MPQ
 ```
+
+## Acknowledgements
+
+The Addon Manager UI and features were inspired by [GitAddonsManager](https://gitlab.com/woblight/GitAddonsManager) and other existing Wow Addon Managers. For an overview of existing addon managers, I recommend this comparison video by Arcane Intellect: [WoW Addon Managers Compared](https://www.youtube.com/watch?v=_V0RZG4YRVY)
 
 ## License
