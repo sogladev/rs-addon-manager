@@ -21,7 +21,7 @@ export function useAddonData() {
     async function refreshAddonData(force = false) {
         const now = Date.now()
         const timeSinceLast = now - lastRefreshTime
-        const refreshInterval = 5000
+        const refreshInterval = 3000
 
         if (refreshPending) {
             return
