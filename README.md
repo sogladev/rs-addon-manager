@@ -26,21 +26,22 @@ Note that the patcher includes support for [Project Epoch](https://www.project-e
 
 ## Addon Manager
 
-| Feature                                  | Supported         |
-| ---------------------------------------- | ----------------- |
-| Windows, Linux, MacOS                    | Yes               |
-| Install, Remove, Update addons           | Yes               |
-| git sources GitHub, GitLab, etc          | Yes               |
-| Install all                              | Yes               |
-| Update all                               | Yes               |
-| Multiple addon directories               | Yes               |
-| Import / Export addon list               | Yes               |
-| Switch Git branches                      | Yes               |
-| Manage subaddons                         | Yes               |
-| Install via Git (HTTPS)                  | Yes               |
-| Install via Git (SSH)                    | Not planned       |
-| Install from GitHub Releases or Packages | Not yet supported |
-| Manage non-Git addons                    | Not yet supported |
+| Feature                                                                        | Supported         |
+| ------------------------------------------------------------------------------ | ----------------- |
+| Windows, Linux, MacOS                                                          | Yes               |
+| Install, Remove, Update addons                                                 | Yes               |
+| git sources GitHub, GitLab, etc                                                | Yes               |
+| Install all                                                                    | Yes               |
+| Update all                                                                     | Yes               |
+| Multiple addon directories                                                     | Yes               |
+| Import / Export addon list                                                     | Yes               |
+| Switch Git branches                                                            | Yes               |
+| Manage subaddons                                                               | Yes               |
+| Install via Git (HTTPS)                                                        | Yes               |
+| Install via Git (SSH)                                                          | Not planned       |
+| Install from GitHub Releases or Packages                                       | Not yet supported |
+| Manage non-Git addons                                                          | Not yet supported |
+| Auto updater with [Tauri Updater plugin](https://v2.tauri.app/plugin/updater/) | Not yet supported |
 
 How to use:
 
