@@ -311,8 +311,7 @@ jobs:
                       README.md
 
     publish-demo-tauri:
-        if: ${{ github.event.inputs.release_type == 'gui' }}
-        needs: build-cli-all-platforms # only build the GUI once all CLI artifacts are ready
+        if: ${{ github.event.inputs.release_type == 'demo' || github.event.inputs.release_type == 'gui' }}
         permissions:
             contents: write
         strategy:
