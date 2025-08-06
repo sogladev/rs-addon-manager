@@ -12,6 +12,17 @@ Note that the patcher includes support for [Project Epoch](https://www.project-e
 
 ![Socials Addon Manager](images/socials-addon-manager.png)
 
+[//]: # 'Table of Contents'
+
+## Table of Contents
+
+- [Addon Manager](#addon-manager)
+- [Patcher](#patcher)
+    - [CLI Patcher](#cli)
+    - [GUI Launcher](#gui)
+- [Tech Stack](#tech-stack)
+- [Local Development](#local-development)
+
 ## Addon Manager
 
 | Feature                                  | Supported         |
@@ -54,25 +65,13 @@ C:\Games\wow335\Interface\AddOns AdiBags *https://github.com/Sattva-108/AdiBags.
 
 ### CLI
 
+A lightweight Rust-based terminal CLI for basic patching. It downloads patches from a `manifest.json`
+
 - Download the CLI binary for your platform from the release
 - Place the binary in your WoW folder (where `Wow.exe` is located)
 - Run the CLI binary to apply patches
 
-A lightweight Rust-based terminal CLI for basic patching. It downloads patches from a `manifest.json`
-
-![CLI](images/rs_patcher.gif)
-
 ### GUI
-
-- Download the GUI binary for your platform from the release
-- Install the GUI application before launching it. This does not need to be your game folder
-- Upon first launch, select your WoW game folder
-    - The selected folder will be stored in:
-        - Windows: `%appdata%`
-        - Linux: `$XDG_CONFIG_HOME` or `~/.local/share`
-        - MacOS: `~/Library/Application Support`
-- After patching is complete, the launcher can start the game executable.
-  note: On non-Windows platforms, Wine will use the `.wine` directory located in the game folder by default. This behavior can be overridden by setting the `WINEPREFIX` environment variable before launching the GUI.
 
 A Tauri + Vue.js wrapper around the same Rust libraries:
 
@@ -83,6 +82,16 @@ A Tauri + Vue.js wrapper around the same Rust libraries:
 ![Launcher Dark](images/tauri_game_launcher_dark.png)
 
 https://github.com/user-attachments/assets/7c642947-a57c-46b0-aab9-eeb456b6e115
+
+- Download the GUI binary for your platform from the release
+- Install the GUI application before launching it. This does not need to be your game folder
+- Upon first launch, select your WoW game folder
+    - The selected folder will be stored in:
+        - Windows: `%appdata%`
+        - Linux: `$XDG_CONFIG_HOME` or `~/.local/share`
+        - MacOS: `~/Library/Application Support`
+- After patching is complete, the launcher can start the game executable.
+  note: On non-Windows platforms, Wine will use the `.wine` directory located in the game folder by default. This behavior can be overridden by setting the `WINEPREFIX` environment variable before launching the GUI.
 
 ## Tech Stack
 
