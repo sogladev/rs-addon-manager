@@ -311,6 +311,7 @@ const saveLogAndClose = async () => {
                 v-model="importText"
                 rows="6"
                 class="textarea textarea-bordered w-full mt-2"
+                spellcheck="false"
                 placeholder="<path> <name> *<gitUrl> <branch>..."
             ></textarea>
             <form method="dialog" class="modal-action flex gap-2">
