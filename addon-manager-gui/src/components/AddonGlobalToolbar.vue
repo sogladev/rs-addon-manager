@@ -67,7 +67,7 @@ const confirmImport = async () => {
     if (!importText.value.trim() || isImporting.value) return
 
     isImporting.value = true
-    const lines = importText.value.split(/\r?\n/).filter((line) => {
+    const lines = importText.value.split(/\r?\n/).filter((line: string) => {
         const trimmed = line.trim()
         return trimmed && !trimmed.startsWith('//') && !trimmed.startsWith('#')
     })
