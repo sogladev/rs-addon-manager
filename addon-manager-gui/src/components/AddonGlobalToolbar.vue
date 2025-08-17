@@ -93,7 +93,7 @@ const confirmImport = async () => {
 
                 try {
                     const alreadyManaged = folders.some?.(
-                        (f) => f.path === folderPath
+                        (f: { path: any }) => f.path === folderPath
                     )
                     if (!alreadyManaged) {
                         await invoke('add_addon_directory', {
