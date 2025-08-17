@@ -77,13 +77,19 @@ const confirmImport = async () => {
         // Process imports sequentially to avoid overwhelming the system
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i]
-            const parts = line.trim().split(/\s+/)
-            if (parts.length >= 4) {
-                const folderPath = parts[0]
-                const gitUrl = parts[2].startsWith('*')
-                    ? parts[2].slice(1)
-                    : parts[2]
-                const branch = parts[3]
+            const match = line
+                .trim()
+                .match(/^(".*?"|\S+)\s+(\S+)\s+(\*\S+)\s+(\S+)$/)
+            if (match) {
+                const folderPath =
+                    match[1].startsWith('"') && match[1].endsWith('"')
+                        ? match[1].slice(1, -1)
+                        : match[1]
+                // const addonName = match[2]
+                const gitUrl = match[3].startsWith('*')
+                    ? match[3].slice(1)
+                    : match[3]
+                const branch = match[4]
 
                 try {
                     const alreadyManaged = folders.some?.(
