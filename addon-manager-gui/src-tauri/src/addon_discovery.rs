@@ -16,7 +16,7 @@ pub struct AppState {
 impl AppState {
     pub fn get_disk_state(
         &self,
-    ) -> Result<std::sync::RwLockReadGuard<HashMap<String, DiskAddOnsFolder>>, String> {
+    ) -> Result<std::sync::RwLockReadGuard<'_, HashMap<String, DiskAddOnsFolder>>, String> {
         self.disk_state.read().map_err(|e| e.to_string())
     }
 
