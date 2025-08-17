@@ -34,6 +34,8 @@ pub fn is_valid_repo_url(url: &str) -> bool {
 /// assert!(is_valid_addons_folder(Path::new(&addons_dir)));
 /// assert!(!is_valid_addons_folder(temp.path()));
 /// assert!(!is_valid_addons_folder(&interface_dir));
+/// let path = Path::new("/home/user/Games/ascension-wow/drive_c/Program Files/Ascension Launcher/resources/epoch_live/Interface/Addons/");
+/// assert!(is_valid_addons_folder(path));
 /// ```
 pub fn is_valid_addons_folder(path: &Path) -> bool {
     let dir_name = path.file_name().and_then(|n| n.to_str());
@@ -41,7 +43,8 @@ pub fn is_valid_addons_folder(path: &Path) -> bool {
         .parent()
         .and_then(|p| p.file_name())
         .and_then(|n| n.to_str());
-    dir_name == Some("AddOns") && parent_name == Some("Interface")
+    matches!(dir_name, Some(name) if name.eq_ignore_ascii_case("AddOns"))
+        && matches!(parent_name, Some(name) if name.eq_ignore_ascii_case("Interface"))
 }
 
 #[tauri::command]
