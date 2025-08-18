@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use tauri::{AppHandle, Emitter};
 
-use crate::{addon_disk, git, operation_tracker::*, validate};
+use crate::{addon_disk, git, operation_reporter::*, validate};
 
 pub struct InstallReporter {
     pub event: Box<dyn FnMut(OperationEvent) + Send>,

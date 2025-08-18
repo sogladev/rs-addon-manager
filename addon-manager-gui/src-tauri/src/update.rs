@@ -2,7 +2,7 @@ use git2::{FetchOptions, Repository, ResetType};
 use std::path::Path;
 use tauri::{AppHandle, Emitter};
 
-use crate::{addon_discovery::AppState, git, operation_tracker::*, validate};
+use crate::{addon_discovery::AppState, git, operation_reporter::*, validate};
 
 /// Perform a forced update of the repository at the given path and branch.
 /// Fetches from origin, force resets local branch to remote HEAD.

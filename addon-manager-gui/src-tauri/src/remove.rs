@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use tauri::{AppHandle, Emitter};
 
-use crate::{git, operation_tracker::*};
+use crate::{git, operation_reporter::*};
 
 /// Deletes addon repo and symlinks by repo URL and AddOns path
 pub fn delete_addon_files(url: &str, path: &str) -> Result<(), String> {
