@@ -4,6 +4,7 @@ import ThemeController from '@/components/ThemeController.vue'
 import TimeoutButton from '@/components/TimeoutButton.vue'
 import { useGlobalError } from '@/composables/useGlobalError'
 import { OperationState } from '@/composables/useOperationTracker'
+import { parseImportLine } from '@/utils/importParser'
 import type { AddOnsFolder } from '@bindings/AddOnsFolder'
 import { invoke } from '@tauri-apps/api/core'
 import { save } from '@tauri-apps/plugin-dialog'
@@ -77,44 +78,37 @@ const confirmImport = async () => {
         // Process imports sequentially to avoid overwhelming the system
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i]
-            const parts = line.trim().split(/\s+/)
-            if (parts.length >= 4) {
-                const folderPath = parts[0]
-                const gitUrl = parts[2].startsWith('*')
-                    ? parts[2].slice(1)
-                    : parts[2]
-                const branch = parts[3]
+            const { folderPath, gitUrl, branch } = parseImportLine(line)
 
-                try {
-                    const alreadyManaged = folders.some?.(
-                        (f: { path: any }) => f.path === folderPath
-                    )
-                    if (!alreadyManaged) {
-                        await invoke('add_addon_directory', {
-                            path: folderPath,
-                        })
-                    }
-
-                    await invoke('install_addon_cmd', {
-                        url: gitUrl,
+            try {
+                const alreadyManaged = folders.some?.(
+                    (f: { path: any }) => f.path === folderPath
+                )
+                if (!alreadyManaged) {
+                    await invoke('add_addon_directory', {
                         path: folderPath,
-                        branch,
                     })
-                } catch (e) {
-                    addIssue(
-                        `Import failed on line ${i + 1}: "${line}"\nGit URL: ${gitUrl}\nError: ${e instanceof Error ? e.message : String(e)}`,
-                        {
-                            lineNumber: i + 1,
-                            lineContent: line,
-                            gitUrl,
-                            branch,
-                            folderPath,
-                            error: e,
-                            stack: e instanceof Error ? e.stack : undefined,
-                        }
-                    )
-                    console.error(`Import failed for ${gitUrl}:`, e)
                 }
+
+                await invoke('install_addon_cmd', {
+                    url: gitUrl,
+                    path: folderPath,
+                    branch,
+                })
+            } catch (e) {
+                addIssue(
+                    `Import failed on line ${i + 1}: "${line}"\nGit URL: ${gitUrl}\nError: ${e instanceof Error ? e.message : String(e)}`,
+                    {
+                        lineNumber: i + 1,
+                        lineContent: line,
+                        gitUrl,
+                        branch,
+                        folderPath,
+                        error: e,
+                        stack: e instanceof Error ? e.stack : undefined,
+                    }
+                )
+                console.error(`Import failed for ${gitUrl}:`, e)
             }
             importProgress.value.current = i + 1
         }
@@ -126,7 +120,6 @@ const confirmImport = async () => {
     }
 }
 
-// Generate export lines with header comment
 const handleExport = () => {
     const header = '# <path> <addonName> *<gitUrl> <branch>'
     const lines: string[] = []
