@@ -7,7 +7,7 @@ use tauri::AppHandle;
 use tauri::Emitter;
 use tauri_plugin_store::StoreExt;
 
-use crate::operation_tracker::{OperationEvent, OperationEventPayload, OperationKey};
+use crate::operation_reporter::{OperationEvent, OperationEventPayload, OperationKey};
 
 const STORE_FILE: &str = "addon-manager.json";
 const STORE_KEY: &str = "addon-directories";

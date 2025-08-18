@@ -2,7 +2,7 @@ use git2::{FetchOptions, Repository, ResetType};
 use std::path::Path;
 use tauri::{AppHandle, Emitter};
 
-use crate::{addon_discovery::AppState, git, operation_tracker::*, validate};
+use crate::{addon_discovery::AppState, git, operation_reporter::*, validate};
 
 /// Perform a forced update of the repository at the given path and branch.
 /// Fetches from origin, force resets local branch to remote HEAD.
@@ -60,7 +60,6 @@ fn update_addon_repo(path: &str, url: &str, branch: &str) -> Result<(), String> 
 
 async fn perform_update_op(
     app_handle: &AppHandle,
-    state: &tauri::State<'_, AppState>,
     url: String,
     path: String,
     branch: String,
@@ -69,9 +68,7 @@ async fn perform_update_op(
         repo_url: url.clone(),
         folder_path: path.clone(),
     };
-    let tracker = state.get_operation_tracker();
 
-    tracker.start_operation(&operation_key, OperationType::Update);
     app_handle
         .emit(
             "operation-event",
@@ -88,8 +85,6 @@ async fn perform_update_op(
         tauri::async_runtime::spawn_blocking(move || update_addon_repo(&path, &url, &branch))
             .await
             .map_err(|e| format!("Task join error: {e}"))?;
-
-    tracker.finish_operation(&operation_key);
 
     let completion_event = match &result {
         Ok(_) => OperationEvent::Completed,
@@ -111,12 +106,11 @@ async fn perform_update_op(
 #[tauri::command]
 pub async fn update_addon_cmd(
     app_handle: AppHandle,
-    state: tauri::State<'_, AppState>,
     url: String,
     path: String,
     branch: String,
 ) -> Result<(), String> {
-    let result = perform_update_op(&app_handle, &state, url, path, branch).await;
+    let result = perform_update_op(&app_handle, url, path, branch).await;
 
     app_handle
         .emit("addon-data-updated", ())
@@ -154,7 +148,7 @@ pub async fn update_all_addons_cmd(
     };
 
     for (path, url, branch) in update_tasks {
-        let result = perform_update_op(&app_handle, &state, url.clone(), path, branch).await;
+        let result = perform_update_op(&app_handle, url.clone(), path, branch).await;
         if let Ok(()) = result {
         } else if let Err(e) = result {
             eprintln!("Update failed for {url}: {e}");

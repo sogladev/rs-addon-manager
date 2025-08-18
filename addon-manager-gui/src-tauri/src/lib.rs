@@ -3,7 +3,7 @@ pub mod addon_disk;
 pub mod addon_store;
 pub mod git;
 pub mod install;
-pub mod operation_tracker;
+pub mod operation_reporter;
 pub mod permission_workaround;
 pub mod remove;
 pub mod symlink;
