@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use tauri::{AppHandle, Emitter};
 
-use crate::{addon_discovery::AppState, git, operation_tracker::*};
+use crate::{git, operation_tracker::*};
 
 /// Deletes addon repo and symlinks by repo URL and AddOns path
 pub fn delete_addon_files(url: &str, path: &str) -> Result<(), String> {
@@ -37,7 +37,6 @@ pub fn delete_addon_files(url: &str, path: &str) -> Result<(), String> {
 
 async fn perform_delete_op(
     app_handle: &AppHandle,
-    state: &tauri::State<'_, AppState>,
     url: String,
     path: String,
 ) -> Result<(), String> {
@@ -45,9 +44,7 @@ async fn perform_delete_op(
         repo_url: url.clone(),
         folder_path: path.clone(),
     };
-    let tracker = state.get_operation_tracker();
 
-    tracker.start_operation(&operation_key, OperationType::Delete);
     app_handle
         .emit(
             "operation-event",
@@ -63,8 +60,6 @@ async fn perform_delete_op(
     let result = tauri::async_runtime::spawn_blocking(move || delete_addon_files(&url, &path))
         .await
         .map_err(|e| format!("Task join error: {e}"))?;
-
-    tracker.finish_operation(&operation_key);
 
     let completion_event = match &result {
         Ok(_) => OperationEvent::Completed,
@@ -86,11 +81,10 @@ async fn perform_delete_op(
 #[tauri::command]
 pub async fn delete_addon_cmd(
     app_handle: AppHandle,
-    state: tauri::State<'_, AppState>,
     url: String,
     path: String,
 ) -> Result<(), String> {
-    let result = perform_delete_op(&app_handle, &state, url, path).await;
+    let result = perform_delete_op(&app_handle, url, path).await;
 
     app_handle
         .emit("addon-data-updated", ())

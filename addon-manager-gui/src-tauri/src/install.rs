@@ -117,7 +117,6 @@ pub fn install_sub_addons<F>(
 #[tauri::command]
 pub async fn install_addon_cmd(
     app_handle: tauri::AppHandle,
-    state: tauri::State<'_, crate::addon_discovery::AppState>,
     url: String,
     path: String,
 ) -> Result<(), String> {
@@ -126,10 +125,6 @@ pub async fn install_addon_cmd(
         repo_url: url.clone(),
         folder_path: path.clone(),
     };
-    let tracker = state.get_operation_tracker();
-
-    // Mark operation as started
-    tracker.start_operation(&operation_key, OperationType::Install);
 
     let app_handle_clone = app_handle.clone();
     let operation_key_clone = operation_key.clone();
@@ -175,7 +170,6 @@ pub async fn install_addon_cmd(
 
     match install_result {
         Ok(_) => {
-            tracker.finish_operation(&operation_key_clone);
             app_handle_clone
                 .emit(
                     "operation-event",
@@ -191,7 +185,6 @@ pub async fn install_addon_cmd(
             Ok(())
         }
         Err(err_msg) => {
-            tracker.finish_operation(&operation_key_clone);
             app_handle_clone
                 .emit(
                     "operation-event",
@@ -218,9 +211,7 @@ pub async fn create_addon_symlink(
         repo_url: repo_url.clone(),
         folder_path: folder_path.clone(),
     };
-    let tracker = state.get_operation_tracker();
 
-    tracker.start_operation(&operation_key, OperationType::Install);
     app_handle
         .emit(
             "operation-event",
@@ -281,8 +272,6 @@ pub async fn create_addon_symlink(
     }
     .await;
 
-    tracker.finish_operation(&operation_key);
-
     let completion_event = match &result {
         Ok(_) => OperationEvent::Completed,
         Err(e) => OperationEvent::Error(e.clone()),
@@ -306,15 +295,12 @@ pub async fn remove_addon_symlink(
     folder_path: String,
     repo_url: String,
     addon_name: String,
-    state: tauri::State<'_, crate::addon_discovery::AppState>,
 ) -> Result<(), String> {
     let operation_key = OperationKey {
         repo_url: repo_url.clone(),
         folder_path: folder_path.clone(),
     };
-    let tracker = state.get_operation_tracker();
 
-    tracker.start_operation(&operation_key, OperationType::Delete);
     app_handle
         .emit(
             "operation-event",
@@ -348,8 +334,6 @@ pub async fn remove_addon_symlink(
         Ok(())
     }
     .await;
-
-    tracker.finish_operation(&operation_key);
 
     let completion_event = match &result {
         Ok(_) => OperationEvent::Completed,

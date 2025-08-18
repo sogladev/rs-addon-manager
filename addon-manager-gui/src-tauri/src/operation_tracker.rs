@@ -1,6 +1,3 @@
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-
 use serde::Serialize;
 use ts_rs::TS;
 
@@ -39,53 +36,6 @@ pub struct OperationKey {
 pub struct OperationEventPayload {
     pub key: OperationKey,
     pub event: OperationEvent,
-}
-
-/// Global operation tracker for managing ongoing install/update operations
-pub struct OperationTracker {
-    active_operations: Arc<Mutex<HashMap<OperationKey, OperationType>>>,
-}
-
-impl OperationTracker {
-    pub fn new() -> Self {
-        Self {
-            active_operations: Arc::new(Mutex::new(HashMap::new())),
-        }
-    }
-
-    pub fn start_operation(&self, key: &OperationKey, operation: OperationType) {
-        if let Ok(mut ops) = self.active_operations.lock() {
-            ops.insert(key.clone(), operation);
-        }
-    }
-
-    pub fn finish_operation(&self, key: &OperationKey) {
-        if let Ok(mut ops) = self.active_operations.lock() {
-            ops.remove(key);
-        }
-    }
-
-    pub fn is_active(&self, key: &OperationKey) -> bool {
-        if let Ok(ops) = self.active_operations.lock() {
-            ops.contains_key(key)
-        } else {
-            false
-        }
-    }
-
-    pub fn get_operation_type(&self, key: &OperationKey) -> Option<OperationType> {
-        if let Ok(ops) = self.active_operations.lock() {
-            ops.get(key).cloned()
-        } else {
-            None
-        }
-    }
-}
-
-impl Default for OperationTracker {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 pub struct OperationReporter {
