@@ -116,7 +116,11 @@ export function useAddonData() {
 
         listen('addon-disk-updated', () => refreshDiskData())
 
+        // Fast refresh
         await refreshAddonData()
+
+        // Automatically check for updates after initial load
+        checkForUpdates(true)
     })
 
     return {
