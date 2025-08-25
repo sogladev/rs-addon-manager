@@ -8,6 +8,7 @@ export function useAddonData() {
     const addonFolders = ref<AddOnsFolder[]>([])
     const folderPaths = computed(() => addonFolders.value.map((f) => f.path))
     const checkingForUpdates = ref(false)
+    const hasCompletedFirstUpdate = ref(false)
 
     const { operations, hasActiveOperations, activeOperationCount } =
         useOperationTracker()
@@ -73,6 +74,7 @@ export function useAddonData() {
         try {
             const folders = await invoke<AddOnsFolder[]>('check_for_updates')
             addonFolders.value = folders
+            hasCompletedFirstUpdate.value = true
         } catch (err) {
             console.error('Failed to check for updates:', err)
         } finally {
@@ -130,6 +132,7 @@ export function useAddonData() {
         refreshDiskData,
         checkForUpdates,
         checkingForUpdates,
+        hasCompletedFirstUpdate,
         operations,
         hasActiveOperations,
         activeOperationCount,

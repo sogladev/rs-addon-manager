@@ -17,6 +17,7 @@ const {
     folderPaths,
     checkForUpdates,
     checkingForUpdates,
+    hasCompletedFirstUpdate,
     operations,
     activeOperationCount,
 } = useAddonData()
@@ -149,6 +150,7 @@ const outOfDateCount = computed(() =>
             :hasUpdates="hasUpdates"
             :outOfDateCount="outOfDateCount"
             :checkingForUpdates="checkingForUpdates"
+            :hasCompletedFirstUpdate="hasCompletedFirstUpdate"
             :operations="operations"
             :activeOperationCount="activeOperationCount"
             :recentlyCompleted="recentlyCompleted"
