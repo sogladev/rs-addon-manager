@@ -27,6 +27,8 @@ const {
     search,
     hasUpdates,
     outOfDateCount,
+    checkingForUpdates,
+    hasCompletedFirstUpdate,
     folders,
     operations,
     activeOperationCount,
@@ -35,6 +37,8 @@ const {
     search: string
     hasUpdates: boolean
     outOfDateCount: number
+    checkingForUpdates?: boolean
+    hasCompletedFirstUpdate?: boolean
     folders: AddOnsFolder[]
     operations: Map<string, OperationState>
     activeOperationCount?: number
@@ -188,17 +192,22 @@ const saveLogAndClose = async () => {
         <div
             class="flex flex-wrap items-center gap-2 bg-base-200 pb-2 pt-2 px-2"
         >
-            <TimeoutButton
-                :timeout="2000"
-                class="btn btn-secondary"
+            <button
+                class="btn btn-secondary w-40"
+                :disabled="checkingForUpdates"
                 @click="emit('refresh')"
             >
-                Check for Updates
-            </TimeoutButton>
+                <span
+                    v-if="checkingForUpdates"
+                    class="loading loading-spinner loading-sm"
+                ></span>
+                <span v-if="checkingForUpdates">Checking...</span>
+                <span v-else>Check for Updates</span>
+            </button>
             <TimeoutButton
-                :timeout="5000"
+                :timeout="30000"
                 class="btn btn-primary w-40"
-                :disabled="!hasUpdates"
+                :disabled="!hasUpdates || checkingForUpdates"
                 @click="emit('update-all')"
             >
                 <span v-if="hasUpdates"
@@ -207,6 +216,7 @@ const saveLogAndClose = async () => {
                         >({{ outOfDateCount }})</span
                     >
                 </span>
+                <span v-else-if="!hasCompletedFirstUpdate">Not checked</span>
                 <span v-else>Up-to-date</span>
             </TimeoutButton>
             <input
