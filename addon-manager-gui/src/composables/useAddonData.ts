@@ -7,6 +7,7 @@ import { useOperationTracker } from './useOperationTracker'
 export function useAddonData() {
     const addonFolders = ref<AddOnsFolder[]>([])
     const folderPaths = computed(() => addonFolders.value.map((f) => f.path))
+    const checkingForUpdates = ref(false)
 
     const { operations, hasActiveOperations, activeOperationCount } =
         useOperationTracker()
@@ -44,6 +45,38 @@ export function useAddonData() {
         } catch (err) {
             console.error('Failed to refresh addon data:', err)
         } finally {
+            refreshPending = false
+        }
+    }
+
+    async function checkForUpdates(force = false) {
+        const now = Date.now()
+        const timeSinceLast = now - lastRefreshTime
+        const refreshInterval = 3000
+
+        if (refreshPending || checkingForUpdates.value) {
+            return
+        }
+
+        if (!force && timeSinceLast < refreshInterval) {
+            if (scheduledRefresh) clearTimeout(scheduledRefresh)
+            scheduledRefresh = setTimeout(() => {
+                scheduledRefresh = null
+                checkForUpdates()
+            }, refreshInterval - timeSinceLast)
+            return
+        }
+
+        checkingForUpdates.value = true
+        refreshPending = true
+        lastRefreshTime = now
+        try {
+            const folders = await invoke<AddOnsFolder[]>('check_for_updates')
+            addonFolders.value = folders
+        } catch (err) {
+            console.error('Failed to check for updates:', err)
+        } finally {
+            checkingForUpdates.value = false
             refreshPending = false
         }
     }
@@ -91,6 +124,8 @@ export function useAddonData() {
         folderPaths,
         refreshAddonData,
         refreshDiskData,
+        checkForUpdates,
+        checkingForUpdates,
         operations,
         hasActiveOperations,
         activeOperationCount,

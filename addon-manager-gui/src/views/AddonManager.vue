@@ -15,7 +15,8 @@ import { computed, onMounted, ref } from 'vue'
 const {
     addonFolders,
     folderPaths,
-    refreshAddonData,
+    checkForUpdates,
+    checkingForUpdates,
     operations,
     activeOperationCount,
 } = useAddonData()
@@ -147,11 +148,12 @@ const outOfDateCount = computed(() =>
             :folders="addonFolders"
             :hasUpdates="hasUpdates"
             :outOfDateCount="outOfDateCount"
+            :checkingForUpdates="checkingForUpdates"
             :operations="operations"
             :activeOperationCount="activeOperationCount"
             :recentlyCompleted="recentlyCompleted"
             @update-all="handleUpdateAll"
-            @refresh="refreshAddonData(true)"
+            @refresh="checkForUpdates(true)"
             @add-addon="showAddModal = true"
         />
 

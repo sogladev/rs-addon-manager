@@ -28,15 +28,44 @@ impl Default for AppState {
 }
 
 #[tauri::command]
-/// Refresh addon data by scanning configured folders
-pub fn refresh_addon_data(
+/// Fast initial load - scan disk only to quickly populate UI
+pub async fn refresh_addon_data(
     app: AppHandle,
-    state: tauri::State<AppState>,
+    state: tauri::State<'_, AppState>,
+) -> Result<Vec<view_models::AddOnsFolder>, String> {
+    // Use the fast disk-only scan for initial load
+    refresh_disk_data(app, state)
+}
+
+#[tauri::command]
+/// Check for updates - scan with remote fetch operations
+pub async fn check_for_updates(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
 ) -> Result<Vec<view_models::AddOnsFolder>, String> {
     // Read configured addon directories
     let config = crate::addon_store::load_user_config(&app)?;
 
-    // Scan folders and stash in‐mem disk data
+    // Clone the config to move it into the spawn_blocking task
+    let folders = config.folders.clone();
+
+    // Perform the disk scanning with remote fetch in a background thread
+    let disk_results = tauri::async_runtime::spawn_blocking(move || {
+        let mut results = Vec::new();
+        for folder_meta in &folders {
+            let path = &folder_meta.path;
+            let folder = DiskAddOnsFolder::scan(path).unwrap_or_else(|e| {
+                eprintln!("Failed to scan path {path:?}: {e:?}");
+                DiskAddOnsFolder::default_with_error(path, e)
+            });
+            results.push((path.clone(), folder));
+        }
+        results
+    })
+    .await
+    .map_err(|e| format!("Task join error: {e}"))?;
+
+    // Update in-memory disk data
     {
         let mut map = match state.disk_state.write() {
             Ok(guard) => guard,
@@ -46,13 +75,8 @@ pub fn refresh_addon_data(
             }
         };
         map.clear();
-        for folder_meta in &config.folders {
-            let path = &folder_meta.path;
-            let folder = DiskAddOnsFolder::scan(path).unwrap_or_else(|e| {
-                eprintln!("Failed to scan path {path:?}: {e:?}");
-                DiskAddOnsFolder::default_with_error(path, e)
-            });
-            map.insert(path.clone(), folder.clone());
+        for (path, folder) in disk_results {
+            map.insert(path, folder);
         }
     }
 

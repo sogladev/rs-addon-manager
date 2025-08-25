@@ -177,7 +177,20 @@ fn create_disk_addon_repository_inner(
     let latest_ref = if disk_only {
         None
     } else {
+        // Fetch from remote to get latest ref
         current_branch.as_ref().and_then(|branch| {
+            if let Ok(mut remote) = repo.find_remote("origin") {
+                let mut fetch_options = git2::FetchOptions::new();
+                let branch_name = branch.strip_prefix("origin/").unwrap_or(branch);
+
+                if let Err(e) = remote.fetch(&[branch_name], Some(&mut fetch_options), None) {
+                    eprintln!(
+                        "Warning: Failed to fetch from remote for {repo_path_display}: {e}",
+                        repo_path_display = repo_path.display()
+                    );
+                }
+            }
+
             let refname = format!("refs/remotes/origin/{branch}");
             repo.find_reference(&refname)
                 .ok()

@@ -25,6 +25,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             addon_discovery::refresh_addon_data,
             addon_discovery::refresh_disk_data,
+            addon_discovery::check_for_updates,
             addon_store::add_addon_directory,
             addon_store::delete_addon_directory,
             addon_store::load_theme,
