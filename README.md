@@ -1,30 +1,54 @@
 # Rs Game Suite
 
-This monorepo contains cross-platform (Windows + Linux + MacOS) tools:
+> Two Separate Utilities: Each tool can be downloaded and used independently. Check the [Releases](../../releases) page for separate downloads.
 
-- A GUI launcher (Tauri + Vue.js) that includes patching
-- A CLI patcher (Rust)
-- A GUI addon manager (Tauri + Vue.js) to manage addons with git
+This monorepo contains two standalone applications for WoW
 
-Note that the patcher includes support for [Project Epoch](https://www.project-epoch.net/play/) via `epoch_patcher-cli`. See releases for binaries or build it yourself with `-features production`
+## Git-Based Addon Manager
+
+A modern GUI addon manager that uses Git repositories to install, update, and manage your WoW addons across multiple directories.
+
+![Socials Addon Manager](images/socials-addon-manager.png)
+
+**Key Features:**
+
+- Install addons directly from GitHub/GitLab URLs
+- Bulk install/update all addons
+- Manage multiple addon directories
+- Import/export addon lists
+- Cross-platform (Windows, Linux, macOS)
+
+## Game Launcher & Patcher
+
+A graphical launcher featuring a built-in patching system. Previously compatible with [Project Epoch](https://www.project-epoch.net/play/).
 
 ![Socials Launcher](images/socials-launcher.png)
 
-![Socials Addon Manager](images/socials-addon-manager.png)
+**Key Features:**
+
+- Manifest-based patch system
+- Visual transaction overviews
+- Game launching with Wine support if available
+- CLI patcher also available
 
 [//]: # 'Table of Contents'
 
 ## Table of Contents
 
-- [Addon Manager](#addon-manager)
-- [Patcher](#patcher)
+- [Git-Based Addon Manager](#-git-based-addon-manager)
+    - [Features](#addon-manager-features)
+    - [How to Use](#addon-manager-usage)
+- [Game Launcher & Patcher](#-game-launcher--patcher)
+    - [Features](#patcher-features)
     - [CLI Patcher](#cli)
     - [GUI Launcher](#gui)
 - [Tech Stack](#tech-stack)
 - [Local Development](#local-development)
 - [Acknowledgements](#Acknowledgements)
 
-## Addon Manager
+---
+
+## Addon Manager Features
 
 | Feature                                                                        | Supported         |
 | ------------------------------------------------------------------------------ | ----------------- |
@@ -43,25 +67,34 @@ Note that the patcher includes support for [Project Epoch](https://www.project-e
 | Manage non-Git addons                                                          | Not yet supported |
 | Auto updater with [Tauri Updater plugin](https://v2.tauri.app/plugin/updater/) | Not yet supported |
 
-How to use:
+## Addon Manager Usage
 
-- Download the GUI binary for your platform from the release
-- Install the GUI application before launching it. This does not need to be your game folder
-- Upon first launch, select the AddOns folder in your WoW game folder
-- Install addons via their HTTPS git URL
+Usage:
+
+1. Download the latest release for your platform
+1. Install and launch the application
+1. Select your WoW `Interface/AddOns` folder
+1. Add addons using their Git repository URLs
+
+Example Git URLs:
+
+- `https://github.com/Sattva-108/AdiBags.git`
+- `https://gitlab.com/username/addon-name.git`
 
 ![Clone](images/addon-manager/clone.png)
 ![Menu](images/addon-manager/main-menu.png)
 
 https://github.com/user-attachments/assets/2491b729-0b62-41d4-bf91-dabb3065cbea
 
-import format:
+**Import Format Example:**
 
 ```
 C:\Games\wow335\Interface\AddOns AdiBags *https://github.com/Sattva-108/AdiBags.git main
 ```
 
-## Patcher
+---
+
+## Patcher Features
 
 | Feature                                 | CLI (Rust)     | GUI (Tauri + Vue.js)   |
 | --------------------------------------- | -------------- | ---------------------- |
