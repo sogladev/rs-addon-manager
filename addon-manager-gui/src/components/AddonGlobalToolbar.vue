@@ -385,11 +385,11 @@ const saveLogAndClose = async () => {
             <p class="mt-4">
                 Source:
                 <a
-                    href="https://github.com/sogladev/rs-game-launcher"
+                    href="https://github.com/sogladev/rs-addon-manager"
                     target="_blank"
                     class="link link-primary"
                 >
-                    https://github.com/sogladev/rs-game-launcher
+                    https://github.com/sogladev/rs-addon-manager
                 </a>
             </p>
             <p class="mt-4">
