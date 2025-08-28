@@ -1,10 +1,4 @@
-# Rs Game Suite
-
-> Two Separate Utilities: Each tool can be downloaded and used independently. Check the [Releases](../../releases) page for separate downloads.
-
-This monorepo contains two standalone applications for WoW
-
-## Git-Based Addon Manager
+# Git-Based Addon Manager
 
 A modern GUI addon manager that uses Git repositories to install, update, and manage your WoW addons across multiple directories.
 
@@ -18,30 +12,11 @@ A modern GUI addon manager that uses Git repositories to install, update, and ma
 - Import/export addon lists
 - Cross-platform (Windows, Linux, macOS)
 
-## Game Launcher & Patcher
-
-A graphical launcher featuring a built-in patching system. Previously compatible with [Project Epoch](https://www.project-epoch.net/play/).
-
-![Socials Launcher](images/socials-launcher.png)
-
-**Key Features:**
-
-- Manifest-based patch system
-- Visual transaction overviews
-- Game launching with Wine support if available
-- CLI patcher also available
-
-[//]: # 'Table of Contents'
-
 ## Table of Contents
 
 - [Git-Based Addon Manager](#-git-based-addon-manager)
     - [Features](#addon-manager-features)
     - [How to Use](#addon-manager-usage)
-- [Game Launcher & Patcher](#-game-launcher--patcher)
-    - [Features](#patcher-features)
-    - [CLI Patcher](#cli)
-    - [GUI Launcher](#gui)
 - [Tech Stack](#tech-stack)
 - [Local Development](#local-development)
 - [Acknowledgements](#Acknowledgements)
@@ -92,52 +67,6 @@ https://github.com/user-attachments/assets/2491b729-0b62-41d4-bf91-dabb3065cbea
 C:\Games\wow335\Interface\AddOns AdiBags *https://github.com/Sattva-108/AdiBags.git main
 ```
 
----
-
-## Patcher Features
-
-| Feature                                 | CLI (Rust)     | GUI (Tauri + Vue.js)   |
-| --------------------------------------- | -------------- | ---------------------- |
-| Manifest-based patch updates            | Yes            | Yes                    |
-| Integrity verification                  | No             | Yes                    |
-| Remove deprecated patches               | Yes            | Yes                    |
-| Transaction overview                    | Console output | Detailed visual output |
-| Directory selection                     | No             | GUI-based              |
-| Launch executable (wine on non-Windows) | No             | Yes                    |
-| Customizable front-end                  | N/A            | Yes                    |
-| Client download                         | Not planned    | Not yet supported      |
-| Manage addons                           | Not planned    | Not planned            |
-
-### CLI
-
-A lightweight Rust-based terminal CLI for basic patching. It downloads patches from a `manifest.json`
-
-How to use:
-
-- Download the CLI binary for your platform from the release
-- Place the binary in your WoW folder where `Wow.exe` is located
-- Run the CLI binary to apply patches
-
-### GUI
-
-A Tauri + Vue.js wrapper around the same Rust libraries:
-
-- Allows directory selection
-- Provides art, transaction overviews, and a launch button
-- Uses the same patching logic as the CLI
-
-![Launcher Dark](images/tauri_game_launcher_dark.png)
-
-https://github.com/user-attachments/assets/7c642947-a57c-46b0-aab9-eeb456b6e115
-
-How to use:
-
-- Download the GUI binary for your platform from the release
-- Install the GUI application before launching it. This does not need to be your game folder
-- Upon first launch, select your WoW game folder
-- After patching is complete, the launcher can start the game executable.
-  note: On non-Windows platforms, Wine will use the `.wine` directory located in the game folder by default. This behavior can be overridden by setting the `WINEPREFIX` environment variable before launching the GUI.
-
 ## Tech Stack
 
 [![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org)
@@ -147,7 +76,6 @@ How to use:
 
 ### Core Technologies
 
-- **CLI:** Rust-based command line interface
 - **GUI:** Tauri + Vue.js application with DaisyUI components
 
 ## Local Development
@@ -186,85 +114,6 @@ To set up formatting and the pre-commit hook:
     ```sh
     bunx eslint --ext .ts,.vue addon-manager-gui/src/
     ```
-
-### Local CDN
-
-The local CDN serves patch files and the manifest for both the CLI and GUI. Run these commands from the project root:
-
-```sh
-cd manifest-cdn
-# Generate manifest.json (run once or when files change)
-cargo run --bin manifest-cdn -- --create
-# Start the local CDN server
-cargo run --bin manifest-cdn
-```
-
-## CLI
-
-From project root
-
-1. Run the CLI
-
-    ```sh
-    # Demo mode (default)
-    cargo run --bin downloader-cli
-
-    # Production mode (sets production banner, description, and manifest URL)
-    cargo run --features production --bin downloader-cli
-    ```
-
-1. Build
-
-    ```sh
-    # Demo build (default)
-    cargo build --bin downloader-cli --release --locked
-    cargo build --bin downloader-cli --target x86_64-pc-windows-gnu --release --locked
-
-    # Production build (sets production banner, description, and manifest URL)
-    cargo build --features production --bin downloader-cli --release --locked
-    cargo build --features production --bin downloader-cli --target x86_64-pc-windows-gnu --release --locked
-    ```
-
-### GUI
-
-From `launcher-gui/`
-
-1. Install dependencies:
-
-    ```sh
-     bun install
-    ```
-
-1. Start the development server
-
-    ```sh
-    # Demo mode (default)
-    bun run tauri dev
-
-    # Production mode (sets production banner, description, and manifest URL in the GUI)
-    bun run tauri dev --features production
-    ```
-
-1. Build the project
-
-    ```sh
-    # Demo build (default)
-    bun run tauri build
-
-    # Production build (sets production banner, description, and manifest URL in the GUI)
-    bun run tauri build --features production
-    ```
-
-#### Fake client directory setup
-
-The downloader CLI does not do any client validation.
-
-```
-mkdir -p client client/Data
-touch client/Battle.net.dll
-touch client/Data/lichking.MPQ
-touch client/Data/patch-3.MPQ
-```
 
 ## Acknowledgements
 
