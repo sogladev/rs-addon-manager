@@ -6,7 +6,7 @@ on:
             version:
                 description: 'Desired version tag'
                 required: true
-                default: 'v0.2.7'
+                default: '0.2.10'
 
 jobs:
     publish-rs-addon-manager:
