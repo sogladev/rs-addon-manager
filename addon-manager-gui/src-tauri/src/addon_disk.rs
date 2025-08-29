@@ -281,8 +281,6 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<DiskAddon>, String> {
         None
     }
 
-    let mut sub_addons = Vec::new();
-
     // Helper to process a directory and collect .toc files
     fn collect_toc_files(dir: &Path) -> Result<Vec<String>, String> {
         let toc_files = std::fs::read_dir(dir)
@@ -317,13 +315,18 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<DiskAddon>, String> {
             .unwrap_or_else(|| "default".to_string())
     }
 
-    // Process root directory
-    let toc_files = collect_toc_files(path)?;
-    if !toc_files.is_empty() {
-        let names = names_from_toc_files(&toc_files);
+    let mut sub_addons = Vec::new();
+
+    // Check if there are .toc files in the root directory
+    let root_toc_files = collect_toc_files(path)?;
+
+    if !root_toc_files.is_empty() {
+        // Case 1: Root folder has .toc files - this is an "unpacked" addon
+        // Only return the root addon, do NOT search subdirectories
+        let names = names_from_toc_files(&root_toc_files);
         let name = longest_string(&names);
         // Extract notes from the first .toc file in root
-        let primary_toc = path.join(&toc_files[0]);
+        let primary_toc = path.join(&root_toc_files[0]);
         let notes = extract_notes(&primary_toc);
         sub_addons.push(DiskAddon {
             dir: ".".to_string(),
@@ -332,41 +335,43 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<DiskAddon>, String> {
             is_symlinked: false, // Will be updated by check_addon_symlinks
             notes,
         });
+    } else {
+        // Case 2: No .toc files in root - this is a "multiple addons" repository
+        // Search immediate subdirectories for addon folders
+        sub_addons.extend(
+            std::fs::read_dir(path)
+                .map_err(|e| format!("Failed to read repo dir: {e}"))?
+                .filter_map(Result::ok)
+                .map(|entry| entry.path())
+                .filter(|sub_path| sub_path.is_dir())
+                .filter_map(|sub_path| {
+                    let toc_files = collect_toc_files(&sub_path).ok()?;
+                    if toc_files.is_empty() {
+                        return None;
+                    }
+                    let names = names_from_toc_files(&toc_files);
+                    let name = longest_string(&names);
+                    let dir_name = sub_path
+                        .file_name()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .to_string();
+                    Some({
+                        // Extract notes from the first .toc file in this subdirectory
+                        let toc_full = sub_path.join(&toc_files[0]);
+                        let notes = extract_notes(&toc_full);
+                        DiskAddon {
+                            dir: dir_name,
+                            names,
+                            name,
+                            is_symlinked: false, // Will be updated by check_addon_symlinks
+                            notes,
+                        }
+                    })
+                }),
+        );
     }
 
-    // Process immediate subdirectories
-    sub_addons.extend(
-        std::fs::read_dir(path)
-            .map_err(|e| format!("Failed to read repo dir: {e}"))?
-            .filter_map(Result::ok)
-            .map(|entry| entry.path())
-            .filter(|sub_path| sub_path.is_dir())
-            .filter_map(|sub_path| {
-                let toc_files = collect_toc_files(&sub_path).ok()?;
-                if toc_files.is_empty() {
-                    return None;
-                }
-                let names = names_from_toc_files(&toc_files);
-                let name = longest_string(&names);
-                let dir_name = sub_path
-                    .file_name()
-                    .unwrap_or_default()
-                    .to_string_lossy()
-                    .to_string();
-                Some({
-                    // Extract notes from the first .toc file in this subdirectory
-                    let toc_full = sub_path.join(&toc_files[0]);
-                    let notes = extract_notes(&toc_full);
-                    DiskAddon {
-                        dir: dir_name,
-                        names,
-                        name,
-                        is_symlinked: false, // Will be updated by check_addon_symlinks
-                        notes,
-                    }
-                })
-            }),
-    );
     Ok(sub_addons)
 }
 
