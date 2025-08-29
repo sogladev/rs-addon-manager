@@ -508,6 +508,93 @@ mod tests {
             sub.names
         );
     }
+
+    #[test]
+    /// https://github.com/trav346/Questie-Epoch
+    /// Bug: When installing the "Ace" subaddon is installed
+    /// Expected: Only questie should be installed
+    /// Directory structure:
+    /// .
+    /// ├── Libs
+    /// │   ├── Ace3.lua
+    /// │   ├── Ace3_TBC.toc
+    /// │   ├── Ace3.toc
+    /// │   ├── Ace3_Vanilla.toc
+    /// │   ├── Ace3_Wrath.toc
+    /// │   ├── Krowi_WorldMapButtons
+    /// │   │   ├── Krowi_WorldMapButtons_TBC.toc
+    /// │   │   ├── Krowi_WorldMapButtons.toc
+    /// │   │   ├── Krowi_WorldMapButtons_Vanilla.toc
+    /// │   │   └── Krowi_WorldMapButtons_Wrath.toc
+    /// ├── Questie.lua
+    /// ├── Questie.toc
+    fn test_find_all_sub_addons_questie_epoch_with_libs_directory() {
+        let temp = tempdir().unwrap();
+        let repo_dir = temp.path();
+
+        // Create root files
+        let questie_lua = repo_dir.join("Questie.lua");
+        let questie_toc = repo_dir.join("Questie.toc");
+        std::fs::File::create(&questie_lua).unwrap();
+        std::fs::File::create(&questie_toc).unwrap();
+
+        // Create Libs directory with Ace3 files
+        let libs_dir = repo_dir.join("Libs");
+        std::fs::create_dir_all(&libs_dir).unwrap();
+
+        // Create Ace3 files in Libs directory
+        let ace3_lua = libs_dir.join("Ace3.lua");
+        let ace3_toc = libs_dir.join("Ace3.toc");
+        let ace3_tbc_toc = libs_dir.join("Ace3_TBC.toc");
+        let ace3_vanilla_toc = libs_dir.join("Ace3_Vanilla.toc");
+        let ace3_wrath_toc = libs_dir.join("Ace3_Wrath.toc");
+        std::fs::File::create(&ace3_lua).unwrap();
+        std::fs::File::create(&ace3_toc).unwrap();
+        std::fs::File::create(&ace3_tbc_toc).unwrap();
+        std::fs::File::create(&ace3_vanilla_toc).unwrap();
+        std::fs::File::create(&ace3_wrath_toc).unwrap();
+
+        // Create Krowi_WorldMapButtons subdirectory in Libs
+        let krowi_dir = libs_dir.join("Krowi_WorldMapButtons");
+        std::fs::create_dir_all(&krowi_dir).unwrap();
+
+        // Create Krowi_WorldMapButtons .toc files
+        let krowi_toc = krowi_dir.join("Krowi_WorldMapButtons.toc");
+        let krowi_tbc_toc = krowi_dir.join("Krowi_WorldMapButtons_TBC.toc");
+        let krowi_vanilla_toc = krowi_dir.join("Krowi_WorldMapButtons_Vanilla.toc");
+        let krowi_wrath_toc = krowi_dir.join("Krowi_WorldMapButtons_Wrath.toc");
+        std::fs::File::create(&krowi_toc).unwrap();
+        std::fs::File::create(&krowi_tbc_toc).unwrap();
+        std::fs::File::create(&krowi_vanilla_toc).unwrap();
+        std::fs::File::create(&krowi_wrath_toc).unwrap();
+
+        let sub_addons = find_all_sub_addons(&repo_dir.to_path_buf()).unwrap();
+
+        let questie_addon = sub_addons.iter().find(|addon| addon.dir == ".");
+        assert!(
+            questie_addon.is_some(),
+            "Expected to find Questie addon in root directory"
+        );
+        let questie = questie_addon.unwrap();
+        assert_eq!(
+            questie.names.len(),
+            1,
+            "Expected 1 name for Questie, found: {:?}",
+            questie.names
+        );
+        assert_eq!(
+            questie.names[0], "Questie",
+            "Expected Questie name to be 'Questie', found: {}",
+            questie.names[0]
+        );
+
+        assert_eq!(
+            sub_addons.len(),
+            1,
+            "Expected 1 sub_addon (Questie only), but found: {:?}",
+            sub_addons
+        );
+    }
 }
 
 /// Returns the canonical base name for a .toc file
