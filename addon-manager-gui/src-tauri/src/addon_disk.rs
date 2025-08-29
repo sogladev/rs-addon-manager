@@ -281,8 +281,6 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<DiskAddon>, String> {
         None
     }
 
-    let mut sub_addons = Vec::new();
-
     // Helper to process a directory and collect .toc files
     fn collect_toc_files(dir: &Path) -> Result<Vec<String>, String> {
         let toc_files = std::fs::read_dir(dir)
@@ -317,13 +315,18 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<DiskAddon>, String> {
             .unwrap_or_else(|| "default".to_string())
     }
 
-    // Process root directory
-    let toc_files = collect_toc_files(path)?;
-    if !toc_files.is_empty() {
-        let names = names_from_toc_files(&toc_files);
+    let mut sub_addons = Vec::new();
+
+    // Check if there are .toc files in the root directory
+    let root_toc_files = collect_toc_files(path)?;
+
+    if !root_toc_files.is_empty() {
+        // Case 1: Root folder has .toc files - this is an "unpacked" addon
+        // Only return the root addon, do NOT search subdirectories
+        let names = names_from_toc_files(&root_toc_files);
         let name = longest_string(&names);
         // Extract notes from the first .toc file in root
-        let primary_toc = path.join(&toc_files[0]);
+        let primary_toc = path.join(&root_toc_files[0]);
         let notes = extract_notes(&primary_toc);
         sub_addons.push(DiskAddon {
             dir: ".".to_string(),
@@ -332,41 +335,43 @@ pub fn find_all_sub_addons(path: &PathBuf) -> Result<Vec<DiskAddon>, String> {
             is_symlinked: false, // Will be updated by check_addon_symlinks
             notes,
         });
+    } else {
+        // Case 2: No .toc files in root - this is a "multiple addons" repository
+        // Search immediate subdirectories for addon folders
+        sub_addons.extend(
+            std::fs::read_dir(path)
+                .map_err(|e| format!("Failed to read repo dir: {e}"))?
+                .filter_map(Result::ok)
+                .map(|entry| entry.path())
+                .filter(|sub_path| sub_path.is_dir())
+                .filter_map(|sub_path| {
+                    let toc_files = collect_toc_files(&sub_path).ok()?;
+                    if toc_files.is_empty() {
+                        return None;
+                    }
+                    let names = names_from_toc_files(&toc_files);
+                    let name = longest_string(&names);
+                    let dir_name = sub_path
+                        .file_name()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .to_string();
+                    Some({
+                        // Extract notes from the first .toc file in this subdirectory
+                        let toc_full = sub_path.join(&toc_files[0]);
+                        let notes = extract_notes(&toc_full);
+                        DiskAddon {
+                            dir: dir_name,
+                            names,
+                            name,
+                            is_symlinked: false, // Will be updated by check_addon_symlinks
+                            notes,
+                        }
+                    })
+                }),
+        );
     }
 
-    // Process immediate subdirectories
-    sub_addons.extend(
-        std::fs::read_dir(path)
-            .map_err(|e| format!("Failed to read repo dir: {e}"))?
-            .filter_map(Result::ok)
-            .map(|entry| entry.path())
-            .filter(|sub_path| sub_path.is_dir())
-            .filter_map(|sub_path| {
-                let toc_files = collect_toc_files(&sub_path).ok()?;
-                if toc_files.is_empty() {
-                    return None;
-                }
-                let names = names_from_toc_files(&toc_files);
-                let name = longest_string(&names);
-                let dir_name = sub_path
-                    .file_name()
-                    .unwrap_or_default()
-                    .to_string_lossy()
-                    .to_string();
-                Some({
-                    // Extract notes from the first .toc file in this subdirectory
-                    let toc_full = sub_path.join(&toc_files[0]);
-                    let notes = extract_notes(&toc_full);
-                    DiskAddon {
-                        dir: dir_name,
-                        names,
-                        name,
-                        is_symlinked: false, // Will be updated by check_addon_symlinks
-                        notes,
-                    }
-                })
-            }),
-    );
     Ok(sub_addons)
 }
 
@@ -506,6 +511,93 @@ mod tests {
             sub.names.len() == 2,
             "Expected 2 unique names, found: {:?}",
             sub.names
+        );
+    }
+
+    #[test]
+    /// https://github.com/trav346/Questie-Epoch
+    /// Bug: When installing the "Ace" subaddon is installed
+    /// Expected: Only questie should be installed
+    /// Directory structure:
+    /// .
+    /// ├── Libs
+    /// │   ├── Ace3.lua
+    /// │   ├── Ace3_TBC.toc
+    /// │   ├── Ace3.toc
+    /// │   ├── Ace3_Vanilla.toc
+    /// │   ├── Ace3_Wrath.toc
+    /// │   ├── Krowi_WorldMapButtons
+    /// │   │   ├── Krowi_WorldMapButtons_TBC.toc
+    /// │   │   ├── Krowi_WorldMapButtons.toc
+    /// │   │   ├── Krowi_WorldMapButtons_Vanilla.toc
+    /// │   │   └── Krowi_WorldMapButtons_Wrath.toc
+    /// ├── Questie.lua
+    /// ├── Questie.toc
+    fn test_find_all_sub_addons_questie_epoch_with_libs_directory() {
+        let temp = tempdir().unwrap();
+        let repo_dir = temp.path();
+
+        // Create root files
+        let questie_lua = repo_dir.join("Questie.lua");
+        let questie_toc = repo_dir.join("Questie.toc");
+        std::fs::File::create(&questie_lua).unwrap();
+        std::fs::File::create(&questie_toc).unwrap();
+
+        // Create Libs directory with Ace3 files
+        let libs_dir = repo_dir.join("Libs");
+        std::fs::create_dir_all(&libs_dir).unwrap();
+
+        // Create Ace3 files in Libs directory
+        let ace3_lua = libs_dir.join("Ace3.lua");
+        let ace3_toc = libs_dir.join("Ace3.toc");
+        let ace3_tbc_toc = libs_dir.join("Ace3_TBC.toc");
+        let ace3_vanilla_toc = libs_dir.join("Ace3_Vanilla.toc");
+        let ace3_wrath_toc = libs_dir.join("Ace3_Wrath.toc");
+        std::fs::File::create(&ace3_lua).unwrap();
+        std::fs::File::create(&ace3_toc).unwrap();
+        std::fs::File::create(&ace3_tbc_toc).unwrap();
+        std::fs::File::create(&ace3_vanilla_toc).unwrap();
+        std::fs::File::create(&ace3_wrath_toc).unwrap();
+
+        // Create Krowi_WorldMapButtons subdirectory in Libs
+        let krowi_dir = libs_dir.join("Krowi_WorldMapButtons");
+        std::fs::create_dir_all(&krowi_dir).unwrap();
+
+        // Create Krowi_WorldMapButtons .toc files
+        let krowi_toc = krowi_dir.join("Krowi_WorldMapButtons.toc");
+        let krowi_tbc_toc = krowi_dir.join("Krowi_WorldMapButtons_TBC.toc");
+        let krowi_vanilla_toc = krowi_dir.join("Krowi_WorldMapButtons_Vanilla.toc");
+        let krowi_wrath_toc = krowi_dir.join("Krowi_WorldMapButtons_Wrath.toc");
+        std::fs::File::create(&krowi_toc).unwrap();
+        std::fs::File::create(&krowi_tbc_toc).unwrap();
+        std::fs::File::create(&krowi_vanilla_toc).unwrap();
+        std::fs::File::create(&krowi_wrath_toc).unwrap();
+
+        let sub_addons = find_all_sub_addons(&repo_dir.to_path_buf()).unwrap();
+
+        let questie_addon = sub_addons.iter().find(|addon| addon.dir == ".");
+        assert!(
+            questie_addon.is_some(),
+            "Expected to find Questie addon in root directory"
+        );
+        let questie = questie_addon.unwrap();
+        assert_eq!(
+            questie.names.len(),
+            1,
+            "Expected 1 name for Questie, found: {:?}",
+            questie.names
+        );
+        assert_eq!(
+            questie.names[0], "Questie",
+            "Expected Questie name to be 'Questie', found: {}",
+            questie.names[0]
+        );
+
+        assert_eq!(
+            sub_addons.len(),
+            1,
+            "Expected 1 sub_addon (Questie only), but found: {:?}",
+            sub_addons
         );
     }
 }
