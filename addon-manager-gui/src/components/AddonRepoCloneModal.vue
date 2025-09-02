@@ -6,10 +6,11 @@ import { computed, ref, watch } from 'vue'
 
 const { addIssue } = useGlobalError()
 
-const { open, folderPaths, addonFolders } = defineProps<{
+const { open, folderPaths, addonFolders, prefill } = defineProps<{
     open: boolean
     folderPaths: string[]
     addonFolders: AddOnsFolder[]
+    prefill?: { gitUrl?: string; branch?: string }
 }>()
 
 const emit = defineEmits<{ (event: 'update:open', value: boolean): void }>()
@@ -61,6 +62,20 @@ async function isValidGitUrl(url: string): Promise<boolean> {
 const trimmedGitUrl = computed(() => gitUrl.value.trim())
 
 const directoryTouched = ref(false)
+
+// Watch for prefill prop changes and update form
+watch(
+    () => prefill,
+    (newPrefill) => {
+        if (newPrefill?.gitUrl && open) {
+            gitUrl.value = newPrefill.gitUrl
+            // Reset form state when prefilling
+            directoryTouched.value = false
+            errorMessage.value = ''
+        }
+    },
+    { immediate: true, deep: true }
+)
 
 const handleClone = async () => {
     directoryTouched.value = true

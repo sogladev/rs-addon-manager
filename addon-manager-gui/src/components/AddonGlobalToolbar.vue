@@ -55,6 +55,7 @@ const emit = defineEmits<{
     'update-all': []
     refresh: []
     'add-addon': []
+    'show-catalogue': []
 }>()
 
 const showImport = ref(false)
@@ -234,7 +235,7 @@ const saveLogAndClose = async () => {
             <button class="btn btn-accent w-32" @click="emit('add-addon')">
                 Install addon
             </button>
-            <button class="btn btn-accent w-32" @click="emit('add-addon')">
+            <button class="btn btn-accent w-32" @click="emit('show-catalogue')">
                 Catalogue
             </button>
             <OperationEventLog

@@ -115,6 +115,28 @@ To set up formatting and the pre-commit hook:
     bunx eslint --ext .ts,.vue addon-manager-gui/src/
     ```
 
+### Catalogue - Adding New Addons
+
+To add a new addon to the catalogue, edit the file:
+
+```
+src/data/addonCatalogue.ts
+```
+
+Add a new entry to the `ADDON_CATALOGUE` array:
+
+```typescript
+{
+    name: 'Your Addon Name',
+    gitUrl: 'https://github.com/user/repo.git',
+    description: 'Brief description of what the addon does',
+    author: 'GitHubUsername',
+    category: 'ui-enhancement',
+    defaultBranch: 'main',
+    notes: 'Any warnings or special instructions' // Optional
+}
+```
+
 ## Acknowledgements
 
 The Addon Manager UI and features were inspired by [GitAddonsManager](https://gitlab.com/woblight/GitAddonsManager) and other existing Wow Addon Managers. For an overview of existing addon managers, I recommend this comparison video by Arcane Intellect: [WoW Addon Managers Compared](https://www.youtube.com/watch?v=_V0RZG4YRVY)

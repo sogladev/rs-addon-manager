@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AddonCatalogueModal from '@/components/AddonCatalogueModal.vue'
 import AddonFolderDeleteModal from '@/components/AddonFolderDeleteModal.vue'
 import AddonFolderList from '@/components/AddonFolderList.vue'
 import AddonGlobalToolbar from '@/components/AddonGlobalToolbar.vue'
@@ -6,6 +7,7 @@ import AddonRepoCloneModal from '@/components/AddonRepoCloneModal.vue'
 import AddonRepoDeleteModal from '@/components/AddonRepoDeleteModal.vue'
 import { useAddonData } from '@/composables/useAddonData'
 import { useOperationTracker } from '@/composables/useOperationTracker'
+import type { CatalogueAddon } from '@/data/addonCatalogue'
 import type { AddonRepository } from '@bindings/AddonRepository'
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
@@ -24,7 +26,9 @@ const {
 const { recentlyCompleted } = useOperationTracker()
 
 const showAddModal = ref(false)
+const showCatalogueModal = ref(false)
 const search = ref('')
+const cloneModalPrefill = ref<{ gitUrl?: string; branch?: string }>({})
 
 onMounted(async () => {
     try {
@@ -122,6 +126,16 @@ async function handleUpdateAll() {
     }
 }
 
+function handleCatalogueInstall(addon: CatalogueAddon) {
+    // Close catalogue modal and open clone modal with pre-filled data
+    showCatalogueModal.value = false
+    cloneModalPrefill.value = {
+        gitUrl: addon.gitUrl,
+        branch: addon.defaultBranch || 'main',
+    }
+    showAddModal.value = true
+}
+
 const hasUpdates = computed(() =>
     addonFolders.value.some((folder) =>
         folder.repositories.some(
@@ -157,12 +171,21 @@ const outOfDateCount = computed(() =>
             @update-all="handleUpdateAll"
             @refresh="checkForUpdates(true)"
             @add-addon="showAddModal = true"
+            @show-catalogue="showCatalogueModal = true"
         />
 
         <AddonRepoCloneModal
             v-model:open="showAddModal"
             :folderPaths="folderPaths"
             :addonFolders="addonFolders"
+            :prefill="cloneModalPrefill"
+        />
+
+        <AddonCatalogueModal
+            v-model:open="showCatalogueModal"
+            :folderPaths="folderPaths"
+            :addonFolders="addonFolders"
+            @install-addon="handleCatalogueInstall"
         />
 
         <AddonFolderDeleteModal
