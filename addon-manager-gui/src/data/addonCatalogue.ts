@@ -299,13 +299,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         serverCompat: { projectEpoch: true },
     },
     // 7. Bagnon
-    {
-        name: 'Bagnon',
-        gitUrl: 'https://github.com/RichSteini/Bagnon-3.3.5.git',
-        description: 'Bag mod',
-        author: 'RichSteini',
-        category: 'ui-enhancement',
-    },
     // 8. Chat Filter
     {
         name: 'Chat Filter',
