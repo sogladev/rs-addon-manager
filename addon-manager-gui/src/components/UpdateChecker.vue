@@ -45,12 +45,11 @@ async function handleDownload() {
     try {
         await update.value.downloadAndInstall((event) => {
             switch (event.event) {
-                case 'Started':
-                    total = event.data.contentLength || 0
-                    break
-                case 'Progress':
-                    downloaded += event.data.chunkLength
-                    progress.value = Math.round((downloaded / total) * 100)
+                    if (total > 0) {
+                        progress.value = Math.round((downloaded / total) * 100)
+                    } else {
+                        progress.value = 0
+                    }
                     break
                 case 'Finished':
                     progress.value = 100
