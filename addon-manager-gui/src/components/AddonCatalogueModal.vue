@@ -139,7 +139,7 @@ const closeModal = () => {
                             No addon directories configured
                         </h3>
                         <div class="text-sm">
-                            Please add an addon directory in the main menu to
+                            Please add an AddOns directory in the main menu to
                             enable installations.
                         </div>
                     </div>
@@ -235,7 +235,7 @@ const closeModal = () => {
                                         :disabled="!folderPaths.length"
                                         :title="
                                             !folderPaths.length
-                                                ? 'Please add an addon directory first'
+                                                ? 'Please add an AddOns directory first'
                                                 : undefined
                                         "
                                     >
