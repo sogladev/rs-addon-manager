@@ -58,24 +58,23 @@ const handleInstall = (addon: CatalogueAddon) => {
     emit('install-addon', addon)
 }
 
-const getAddonStatusMessage = (addon: CatalogueAddon): string | null => {
-    if (!folderPaths.length) return 'No addon directories configured'
-
-    // Check if addon is already installed in any folder
+// Map addon gitUrl to installed folder path
+const installedMap = computed(() => {
+    const map = new Map<string, string>()
     for (const folder of addonFolders) {
-        const existingRepo = folder.repositories.find(
-            (repo) => repo.repoUrl === addon.gitUrl
-        )
-        if (existingRepo) {
-            return `Already installed in ${folder.path}`
+        for (const repo of folder.repositories) {
+            map.set(repo.repoUrl, folder.path)
         }
     }
+    return map
+})
 
-    return null
+const getInstalledPath = (addon: CatalogueAddon): string | undefined => {
+    return installedMap.value.get(addon.gitUrl)
 }
 
 const isAddonInstalled = (addon: CatalogueAddon): boolean => {
-    return !!getAddonStatusMessage(addon)?.startsWith('Already installed')
+    return !!getInstalledPath(addon)
 }
 
 const closeModal = () => {
@@ -88,7 +87,7 @@ const closeModal = () => {
 
 <template>
     <dialog :open="open" class="modal" @click.self="closeModal">
-        <div class="modal-box max-w-4xl h-[80vh] flex flex-col">
+        <div class="modal-box max-w-4xl h-[90vh] flex flex-col">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="font-bold text-lg flex items-center gap-2">
                     <!-- <Package class="w-6 h-6" /> -->
@@ -191,22 +190,31 @@ const closeModal = () => {
                                     </div>
                                 </div>
 
-                                <!-- Installation status -->
+                                <div v-if="!folderPaths.length" class="mt-2">
+                                    <div
+                                        class="alert alert-info py-2 px-3 text-xs"
+                                    >
+                                        No addon directories configured
+                                    </div>
+                                </div>
                                 <div
-                                    v-if="getAddonStatusMessage(addon)"
+                                    v-else-if="isAddonInstalled(addon)"
                                     class="mt-2"
                                 >
                                     <div
-                                        :class="[
-                                            'alert py-2 px-3 text-xs',
-                                            isAddonInstalled(addon)
-                                                ? 'alert-success'
-                                                : 'alert-info',
-                                        ]"
+                                        class="alert alert-success py-2 px-3 text-xs"
                                     >
-                                        <span>{{
-                                            getAddonStatusMessage(addon)
-                                        }}</span>
+                                        <template v-if="folderPaths.length > 1">
+                                            <span
+                                                class="underline cursor-pointer"
+                                                :title="getInstalledPath(addon)"
+                                            >
+                                                Installed
+                                            </span>
+                                        </template>
+                                        <template v-else>
+                                            <span>Installed</span>
+                                        </template>
                                     </div>
                                 </div>
                             </div>
@@ -321,5 +329,12 @@ const closeModal = () => {
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+/* Increase top/bottom padding for modal dialogs */
+.modal {
+    align-items: flex-start;
+    padding-top: 5vh;
+    padding-bottom: 5vh;
 }
 </style>
