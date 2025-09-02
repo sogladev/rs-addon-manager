@@ -50,7 +50,10 @@ async function handleDownload() {
                     break
                 case 'Progress':
                     downloaded = event?.data?.downloaded ?? downloaded
-                    total = event?.data?.total ?? event?.data?.contentLength ?? total
+                    total =
+                        event?.data?.total ??
+                        event?.data?.contentLength ??
+                        total
                     if (total > 0) {
                         progress.value = Math.round((downloaded / total) * 100)
                     } else {
