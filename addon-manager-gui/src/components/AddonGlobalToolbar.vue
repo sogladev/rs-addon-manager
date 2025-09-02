@@ -382,7 +382,7 @@ const saveLogAndClose = async () => {
     >
         <div class="modal-box max-w-md">
             <h3 class="font-bold text-lg flex items-center gap-2">
-                <Info class="w-6 h-6" />
+                <!-- <Info class="w-6 h-6" /> -->
                 About
             </h3>
             <p class="mt-4">Addon manager using git for version control</p>
