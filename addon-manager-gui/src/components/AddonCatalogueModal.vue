@@ -185,7 +185,7 @@ const closeModal = () => {
                                         v-if="isInstalled(addon)"
                                         class="tooltip"
                                         :data-tip="
-                                            folderPaths.length > 10
+                                            folderPaths.length > 1
                                                 ? `Installed at ${getInstalledPath(addon)}`
                                                 : 'Already installed'
                                         "
