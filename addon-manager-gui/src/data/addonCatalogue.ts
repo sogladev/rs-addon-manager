@@ -451,16 +451,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'Raid frame replacement',
         category: 'ui-enhancement',
     },
-    // 24. Group Bulletin Board
-    {
-        name: 'GroupBulletinBoard',
-        gitUrl: 'https://github.com/sogladev/GroupBulletinBoard-epoch',
-        description: 'LFG bulletin board like tool (Epoch Addon)',
-        author: 'sogladev',
-        category: 'social',
-        notes: 'Alternatives: gimikz, olliebdev',
-        serverCompat: { projectEpoch: true },
-    },
     // 25. Hardcore Death Announcer
     {
         name: 'Hardcore Death Announcer',
