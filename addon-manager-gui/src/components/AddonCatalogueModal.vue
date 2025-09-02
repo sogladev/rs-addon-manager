@@ -73,7 +73,7 @@ const getInstalledPath = (addon: CatalogueAddon): string | undefined => {
     return installedMap.value.get(addon.gitUrl)
 }
 
-const isAddonInstalled = (addon: CatalogueAddon): boolean => {
+const isInstalled = (addon: CatalogueAddon): boolean => {
     return !!getInstalledPath(addon)
 }
 
@@ -179,6 +179,22 @@ const closeModal = () => {
                                     >
                                         Epoch
                                     </div>
+
+                                    <!-- Installed badge moved here next to title/categories -->
+                                    <div
+                                        v-if="isInstalled(addon)"
+                                        class="tooltip"
+                                        :data-tip="
+                                            folderPaths.length > 10
+                                                ? `Installed at ${getInstalledPath(addon)}`
+                                                : 'Already installed'
+                                        "
+                                    >
+                                        <span
+                                            class="badge badge-success badge-sm"
+                                            >Installed</span
+                                        >
+                                    </div>
                                 </div>
 
                                 <p
@@ -200,26 +216,6 @@ const closeModal = () => {
                                         class="alert alert-warning py-2 px-3 text-xs"
                                     >
                                         <span>{{ addon.notes }}</span>
-                                    </div>
-                                </div>
-
-                                <div
-                                    v-if="isAddonInstalled(addon)"
-                                    class="mt-2"
-                                >
-                                    <div
-                                        class="tooltip"
-                                        :data-tip="
-                                            folderPaths.length > 10
-                                                ? `Installed at ${getInstalledPath(addon)}`
-                                                : 'Already installed'
-                                        "
-                                    >
-                                        <span
-                                            class="badge badge-success badge-sm"
-                                        >
-                                            Installed
-                                        </span>
                                     </div>
                                 </div>
                             </div>
