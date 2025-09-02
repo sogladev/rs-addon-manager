@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { check } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
+import { getVersion } from '@tauri-apps/api/app'
 
 const update = ref<{
     version: string
@@ -13,6 +14,16 @@ const update = ref<{
 const checking = ref(false)
 const progress = ref(0)
 const updateError = ref<string | null>(null)
+const currentVersion = ref<string>('')
+
+onMounted(async () => {
+    try {
+        currentVersion.value = await getVersion()
+    } catch (e) {
+        console.error('Failed to get app version:', e)
+        currentVersion.value = 'Unknown'
+    }
+})
 
 async function handleCheck() {
     checking.value = true
@@ -65,6 +76,11 @@ async function handleDownload() {
 
 <template>
     <div class="flex flex-col gap-4">
+        <div v-if="currentVersion" class="text-sm">
+            <span class="font-semibold">Current version:</span>
+            {{ currentVersion }}
+        </div>
+
         <button
             class="btn btn-outline btn-sm"
             @click="handleCheck"
