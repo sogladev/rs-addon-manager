@@ -296,7 +296,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'Sattva-108',
         category: 'ui-enhancement',
         defaultBranch: 'main',
-        notes: 'Non-Epoch Addon - Bag mod',
     },
     // 2. Atlas
     {
@@ -334,7 +333,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         gitUrl: 'https://felbite.com/addon/4303-auctionlite/',
         description: 'AH replacement',
         category: 'utility',
-        notes: 'Non-Epoch Addon - Auction House replacement',
         installable: false,
         manualUrl: 'https://felbite.com/addon/4303-auctionlite/',
     },
@@ -436,7 +434,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         gitUrl: 'https://cdn.discordapp.com/attachments/1410021039500689505/1411848406548091061/Decursive.zip',
         description: 'Simplifies decursing targets with one click',
         category: 'combat',
-        notes: 'Epoch/Non-Epoch Addon',
         installable: false,
         manualUrl:
             'https://cdn.discordapp.com/attachments/1410021039500689505/1411848406548091061/Decursive.zip',
@@ -587,11 +584,10 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     {
         name: 'WeakAuras',
         gitUrl: 'https://github.com/NoM0Re/WeakAuras-WotLK',
-        description: 'Master list of working Epoch WA (Epoch/Non-Epoch)',
+        description: 'Master list of working Epoch WA',
         author: 'NoM0Re',
         category: 'utility',
         defaultBranch: 'main',
-        notes: 'Epoch/Non-Epoch Addon',
     },
     // 34. WIM
     {
@@ -599,7 +595,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         gitUrl: 'https://warperia.com/addon-wotlk/wowinstantmessenger/',
         description: 'Messaging enhancement',
         category: 'social',
-        notes: 'Direct link: https://github.com/NoM0Re/WoW-3.3.5a-Addons/raw/main/src/Addons/WIM.zip',
     },
     // 35. Zygor Guides Viewer
     {
