@@ -7,6 +7,7 @@ A modern GUI addon manager that uses Git repositories to install, update, and ma
 **Key Features:**
 
 - Install addons directly from GitHub/GitLab URLs
+- Curated catalogue of addons for easy install
 - Bulk install/update all addons
 - Manage multiple addon directories
 - Import/export addon lists
@@ -30,6 +31,7 @@ A modern GUI addon manager that uses Git repositories to install, update, and ma
 | Windows, Linux, MacOS                                                          | Yes               |
 | Install, Remove, Update addons                                                 | Yes               |
 | git sources GitHub, GitLab, etc                                                | Yes               |
+| Curated catalogue of addons for easy install                                   | Yes               |
 | Install all                                                                    | Yes               |
 | Update all                                                                     | Yes               |
 | Multiple addon directories                                                     | Yes               |
