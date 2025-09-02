@@ -285,17 +285,22 @@ const closeModal = () => {
             <div class="border-t border-base-300 pt-4 mt-4">
                 <div class="flex justify-between items-center">
                     <p class="text-xs text-base-content/60">
-                        <span
-                            >Addons curated for Project Epoch WoW server.</span
-                        >
+                        <span>Addons curated from the</span>
                         <a
                             href="https://project-epoch-wow.fandom.com/wiki/AddOns"
                             target="_blank"
                             rel="noopener noreferrer"
                             class="link link-primary ml-1"
+                            >Project Epoch Wiki</a
                         >
-                            Learn more
-                        </a>
+                        <span class="ml-2">and the</span>
+                        <a
+                            href="https://discord.gg/Px4T8VVZwr"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="link link-primary ml-1"
+                            >Epoch Addons Discord</a
+                        >
                     </p>
                     <button class="btn btn-ghost btn-sm" @click="closeModal">
                         Close
