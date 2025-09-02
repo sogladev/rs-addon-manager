@@ -42,7 +42,7 @@ A modern GUI addon manager that uses Git repositories to install, update, and ma
 | Install via Git (SSH)                                                          | Not planned       |
 | Install from GitHub Releases or Packages                                       | Not yet supported |
 | Manage non-Git addons                                                          | Not yet supported |
-| Auto updater with [Tauri Updater plugin](https://v2.tauri.app/plugin/updater/) | Not yet supported |
+| Auto updater with [Tauri Updater plugin](https://v2.tauri.app/plugin/updater/) | Yes               |
 
 ## Addon Manager Usage
 
