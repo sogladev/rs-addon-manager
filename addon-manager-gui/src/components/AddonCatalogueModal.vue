@@ -226,7 +226,7 @@ const closeModal = () => {
                             <div class="flex flex-col gap-2 min-w-0">
                                 <template v-if="addon.installable !== false">
                                     <button
-                                        class="btn btn-primary btn-sm"
+                                        class="btn btn-accent btn-sm"
                                         @click="handleInstall(addon)"
                                         :disabled="!folderPaths.length"
                                         :title="
