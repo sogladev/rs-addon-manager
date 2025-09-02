@@ -159,7 +159,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     },
     {
         name: 'pretty_lootalert',
-        gitUrl: 'https://github.com/sogladev/pretty_lootalert',
+        gitUrl: 'https://github.com/sogladev/pretty_lootalert.git',
         description:
             'Loot alert UI with configurable display for item pickup notifications.',
         author: 'sogladev',
@@ -244,7 +244,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     },
     {
         name: 'TwitchEmotes-335',
-        gitUrl: 'https://github.com/sogladev/TwitchEmotes-335',
+        gitUrl: 'https://github.com/sogladev/TwitchEmotes-335.git',
         description:
             'Shows Twitch emotes in your chat by typing them as you would into Twitch chat',
         author: 'sogladev',
@@ -264,7 +264,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     // 2. Atlas
     {
         name: 'Atlas',
-        gitUrl: 'https://github.com/Raynbock/Atlas-Project-Epoch',
+        gitUrl: 'https://github.com/Raynbock/Atlas-Project-Epoch.git',
         description: 'Maps for dungeons (Epoch Addon)',
         author: 'Raynbock',
         category: 'utility',
@@ -274,7 +274,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     // 4. Atlas Quest
     {
         name: 'Atlas Quest',
-        gitUrl: 'https://github.com/Rofos2011/AtlasQuest',
+        gitUrl: 'https://github.com/Rofos2011/AtlasQuest.git',
         description: 'AtlasQuest UI integration (Epoch Addon)',
         author: 'Rofos2011',
         category: 'utility',
@@ -292,7 +292,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     // 6. AUX
     {
         name: 'AUX',
-        gitUrl: 'https://github.com/Bestoriop/Aux-addon-Epoch/tree/main',
+        gitUrl: 'https://github.com/Bestoriop/Aux-addon-Epoch/tree/main.git',
         description: 'Auction house replacement tool (Epoch Addon)',
         author: 'Bestoriop',
         category: 'utility',
@@ -301,7 +301,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     // 7. Bagnon
     {
         name: 'Bagnon',
-        gitUrl: 'https://github.com/RichSteini/Bagnon-3.3.5',
+        gitUrl: 'https://github.com/RichSteini/Bagnon-3.3.5.git',
         description: 'Bag mod',
         author: 'RichSteini',
         category: 'ui-enhancement',
@@ -309,7 +309,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     // 8. Chat Filter
     {
         name: 'Chat Filter',
-        gitUrl: 'https://github.com/sousou63/ChatFilter',
+        gitUrl: 'https://github.com/sousou63/ChatFilter.git',
         description: 'Lightweight chat filter (Epoch Addon)',
         author: 'sousou63',
         category: 'utility',
@@ -339,21 +339,21 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     // 12. CombatLogFix
     {
         name: 'CombatLogFix',
-        gitUrl: 'https://github.com/KhalGH/CombatLogFix-WotLK',
+        gitUrl: 'https://github.com/KhalGH/CombatLogFix-WotLK.git',
         description: 'Fixes known bugs with the combat log',
         category: 'combat',
     },
     // 13. CompactRaidFrames
     {
         name: 'CompactRaidFrames',
-        gitUrl: 'https://gitlab.com/Tsoukie/compactraidframe-3.3.5',
+        gitUrl: 'https://gitlab.com/Tsoukie/compactraidframe-3.3.5.git',
         description: 'Compacts Blizzard raid frames',
         category: 'ui-enhancement',
     },
     // 14. ConsolePort
     {
         name: 'ConsolePort',
-        gitUrl: 'https://github.com/leoaviana/ConsolePortLK',
+        gitUrl: 'https://github.com/leoaviana/ConsolePortLK.git',
         description: 'ConsolePort integration',
         author: 'leoaviana',
         category: 'utility',
@@ -381,7 +381,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     // 19. DragonUI
     {
         name: 'DragonUI',
-        gitUrl: 'https://github.com/NeticSoul/DragonUI',
+        gitUrl: 'https://github.com/NeticSoul/DragonUI.git',
         description: 'Dragonflight UI in Epoch (Epoch Addon)',
         author: 'NeticSoul',
         category: 'ui-enhancement',
@@ -391,7 +391,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     // 21. Epoch Drops
     {
         name: 'Epoch Drops',
-        gitUrl: 'https://github.com/sebastianpiresmolin/epoch-drops',
+        gitUrl: 'https://github.com/sebastianpiresmolin/epoch-drops.git',
         description: 'Database collection tool (Epoch Addon)',
         author: 'sebastianpiresmolin',
         category: 'utility',
@@ -400,7 +400,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     // 22. FSRTracker
     {
         name: 'Five Second Rule',
-        gitUrl: 'https://github.com/RetroUnreal/FSRTracker',
+        gitUrl: 'https://github.com/RetroUnreal/FSRTracker.git',
         description: 'Track the five second rule for drinking (Epoch Addon)',
         author: 'RetroUnreal',
         category: 'utility',
@@ -416,7 +416,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     // 25. Hardcore Death Announcer
     {
         name: 'Hardcore Death Announcer',
-        gitUrl: 'https://github.com/TVBrowntown/HCDeaths/',
+        gitUrl: 'https://github.com/TVBrowntown/HCDeaths.git',
         description: 'Announces hardcore deaths (Epoch Addon)',
         author: 'TVBrowntown',
         category: 'utility',
@@ -425,7 +425,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     // 26. Tidy Plates
     {
         name: 'TidyPlates',
-        gitUrl: 'https://github.com/bkader/TidyPlates_WoTLK',
+        gitUrl: 'https://github.com/bkader/TidyPlates_WoTLK.git',
         description: 'Nameplate replacement',
         author: 'bkader',
         category: 'ui-enhancement',
@@ -433,7 +433,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     // 27. Trade Logger
     {
         name: 'TradeLogger',
-        gitUrl: 'https://github.com/mastersuleman/WoW-Tradelogger',
+        gitUrl: 'https://github.com/mastersuleman/WoW-Tradelogger.git',
         description: 'Logs trades (Epoch Addon)',
         author: 'mastersuleman',
         category: 'utility',
@@ -442,7 +442,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     // 28. TradeSkillMaster
     {
         name: 'TradeSkillMaster',
-        gitUrl: 'https://github.com/eyougo/TradeSkillMaster',
+        gitUrl: 'https://github.com/eyougo/TradeSkillMaster.git',
         description: 'AH replacement',
         author: 'eyougo',
         category: 'utility',
@@ -451,7 +451,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     // 30. Vanilla Graphics Boost
     {
         name: 'Vanilla Graphics Boost',
-        gitUrl: 'https://github.com/fleekx/VanillaGraphicBoost',
+        gitUrl: 'https://github.com/fleekx/VanillaGraphicBoost.git',
         description: 'Auto applies graphics boosts via macros (Epoch Addon)',
         author: 'fleekx',
         category: 'utility',
@@ -464,11 +464,12 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'Click-cast raid frame replacement',
         author: 'NoM0Re',
         category: 'ui-enhancement',
+        installable: false,
     },
     // 32. What''s Training
     {
         name: 'WhatsTraining',
-        gitUrl: 'https://github.com/ZythDr/Whats-Training-Epoch',
+        gitUrl: 'https://github.com/ZythDr/Whats-Training-Epoch.git',
         description: 'Shows your class spells in a new tab (Epoch Addon)',
         author: 'ZythDr',
         category: 'utility',
@@ -481,11 +482,12 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         gitUrl: 'https://warperia.com/addon-wotlk/wowinstantmessenger/',
         description: 'Messaging enhancement',
         category: 'social',
+        installable: false,
     },
     // 35. Zygor Guides Viewer
     {
         name: 'ZygorGuidesViewer',
-        gitUrl: 'https://github.com/SimonGaufreteau/ZygorGuidesViewer',
+        gitUrl: 'https://github.com/SimonGaufreteau/ZygorGuidesViewer.git',
         description: 'Leveling guide (Epoch Addon)',
         author: 'SimonGaufreteau',
         category: 'utility',
