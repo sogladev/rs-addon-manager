@@ -1,6 +1,6 @@
 [package]
 name = "addon-manager-gui"
-version = "0.2.11"
+version = "0.2.12"
 description = "A cross-platform addon manager for installing, updating, and managing addons using Git."
 authors = ["sogladev"]
 edition = "2021"
