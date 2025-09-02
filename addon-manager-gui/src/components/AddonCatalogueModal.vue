@@ -174,7 +174,7 @@ const closeModal = () => {
                                     class="flex items-center gap-4 text-xs text-base-content/60"
                                 >
                                     <span v-if="addon.author"
-                                        >by {{ addon.author }}</span
+                                        >{{ addon.author }}</span
                                     >
                                 </div>
 
