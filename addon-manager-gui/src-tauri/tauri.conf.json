@@ -13,8 +13,8 @@
         "windows": [
             {
                 "title": "Addon Manager",
-                "width": 800,
-                "height": 600
+                "width": 960,
+                "height": 720
             }
         ],
         "security": {
