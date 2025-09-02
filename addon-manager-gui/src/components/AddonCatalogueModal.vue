@@ -11,7 +11,6 @@ import {
 import type { AddOnsFolder } from '@bindings/AddOnsFolder'
 import { computed, ref } from 'vue'
 import {
-    Search,
     // Package,
     ExternalLink,
     Download,
@@ -51,7 +50,7 @@ const filteredAddons = computed(() => {
         )
     }
 
-    return addons
+    return [...addons].sort((a, b) => a.name.localeCompare(b.name))
 })
 
 const handleInstall = (addon: CatalogueAddon) => {
@@ -104,14 +103,11 @@ const closeModal = () => {
             <!-- Search and Filter -->
             <div class="flex flex-col sm:flex-row gap-4 mb-4">
                 <div class="flex-1 relative">
-                    <Search
-                        class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-base-content/50"
-                    />
                     <input
                         v-model="searchQuery"
                         type="text"
                         placeholder="Search addons..."
-                        class="input input-bordered w-full pl-10"
+                        class="input input-bordered w-full"
                     />
                 </div>
                 <div class="flex items-center gap-2">
@@ -204,16 +200,14 @@ const closeModal = () => {
                                     <div
                                         class="alert alert-success py-2 px-3 text-xs"
                                     >
-                                        <template v-if="folderPaths.length > 1">
-                                            <span
-                                                class="underline cursor-pointer"
-                                                :title="getInstalledPath(addon)"
-                                            >
-                                                Installed
-                                            </span>
+                                        <template
+                                            v-if="folderPaths.length > 10"
+                                        >
+                                            Already installed at
+                                            {{ getInstalledPath(addon) }}
                                         </template>
                                         <template v-else>
-                                            <span>Installed</span>
+                                            <span>Already installed</span>
                                         </template>
                                     </div>
                                 </div>
@@ -329,12 +323,5 @@ const closeModal = () => {
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-}
-
-/* Increase top/bottom padding for modal dialogs */
-.modal {
-    align-items: flex-start;
-    padding-top: 5vh;
-    padding-bottom: 5vh;
 }
 </style>
