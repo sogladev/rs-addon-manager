@@ -2,6 +2,7 @@
 import OperationEventLog from '@/components/OperationEventLog.vue'
 import ThemeController from '@/components/ThemeController.vue'
 import TimeoutButton from '@/components/TimeoutButton.vue'
+import UpdateChecker from '@/components/UpdateChecker.vue'
 import { useGlobalError } from '@/composables/useGlobalError'
 import { OperationState } from '@/composables/useOperationTracker'
 import { parseImportLine } from '@/utils/importParser'
@@ -395,6 +396,9 @@ const saveLogAndClose = async () => {
                     https://github.com/sogladev/rs-addon-manager
                 </a>
             </p>
+            <div class="mt-4">
+                <UpdateChecker />
+            </div>
             <p class="mt-4">
                 Author:
                 <a
