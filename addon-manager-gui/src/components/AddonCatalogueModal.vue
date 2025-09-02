@@ -161,6 +161,12 @@ const closeModal = () => {
                                             )
                                         }}
                                     </div>
+                                    <div
+                                        v-if="addon.serverCompat?.projectEpoch"
+                                        class="badge badge-outline badge-sm"
+                                    >
+                                        Epoch
+                                    </div>
                                 </div>
 
                                 <p
