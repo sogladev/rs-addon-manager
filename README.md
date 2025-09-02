@@ -59,11 +59,17 @@ Example Git URLs:
 - `https://gitlab.com/username/addon-name.git`
 
 ![Clone](images/addon-manager/clone.png)
+
+![Catalogue](images/addon-manager/catalogue-0.2.11.jpg)
+
+> Note:
+> The catalogue is a helpful tool that automatically fills in HTTPS URLs for addons. Addons are curated from the [Project Epoch Wiki](https://project-epoch-wow.fandom.com/wiki/AddOns) and the [Epoch Addons Discord](https://discord.gg/Px4T8VVZwr). This list may contain moved, outdated, or broken repository links.
+
 ![Menu](images/addon-manager/main-menu.png)
 
 https://github.com/user-attachments/assets/2491b729-0b62-41d4-bf91-dabb3065cbea
 
-**Import Format Example:**
+### Import Format Example
 
 ```
 C:\Games\wow335\Interface\AddOns AdiBags *https://github.com/Sattva-108/AdiBags.git main
