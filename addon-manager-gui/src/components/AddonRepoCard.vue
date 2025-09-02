@@ -237,7 +237,7 @@ const progressPercent = computed(() => {
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <div class="w-40">
+            <div class="w-32">
                 <select
                     class="select select-bordered select-sm w-full truncate"
                     v-model="selectedBranch"

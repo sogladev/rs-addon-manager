@@ -193,7 +193,7 @@ const saveLogAndClose = async () => {
             class="flex flex-wrap items-center gap-2 bg-base-200 pb-2 pt-2 px-2"
         >
             <button
-                class="btn btn-secondary w-40"
+                class="btn btn-secondary w-32"
                 :disabled="checkingForUpdates"
                 @click="emit('refresh')"
             >
@@ -202,11 +202,11 @@ const saveLogAndClose = async () => {
                     class="loading loading-spinner loading-sm"
                 ></span>
                 <span v-if="checkingForUpdates">Checking...</span>
-                <span v-else>Check for Updates</span>
+                <span v-else>Check updates</span>
             </button>
             <TimeoutButton
                 :timeout="30000"
-                class="btn btn-primary w-40"
+                class="btn btn-primary w-32"
                 :disabled="!hasUpdates || checkingForUpdates"
                 @click="emit('update-all')"
             >
@@ -231,9 +231,11 @@ const saveLogAndClose = async () => {
                 placeholder="Search installed"
                 type="search"
             />
-            <button class="btn btn-accent w-40" @click="emit('add-addon')">
-                <!-- <Plus /> -->
+            <button class="btn btn-accent w-32" @click="emit('add-addon')">
                 Install addon
+            </button>
+            <button class="btn btn-accent w-32" @click="emit('add-addon')">
+                Catalogue
             </button>
             <OperationEventLog
                 v-if="operations && recentlyCompleted"
