@@ -181,9 +181,6 @@ const closeModal = () => {
                                     <span v-if="addon.author"
                                         >by {{ addon.author }}</span
                                     >
-                                    <span v-if="addon.defaultBranch"
-                                        >branch: {{ addon.defaultBranch }}</span
-                                    >
                                 </div>
 
                                 <div v-if="addon.notes" class="mt-2">

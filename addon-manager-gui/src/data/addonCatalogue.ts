@@ -4,7 +4,6 @@ export interface CatalogueAddon {
     description: string
     author?: string
     category: AddonCategory
-    defaultBranch?: string
     notes?: string
     installable?: boolean // whether the addon can be auto-installed via git
     manualUrl?: string // URL for manual download if not installable
@@ -39,7 +38,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'Raynbock',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     {
         name: 'Questie Epoch',
@@ -48,7 +46,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
             'An all-in-one questing addon designed to support the new custom quests on Project Epoch. Behaves similarly to Classic Questie.',
         author: 'trav346',
         category: 'questing',
-        defaultBranch: 'main',
         serverCompat: { projectEpoch: true },
     },
     {
@@ -59,7 +56,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'Bennylavaa',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     {
         name: 'ElvUI Epoch',
@@ -68,7 +64,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
             'A user interface designed around user-friendliness with extra features. Forked from ElvUI-WotLK to include an Epoch crash fix.',
         author: 'Bennylavaa',
         category: 'ui-enhancement',
-        defaultBranch: 'main',
         serverCompat: { projectEpoch: true },
     },
     {
@@ -79,7 +74,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'Bennylavaa',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     {
         name: 'GroupBulletinBoard Epoch',
@@ -89,7 +83,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'TheNielDeal',
         category: 'social',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     {
         name: 'GroupBulletinBoard Epoch',
@@ -99,7 +92,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'sogladev',
         category: 'social',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
 
     // UI Enhancement
@@ -110,7 +102,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
             'Displays the contents of your bags in single view, distributed into several sections using smart filters.',
         author: 'Sattva-108',
         category: 'ui-enhancement',
-        defaultBranch: 'main',
     },
     {
         name: 'Bagnon',
@@ -118,7 +109,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'Inventory manager with added autoclean functionality.',
         author: 'RichSteini',
         category: 'ui-enhancement',
-        defaultBranch: 'main',
     },
     {
         name: 'DiabolicUI',
@@ -126,7 +116,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'Diablo 3 UI for WoW with a dark, immersive design.',
         author: 'thExiled',
         category: 'ui-enhancement',
-        defaultBranch: 'main',
     },
     {
         name: 'KkthnxUI',
@@ -135,7 +124,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
             'Simplistic user interface that holds onto information and functionality while keeping good looks.',
         author: 'mrrosh',
         category: 'ui-enhancement',
-        defaultBranch: 'main',
     },
     {
         name: 'Dominos',
@@ -144,7 +132,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
             'Replaces your main bar with movable parts that offer additional customization.',
         author: 'bkader',
         category: 'ui-enhancement',
-        defaultBranch: 'main',
     },
     {
         name: 'RetailUI',
@@ -152,7 +139,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'Brings the modern Retail WoW UI to Project Epoch.',
         author: 'a3st',
         category: 'ui-enhancement',
-        defaultBranch: 'main',
     },
     {
         name: 'TidyPlates',
@@ -161,7 +147,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
             'Enhanced and customizable nameplates for better target visibility.',
         author: 'Ravendwyr',
         category: 'ui-enhancement',
-        defaultBranch: 'main',
         notes: 'May need compatibility testing',
     },
     {
@@ -171,7 +156,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
             'Plater imitation addon for 3.3.5. Customizes nameplate text, icons, and style.',
         author: 'RichSteini',
         category: 'ui-enhancement',
-        defaultBranch: 'main',
     },
     {
         name: 'pretty_lootalert',
@@ -180,7 +164,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
             'Loot alert UI with configurable display for item pickup notifications.',
         author: 'sogladev',
         category: 'ui-enhancement',
-        defaultBranch: 'main',
         notes: 'Configuration via a "config.lua" file; this is a pre-configured fork of s0h2x/pretty_lootalert to show fewer toasts',
     },
 
@@ -192,7 +175,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
             'Advanced damage meter with threat plugin and detailed combat statistics.',
         author: 'Bunny67',
         category: 'combat',
-        defaultBranch: 'master',
     },
     {
         name: 'Skada Revisited',
@@ -201,7 +183,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
             'Damage meter with extra modules that replicate popular features of other combat meters.',
         author: 'bkader',
         category: 'combat',
-        defaultBranch: 'main',
     },
     {
         name: 'Omen3',
@@ -209,7 +190,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'Threat meter. Single purpose and easy set up.',
         author: 'Exposeya',
         category: 'combat',
-        defaultBranch: 'main',
         notes: 'May need compatibility verification',
     },
 
@@ -220,7 +200,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'Quality-of-life improvements and system tweaks.',
         author: 'Sattva-108',
         category: 'utility',
-        defaultBranch: 'main',
     },
     {
         name: 'WeakAuras',
@@ -229,7 +208,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
             'Create visual alerts and condition tracking for abilities, buffs, etc.',
         author: 'NoM0Re',
         category: 'utility',
-        defaultBranch: 'main',
     },
     {
         name: 'Immersion',
@@ -238,7 +216,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
             'Immersive questing addon that makes quest interactions more engaging.',
         author: 's0h2x',
         category: 'questing',
-        defaultBranch: 'main',
     },
     {
         name: 'ItemRack',
@@ -247,7 +224,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
             'Make swapping equipment easier through popout slot menus and gear sets.',
         author: 'FeanoroWoW',
         category: 'utility',
-        defaultBranch: 'main',
     },
 
     // Social
@@ -258,7 +234,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
             'Enhanced mail UI with mass operations and better organization.',
         author: 'Bennylavaa',
         category: 'social',
-        defaultBranch: 'main',
     },
     {
         name: 'Chat Emoji',
@@ -266,7 +241,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'Adds emoji support to chat for better communication.',
         author: 'Bennylavaa',
         category: 'social',
-        defaultBranch: 'main',
     },
     {
         name: 'TwitchEmotes-335',
@@ -275,7 +249,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
             'Shows Twitch emotes in your chat by typing them as you would into Twitch chat',
         author: 'sogladev',
         category: 'social',
-        defaultBranch: 'main',
     },
     {
         name: 'Hermes',
@@ -284,7 +257,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
             'Enables cross-faction communication with minimal comprehension loss.',
         author: 'dobleedpurple',
         category: 'social',
-        defaultBranch: 'main',
     },
 
     // Unified Epoch Addons List from Discord
@@ -295,7 +267,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'Bag mod',
         author: 'Sattva-108',
         category: 'ui-enhancement',
-        defaultBranch: 'main',
     },
     // 2. Atlas
     {
@@ -305,7 +276,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'Raynbock',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     // 3. AtlaslootProjectEpoch
     {
@@ -315,7 +285,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'Raynbock',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     // 4. Atlas Quest
     {
@@ -325,7 +294,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'Rofos2011',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     // 5. Auctionlite
     {
@@ -344,7 +312,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'Bestoriop',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     // 7. Bagnon
     {
@@ -353,7 +320,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'Bag mod',
         author: 'RichSteini',
         category: 'ui-enhancement',
-        defaultBranch: 'main',
     },
     // 8. Chat Filter
     {
@@ -363,7 +329,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'sousou63',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     // 9. ClassicAPI
     {
@@ -392,7 +357,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         gitUrl: 'https://github.com/KhalGH/CombatLogFix-WotLK',
         description: 'Fixes known bugs with the combat log',
         category: 'combat',
-        defaultBranch: 'main',
     },
     // 13. CompactRaidFrames
     {
@@ -408,7 +372,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'ConsolePort integration',
         author: 'leoaviana',
         category: 'utility',
-        defaultBranch: 'master',
         notes: 'See instructions at https://github.com/leoaviana/WoWmapperX',
     },
     // 15. CircadianRhythm
@@ -419,7 +382,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'Bennylavaa',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     // 16. Cromulent
     {
@@ -445,7 +407,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'Damage/healing meter',
         author: 'Bunny67',
         category: 'combat',
-        defaultBranch: 'main',
     },
     // 19. DragonUI
     {
@@ -455,7 +416,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'NeticSoul',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     // 20. ElvUI Epoch
     {
@@ -465,7 +425,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'Bennylavaa',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     // 21. Epoch Drops
     {
@@ -475,7 +434,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'sebastianpiresmolin',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     // 22. FSRTracker
     {
@@ -485,7 +443,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'RetroUnreal',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     // 23. Grid2
     {
@@ -501,7 +458,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'LFG bulletin board like tool (Epoch Addon)',
         author: 'sogladev',
         category: 'social',
-        defaultBranch: 'main',
         notes: 'Alternatives: gimikz, olliebdev',
         serverCompat: { projectEpoch: true },
     },
@@ -513,7 +469,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'TVBrowntown',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     // 26. Tidy Plates
     {
@@ -522,7 +477,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'Nameplate replacement',
         author: 'bkader',
         category: 'ui-enhancement',
-        defaultBranch: 'main',
     },
     // 27. Trade Logger
     {
@@ -532,7 +486,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'mastersuleman',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     // 28. TradeSkillMaster
     {
@@ -541,7 +494,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'AH replacement',
         author: 'eyougo',
         category: 'utility',
-        defaultBranch: 'main',
     },
     // 29. Twitch Emotes
     {
@@ -550,7 +502,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'Static and animated Twitch emotes in chat (Epoch Addon)',
         author: 'sogladev',
         category: 'social',
-        defaultBranch: 'main',
     },
     // 30. Vanilla Graphics Boost
     {
@@ -560,7 +511,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'fleekx',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     // 31. VuhDo
     {
@@ -578,7 +528,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'ZythDr',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
     // 33. WeakAuras
     {
@@ -587,7 +536,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'Master list of working Epoch WA',
         author: 'NoM0Re',
         category: 'utility',
-        defaultBranch: 'main',
     },
     // 34. WIM
     {
@@ -604,7 +552,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         author: 'SimonGaufreteau',
         category: 'utility',
         serverCompat: { projectEpoch: true },
-        defaultBranch: 'main',
     },
 ]
 
