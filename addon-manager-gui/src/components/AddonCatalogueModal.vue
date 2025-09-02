@@ -14,6 +14,7 @@ import {
     // Package,
     ExternalLink,
     Download,
+    AlertTriangle,
     // Filter,
 } from 'lucide-vue-next'
 
@@ -128,6 +129,22 @@ const closeModal = () => {
                 </div>
             </div>
 
+            <!-- Warning for no directories -->
+            <div v-if="!folderPaths.length" class="alert alert-warning mb-4">
+                <div class="flex items-start gap-3">
+                    <AlertTriangle class="w-6 h-6 shrink-0" />
+                    <div>
+                        <h3 class="font-bold">
+                            No addon directories configured
+                        </h3>
+                        <div class="text-sm">
+                            Please add an addon directory in the main menu to
+                            enable installations.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Results count -->
             <div class="text-sm text-base-content/70 mb-3">
                 Showing {{ filteredAddons.length }} addon{{
@@ -173,9 +190,9 @@ const closeModal = () => {
                                 <div
                                     class="flex items-center gap-4 text-xs text-base-content/60"
                                 >
-                                    <span v-if="addon.author"
-                                        >{{ addon.author }}</span
-                                    >
+                                    <span v-if="addon.author">{{
+                                        addon.author
+                                    }}</span>
                                 </div>
 
                                 <div v-if="addon.notes" class="mt-2">
@@ -186,29 +203,23 @@ const closeModal = () => {
                                     </div>
                                 </div>
 
-                                <div v-if="!folderPaths.length" class="mt-2">
-                                    <div
-                                        class="alert alert-info py-2 px-3 text-xs"
-                                    >
-                                        No addon directories configured
-                                    </div>
-                                </div>
                                 <div
-                                    v-else-if="isAddonInstalled(addon)"
+                                    v-if="isAddonInstalled(addon)"
                                     class="mt-2"
                                 >
                                     <div
-                                        class="alert alert-success py-2 px-3 text-xs"
+                                        class="tooltip"
+                                        :data-tip="
+                                            folderPaths.length > 10
+                                                ? `Installed at ${getInstalledPath(addon)}`
+                                                : 'Already installed'
+                                        "
                                     >
-                                        <template
-                                            v-if="folderPaths.length > 10"
+                                        <span
+                                            class="badge badge-success badge-sm"
                                         >
-                                            Already installed at
-                                            {{ getInstalledPath(addon) }}
-                                        </template>
-                                        <template v-else>
-                                            <span>Already installed</span>
-                                        </template>
+                                            Installed
+                                        </span>
                                     </div>
                                 </div>
                             </div>
