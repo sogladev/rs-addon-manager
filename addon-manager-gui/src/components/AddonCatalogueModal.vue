@@ -11,9 +11,9 @@ import {
 import type { AddOnsFolder } from '@bindings/AddOnsFolder'
 import { computed, ref } from 'vue'
 import {
-    // Package,
-    ExternalLink,
-    Download,
+    Package,
+    Globe,
+    // Download,
     AlertTriangle,
     // Filter,
 } from 'lucide-vue-next'
@@ -163,7 +163,7 @@ const closeModal = () => {
                     class="card bg-base-100 border border-base-300 shadow-sm"
                 >
                     <div class="card-body p-4">
-                        <div class="flex items-start justify-between gap-4">
+                        <div class="flex items-center justify-between gap-4">
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-2 mb-2">
                                     <h4 class="font-semibold text-lg truncate">
@@ -182,8 +182,6 @@ const closeModal = () => {
                                     >
                                         Epoch
                                     </div>
-
-                                    <!-- Installed badge moved here next to title/categories -->
                                     <div
                                         v-if="isInstalled(addon)"
                                         class="tooltip"
@@ -198,6 +196,14 @@ const closeModal = () => {
                                             >Installed</span
                                         >
                                     </div>
+                                    <button
+                                        class="btn btn-ghost btn-xs flex items-center gap-1"
+                                        @click="openWebsite(addon.gitUrl)"
+                                        title="Open website"
+                                    >
+                                        <Globe class="w-3 h-3" />
+                                        Website
+                                    </button>
                                 </div>
 
                                 <p
@@ -226,7 +232,7 @@ const closeModal = () => {
                             <div class="flex flex-col gap-2 min-w-0">
                                 <template v-if="addon.installable !== false">
                                     <button
-                                        class="btn btn-accent btn-sm"
+                                        class="btn btn-accent btn-sm w-24"
                                         @click="handleInstall(addon)"
                                         :disabled="!folderPaths.length"
                                         :title="
@@ -235,15 +241,8 @@ const closeModal = () => {
                                                 : undefined
                                         "
                                     >
-                                        <Download class="w-4 h-4" />
+                                        <!-- <Download class="w-4 h-4" /> -->
                                         Install
-                                    </button>
-                                    <button
-                                        class="btn btn-ghost btn-sm"
-                                        @click="openWebsite(addon.gitUrl)"
-                                        title="View repository"
-                                    >
-                                        <ExternalLink class="w-4 h-4" />
                                     </button>
                                 </template>
                                 <template v-else>
@@ -252,19 +251,9 @@ const closeModal = () => {
                                         disabled
                                         title="Manual install only"
                                     >
-                                        <Download class="w-4 h-4" />
+                                        <!-- <Download class="w-4 h-4" /> -->
                                         Manual Install
                                     </button>
-                                    <a
-                                        v-if="addon.manualUrl"
-                                        :href="addon.manualUrl"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        class="btn btn-ghost btn-sm"
-                                        title="Download manually"
-                                    >
-                                        <ExternalLink class="w-4 h-4" />
-                                    </a>
                                 </template>
                             </div>
                         </div>
