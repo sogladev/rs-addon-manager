@@ -101,7 +101,7 @@ async function handleDownload() {
                 Download & Install
             </button>
             <progress
-                v-if="progress"
+                v-if="progress > 0"
                 class="progress progress-primary w-full"
                 :value="progress"
                 max="100"
