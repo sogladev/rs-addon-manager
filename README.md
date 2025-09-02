@@ -7,6 +7,7 @@ A modern GUI addon manager that uses Git repositories to install, update, and ma
 **Key Features:**
 
 - Install addons directly from GitHub/GitLab URLs
+- Curated catalogue of addons for easy install
 - Bulk install/update all addons
 - Manage multiple addon directories
 - Import/export addon lists
@@ -30,6 +31,7 @@ A modern GUI addon manager that uses Git repositories to install, update, and ma
 | Windows, Linux, MacOS                                                          | Yes               |
 | Install, Remove, Update addons                                                 | Yes               |
 | git sources GitHub, GitLab, etc                                                | Yes               |
+| Curated catalogue of addons for easy install                                   | Yes               |
 | Install all                                                                    | Yes               |
 | Update all                                                                     | Yes               |
 | Multiple addon directories                                                     | Yes               |
@@ -57,11 +59,17 @@ Example Git URLs:
 - `https://gitlab.com/username/addon-name.git`
 
 ![Clone](images/addon-manager/clone.png)
+
+![Catalogue](images/addon-manager/catalogue-0.2.11.jpg)
+
+> Note:
+> The catalogue is a helpful tool that automatically fills in HTTPS URLs for addons. Addons are curated from the [Project Epoch Wiki](https://project-epoch-wow.fandom.com/wiki/AddOns) and the [Epoch Addons Discord](https://discord.gg/Px4T8VVZwr). This list may contain moved, outdated, or broken repository links.
+
 ![Menu](images/addon-manager/main-menu.png)
 
 https://github.com/user-attachments/assets/2491b729-0b62-41d4-bf91-dabb3065cbea
 
-**Import Format Example:**
+### Import Format Example
 
 ```
 C:\Games\wow335\Interface\AddOns AdiBags *https://github.com/Sattva-108/AdiBags.git main
@@ -114,6 +122,28 @@ To set up formatting and the pre-commit hook:
     ```sh
     bunx eslint --ext .ts,.vue addon-manager-gui/src/
     ```
+
+### Catalogue - Adding New Addons
+
+To add a new addon to the catalogue, edit the file:
+
+```
+src/data/addonCatalogue.ts
+```
+
+Add a new entry to the `ADDON_CATALOGUE` array:
+
+```typescript
+{
+    name: 'Your Addon Name',
+    gitUrl: 'https://github.com/user/repo.git',
+    description: 'Brief description of what the addon does',
+    author: 'GitHubUsername',
+    category: 'ui-enhancement',
+    defaultBranch: 'main',
+    notes: 'Any warnings or special instructions' // Optional
+}
+```
 
 ## Acknowledgements
 
