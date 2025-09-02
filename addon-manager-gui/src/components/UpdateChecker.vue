@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { app } from '@tauri-apps/api'
+import { ref } from 'vue'
 import { check } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
 
@@ -14,7 +13,6 @@ const update = ref<{
 const checking = ref(false)
 const progress = ref(0)
 const updateError = ref<string | null>(null)
-const currentVersion = ref<string>('')
 
 async function handleCheck() {
     checking.value = true
