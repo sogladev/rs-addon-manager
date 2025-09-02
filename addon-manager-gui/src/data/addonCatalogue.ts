@@ -243,7 +243,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         category: 'social',
     },
     {
-        name: 'TwitchEmotes-335',
+        name: 'Twitch Emotes v2',
         gitUrl: 'https://github.com/sogladev/TwitchEmotes-335.git',
         description:
             'Shows Twitch emotes in your chat by typing them as you would into Twitch chat',
