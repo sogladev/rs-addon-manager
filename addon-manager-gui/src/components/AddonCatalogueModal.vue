@@ -15,6 +15,7 @@ import {
     Globe,
     // Download,
     AlertTriangle,
+    X,
     // Filter,
 } from 'lucide-vue-next'
 import { useExternalLink } from '@/composables/useExternalLink'
@@ -96,11 +97,8 @@ const closeModal = () => {
                     <!-- <Package class="w-6 h-6" /> -->
                     Addon Catalogue
                 </h3>
-                <button
-                    class="btn btn-sm btn-circle btn-ghost"
-                    @click="closeModal"
-                >
-                    ✕
+                <button class="btn btn-sm btn-ghost" @click="closeModal">
+                    <X class="w-4 h-4" />
                 </button>
             </div>
 
@@ -278,28 +276,34 @@ const closeModal = () => {
 
             <!-- Footer -->
             <div class="border-t border-base-300 pt-4 mt-4">
-                <div class="flex justify-between items-center">
-                    <p class="text-xs text-base-content/60">
-                        <span>Addons curated from the</span>
-                        <a
-                            href="https://project-epoch-wow.fandom.com/wiki/AddOns"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="link link-primary ml-1"
-                            >Project Epoch Wiki</a
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between items-center">
+                        <p class="text-xs text-base-content/60">
+                            <span>Addons curated from the</span>
+                            <a
+                                href="https://project-epoch-wow.fandom.com/wiki/AddOns"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="link link-primary ml-1"
+                                >Project Epoch Wiki</a
+                            >
+                            <span class="ml-2">and the</span>
+                            <a
+                                href="https://discord.gg/Px4T8VVZwr"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="link link-primary ml-1"
+                                >Epoch Addons Discord</a
+                            >. This may contain moved, outdated, or broken
+                            repository links.
+                        </p>
+                        <button
+                            class="btn btn-ghost btn-sm"
+                            @click="closeModal"
                         >
-                        <span class="ml-2">and the</span>
-                        <a
-                            href="https://discord.gg/Px4T8VVZwr"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="link link-primary ml-1"
-                            >Epoch Addons Discord</a
-                        >
-                    </p>
-                    <button class="btn btn-ghost btn-sm" @click="closeModal">
-                        Close
-                    </button>
+                            Close
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
