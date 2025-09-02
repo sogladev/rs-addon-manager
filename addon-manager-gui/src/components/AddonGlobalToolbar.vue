@@ -2,6 +2,7 @@
 import OperationEventLog from '@/components/OperationEventLog.vue'
 import ThemeController from '@/components/ThemeController.vue'
 import TimeoutButton from '@/components/TimeoutButton.vue'
+import UpdateChecker from '@/components/UpdateChecker.vue'
 import { useGlobalError } from '@/composables/useGlobalError'
 import { OperationState } from '@/composables/useOperationTracker'
 import { parseImportLine } from '@/utils/importParser'
@@ -381,7 +382,7 @@ const saveLogAndClose = async () => {
     >
         <div class="modal-box max-w-md">
             <h3 class="font-bold text-lg flex items-center gap-2">
-                <Info class="w-6 h-6" />
+                <!-- <Info class="w-6 h-6" /> -->
                 About
             </h3>
             <p class="mt-4">Addon manager using git for version control</p>
@@ -395,6 +396,9 @@ const saveLogAndClose = async () => {
                     https://github.com/sogladev/rs-addon-manager
                 </a>
             </p>
+            <div class="mt-4">
+                <UpdateChecker />
+            </div>
             <p class="mt-4">
                 Author:
                 <a
