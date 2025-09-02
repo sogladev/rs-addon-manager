@@ -11,7 +11,7 @@ import {
 import type { AddOnsFolder } from '@bindings/AddOnsFolder'
 import { computed, ref } from 'vue'
 import {
-    Package,
+    // Package,
     Globe,
     // Download,
     AlertTriangle,
@@ -30,7 +30,7 @@ const emit = defineEmits<{
     (event: 'install-addon', addon: CatalogueAddon): void
 }>()
 
-const searchQuery = ref('')
+const search = ref('')
 const selectedCategory = ref<AddonCategory | 'all'>('all')
 
 const { openWebsite } = useExternalLink()
@@ -46,8 +46,8 @@ const filteredAddons = computed(() => {
     }
 
     // Filter by search query
-    if (searchQuery.value.trim()) {
-        addons = searchAddons(searchQuery.value).filter(
+    if (search.value.trim()) {
+        addons = searchAddons(search.value).filter(
             (addon) =>
                 selectedCategory.value === 'all' ||
                 addon.category === selectedCategory.value
@@ -83,7 +83,7 @@ const isInstalled = (addon: CatalogueAddon): boolean => {
 const closeModal = () => {
     emit('update:open', false)
     // Reset filters when closing
-    searchQuery.value = ''
+    search.value = ''
     selectedCategory.value = 'all'
 }
 </script>
@@ -108,10 +108,10 @@ const closeModal = () => {
             <div class="flex flex-col sm:flex-row gap-4 mb-4">
                 <div class="flex-1 relative">
                     <input
-                        v-model="searchQuery"
-                        type="text"
+                        v-model="search"
                         placeholder="Search addons..."
                         class="input input-bordered w-full"
+                        type="search"
                     />
                 </div>
                 <div class="flex items-center gap-2">
@@ -262,15 +262,13 @@ const closeModal = () => {
 
                 <!-- Empty state -->
                 <div v-if="!filteredAddons.length" class="text-center py-12">
-                    <Package
-                        class="w-12 h-12 mx-auto text-base-content/30 mb-4"
-                    />
+                    <!-- <Package class="w-12 h-12 mx-auto text-base-content/30 mb-4" /> -->
                     <h3 class="text-lg font-semibold text-base-content/70 mb-2">
                         No addons found
                     </h3>
                     <p class="text-base-content/50">
                         {{
-                            searchQuery.trim()
+                            search.trim()
                                 ? 'Try adjusting your search or filter'
                                 : 'No addons available in this category'
                         }}
