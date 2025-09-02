@@ -1,15 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { check } from '@tauri-apps/plugin-updater'
+import { check, type Update } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
 import { getVersion } from '@tauri-apps/api/app'
 
-const update = ref<{
-    version: string
-    date?: string
-    body?: string
-    downloadAndInstall: (cb?: (e: any) => void) => Promise<void>
-} | null>(null)
+const update = ref<Update | null>(null)
 
 const checking = ref(false)
 const progress = ref(0)
@@ -48,10 +43,10 @@ async function handleDownload() {
     let total = 0
     updateError.value = null
     try {
-        await update.value.downloadAndInstall((event: any) => {
+        await update.value.downloadAndInstall((event) => {
             switch (event.event) {
                 case 'Started':
-                    total = event.data.contentLength
+                    total = event.data.contentLength || 0
                     break
                 case 'Progress':
                     downloaded += event.data.chunkLength
