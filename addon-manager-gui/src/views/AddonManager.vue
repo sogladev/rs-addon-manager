@@ -28,7 +28,7 @@ const { recentlyCompleted } = useOperationTracker()
 const showAddModal = ref(false)
 const showCatalogueModal = ref(false)
 const search = ref('')
-const cloneModalPrefill = ref<{ gitUrl?: string; branch?: string }>({})
+const cloneModalPrefill = ref<{ gitUrl?: string }>({})
 
 onMounted(async () => {
     try {
@@ -131,7 +131,6 @@ function handleCatalogueInstall(addon: CatalogueAddon) {
     showCatalogueModal.value = false
     cloneModalPrefill.value = {
         gitUrl: addon.gitUrl,
-        branch: addon.defaultBranch || 'main',
     }
     showAddModal.value = true
 }

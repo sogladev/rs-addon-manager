@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { useGlobalError } from '@/composables/useGlobalError'
 import { useOperationTracker } from '@/composables/useOperationTracker'
+import { useExternalLink } from '@/composables/useExternalLink'
 import type { Addon } from '@bindings/Addon'
 import type { AddonRepository } from '@bindings/AddonRepository'
 import { invoke } from '@tauri-apps/api/core'
 import { readTextFile } from '@tauri-apps/plugin-fs'
-import { openUrl } from '@tauri-apps/plugin-opener'
 import { Ellipsis, FileText, Globe, Trash2, Wrench } from 'lucide-vue-next'
 import { marked } from 'marked'
 import { computed, ref, watch } from 'vue'
@@ -25,10 +25,10 @@ const emit = defineEmits<{
 const showReadmeModal = ref(false)
 const readmeHtml = ref('')
 
+const { openWebsite } = useExternalLink()
+
 const handleWebsite = () => {
-    const url = repo.repoUrl.replace(/\.git$/, '')
-    console.debug('Open website', url)
-    openUrl(url)
+    openWebsite(repo.repoUrl)
 }
 
 const { isOperationActive, getOperationType, getProgress } =

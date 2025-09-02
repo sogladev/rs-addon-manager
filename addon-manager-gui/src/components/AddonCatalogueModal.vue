@@ -17,6 +17,7 @@ import {
     AlertTriangle,
     // Filter,
 } from 'lucide-vue-next'
+import { useExternalLink } from '@/composables/useExternalLink'
 
 const { open, folderPaths, addonFolders } = defineProps<{
     open: boolean
@@ -31,6 +32,8 @@ const emit = defineEmits<{
 
 const searchQuery = ref('')
 const selectedCategory = ref<AddonCategory | 'all'>('all')
+
+const { openWebsite } = useExternalLink()
 
 const categories = getAllCategories()
 
@@ -235,17 +238,13 @@ const closeModal = () => {
                                         <Download class="w-4 h-4" />
                                         Install
                                     </button>
-                                    <a
-                                        :href="
-                                            addon.gitUrl.replace(/\.git$/, '')
-                                        "
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                    <button
                                         class="btn btn-ghost btn-sm"
+                                        @click="openWebsite(addon.gitUrl)"
                                         title="View repository"
                                     >
                                         <ExternalLink class="w-4 h-4" />
-                                    </a>
+                                    </button>
                                 </template>
                                 <template v-else>
                                     <button
