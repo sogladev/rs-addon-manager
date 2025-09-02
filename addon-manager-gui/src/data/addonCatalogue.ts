@@ -261,13 +261,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
 
     // Unified Epoch Addons List from Discord
     // 1. Adi-bags
-    {
-        name: 'Adi-bags',
-        gitUrl: 'https://github.com/Sattva-108/AdiBags',
-        description: 'Bag mod',
-        author: 'Sattva-108',
-        category: 'ui-enhancement',
-    },
     // 2. Atlas
     {
         name: 'Atlas',
@@ -278,14 +271,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         serverCompat: { projectEpoch: true },
     },
     // 3. AtlaslootProjectEpoch
-    {
-        name: 'Atlasloot',
-        gitUrl: 'https://github.com/Raynbock/AtlaslootProjectEpoch',
-        description: 'Loot for dungeons (Epoch Addon)',
-        author: 'Raynbock',
-        category: 'utility',
-        serverCompat: { projectEpoch: true },
-    },
     // 4. Atlas Quest
     {
         name: 'Atlas Quest',
@@ -375,14 +360,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         notes: 'See instructions at https://github.com/leoaviana/WoWmapperX',
     },
     // 15. CircadianRhythm
-    {
-        name: 'CircadianRhythm',
-        gitUrl: 'https://github.com/Bennylavaa/CircadianRhythm',
-        description: 'Shows the time of day/night (Epoch Addon)',
-        author: 'Bennylavaa',
-        category: 'utility',
-        serverCompat: { projectEpoch: true },
-    },
     // 16. Cromulent
     {
         name: 'Cromulent',
@@ -401,31 +378,16 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
             'https://cdn.discordapp.com/attachments/1410021039500689505/1411848406548091061/Decursive.zip',
     },
     // 18. Details
-    {
-        name: 'Details',
-        gitUrl: 'https://github.com/Bunny67/Details-WotLK',
-        description: 'Damage/healing meter',
-        author: 'Bunny67',
-        category: 'combat',
-    },
     // 19. DragonUI
     {
         name: 'DragonUI',
         gitUrl: 'https://github.com/NeticSoul/DragonUI',
         description: 'Dragonflight UI in Epoch (Epoch Addon)',
         author: 'NeticSoul',
-        category: 'utility',
+        category: 'ui-enhancement',
         serverCompat: { projectEpoch: true },
     },
     // 20. ElvUI Epoch
-    {
-        name: 'ElvUI Epoch',
-        gitUrl: 'https://github.com/Bennylavaa/ElvUI-Epoch',
-        description: 'ElvUI for Epoch (Epoch Addon)',
-        author: 'Bennylavaa',
-        category: 'utility',
-        serverCompat: { projectEpoch: true },
-    },
     // 21. Epoch Drops
     {
         name: 'Epoch Drops',
@@ -486,13 +448,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         category: 'utility',
     },
     // 29. Twitch Emotes
-    {
-        name: 'TwitchEmotes',
-        gitUrl: 'https://github.com/sogladev/TwitchEmotes-335',
-        description: 'Static and animated Twitch emotes in chat (Epoch Addon)',
-        author: 'sogladev',
-        category: 'social',
-    },
     // 30. Vanilla Graphics Boost
     {
         name: 'Vanilla Graphics Boost',
@@ -520,13 +475,6 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         serverCompat: { projectEpoch: true },
     },
     // 33. WeakAuras
-    {
-        name: 'WeakAuras',
-        gitUrl: 'https://github.com/NoM0Re/WeakAuras-WotLK',
-        description: 'Master list of working Epoch WA',
-        author: 'NoM0Re',
-        category: 'utility',
-    },
     // 34. WIM
     {
         name: 'WIM',
