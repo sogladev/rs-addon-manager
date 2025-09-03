@@ -292,7 +292,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     // 6. AUX
     {
         name: 'AUX',
-        gitUrl: 'https://github.com/Bestoriop/Aux-addon-Epoch/tree/main.git',
+        gitUrl: 'https://github.com/Bestoriop/Aux-addon-Epoch.git',
         description: 'Auction house replacement tool (Epoch Addon)',
         author: 'Bestoriop',
         category: 'utility',
@@ -312,6 +312,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     {
         name: 'ClassicAPI',
         gitUrl: 'https://share.google/mORNZjd5KjIJn72dn',
+        installable: false,
         description: 'Brings the Classic API functionality to 3.3.5',
         category: 'utility',
     },
@@ -319,6 +320,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     {
         name: 'CleanerLootMessages',
         gitUrl: 'https://www.curseforge.com/wow/addons/cleanerlootmessages/files/3998350',
+        installable: false,
         description: 'Reduces loot messages for clarity',
         category: 'utility',
     },
@@ -326,6 +328,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     {
         name: 'Color Picker Plus',
         gitUrl: 'https://www.curseforge.com/wow/addons/colorpickerplus/files/all?page=1&pageSize=20&version=7.2.0',
+        installable: false,
         description: 'Replaces the standard Color Picker',
         category: 'ui-enhancement',
     },
@@ -357,6 +360,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     {
         name: 'Cromulent',
         gitUrl: 'https://felbite.com/addon/4119-cromulent/',
+        installable: false,
         description: 'Shows zone level and fishing level',
         category: 'utility',
     },
@@ -403,6 +407,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
     {
         name: 'Grid2',
         gitUrl: 'https://felbite.com/addon/4264-grid2/',
+        installable: false,
         description: 'Raid frame replacement',
         category: 'ui-enhancement',
     },
