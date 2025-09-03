@@ -43,6 +43,7 @@ A modern GUI addon manager that uses Git repositories to install, update, and ma
 | Install from GitHub Releases or Packages                                       | Not yet supported |
 | Manage non-Git addons                                                          | Not yet supported |
 | Auto updater with [Tauri Updater plugin](https://v2.tauri.app/plugin/updater/) | Yes               |
+| CLI Headless mode                                                              | Yes               |
 
 ## Addon Manager Usage
 
@@ -68,6 +69,17 @@ Example Git URLs:
 ![Menu](images/addon-manager/main-menu.png)
 
 https://github.com/user-attachments/assets/2491b729-0b62-41d4-bf91-dabb3065cbea
+
+### Command Line Options
+
+```bash
+# Run in headless mode to automatically check for updates and update all addons
+./addon-manager --headless
+# Only shows errors
+./addon-manager --headless --quiet
+# Show help
+./addon-manager --help
+```
 
 ### Import Format Example
 

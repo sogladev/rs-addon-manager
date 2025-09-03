@@ -45,3 +45,53 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+pub fn run_headless(quiet: bool) {
+    let app = tauri::Builder::default()
+        .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_fs::init())
+        .manage(addon_discovery::AppState::default())
+        .setup(|_app| Ok(()))
+        .build(tauri::generate_context!())
+        .expect("failed to build minimal Tauri app");
+
+    let handle = app.handle();
+    let state = tauri::Manager::state::<addon_discovery::AppState>(&app).clone();
+
+    tauri::async_runtime::block_on(async {
+        match addon_discovery::check_for_updates(handle.clone(), state.clone()).await {
+            Ok(folders) => {
+                if !quiet {
+                    println!("Scanned {} AddOns folders", folders.len());
+                    for folder in &folders {
+                        if !folder.repositories.is_empty() {
+                            println!(
+                                "  - {}: {} repositories",
+                                folder.path,
+                                folder.repositories.len()
+                            );
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("Failed to check for updates: {e}");
+                std::process::exit(1);
+            }
+        }
+
+        match update::update_all_addons_cmd(handle.clone(), state).await {
+            Ok(_) => {
+                if !quiet {
+                    println!("All addons are up-to-date");
+                }
+            }
+            Err(e) => {
+                eprintln!("Failed to update addons: {e}");
+                std::process::exit(1);
+            }
+        }
+    });
+
+    std::process::exit(0)
+}
