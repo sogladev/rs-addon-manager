@@ -42,7 +42,7 @@ jobs:
               uses: oven-sh/setup-bun@v2
             - name: Install frontend dependencies
               run: |
-                  cd addon-manager-gui
+                  cd addon-manager
                   bun install
             - uses: tauri-apps/tauri-action@v0
               env:
@@ -50,7 +50,7 @@ jobs:
                   TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
                   TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
               with:
-                  projectPath: addon-manager-gui
+                  projectPath: addon-manager
                   tagName: ${{ github.event.inputs.version }}
                   releaseName: 'Addon Manager v${{ github.event.inputs.version }}'
                   releaseBody: 'Production release of the Addon Manager application.'

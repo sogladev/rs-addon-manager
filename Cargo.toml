@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "addon-manager-gui/src-tauri"
+    "addon-manager/src-tauri"
 ]
 
 [profile.release]
