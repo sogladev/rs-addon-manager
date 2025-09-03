@@ -13,6 +13,12 @@ A modern GUI addon manager that uses Git repositories to install, update, and ma
 - Import/export addon lists
 - Cross-platform (Windows, Linux, macOS)
 
+## Download
+
+Get the latest builds from the [Releases page](https://github.com/sogladev/rs-addon-manager/releases/latest).
+
+For Windows users: I recommend the MSI installer (`addon-manager_*.msi`) as it supports Tauri's built-in self-updater.
+
 ## Table of Contents
 
 - [Git-Based Addon Manager](#-git-based-addon-manager)
