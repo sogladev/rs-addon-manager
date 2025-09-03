@@ -132,7 +132,7 @@ To set up formatting and the pre-commit hook:
 
 3. Run manually
     ```sh
-    bunx eslint --ext .ts,.vue addon-manager-gui/src/
+    bunx eslint --ext .ts,.vue addon-manager/src/
     ```
 
 ### Catalogue - Adding New Addons

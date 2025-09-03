@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "addon-manager-gui",
+      "name": "addon-manager",
       "dependencies": {
         "@tauri-apps/api": "^2.7.0",
         "@tauri-apps/plugin-dialog": "~2",
