@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, shallowRef } from 'vue'
 import { check, type Update } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
 import { getVersion } from '@tauri-apps/api/app'
 
-const update = ref<Update | null>(null)
+const update = shallowRef<Update | null>(null)
 
 const checking = ref(false)
 const progress = ref(0)
@@ -40,24 +40,22 @@ async function handleCheck() {
 async function handleDownload() {
     if (!update.value) return
     let downloaded = 0
-    let total = 0
+    let contentLength = 0
     updateError.value = null
+    progress.value = 0
     try {
         await update.value.downloadAndInstall((event: any) => {
             switch (event.event) {
                 case 'Started':
+                    contentLength = event.data?.contentLength || 0
                     progress.value = 0
                     break
                 case 'Progress':
-                    downloaded = event?.data?.downloaded ?? downloaded
-                    total =
-                        event?.data?.total ??
-                        event?.data?.contentLength ??
-                        total
-                    if (total > 0) {
-                        progress.value = Math.round((downloaded / total) * 100)
-                    } else {
-                        progress.value = 0
+                    downloaded += event.data?.chunkLength || 0
+                    if (contentLength > 0) {
+                        progress.value = Math.round(
+                            (downloaded / contentLength) * 100
+                        )
                     }
                     break
                 case 'Finished':
@@ -65,7 +63,6 @@ async function handleDownload() {
                     break
             }
         })
-
         await relaunch()
     } catch (e: any) {
         console.error('Update install failed:', e)
