@@ -46,7 +46,7 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
-pub fn run_headless() {
+pub fn run_headless(quiet: bool) {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_fs::init())
@@ -61,27 +61,33 @@ pub fn run_headless() {
     tauri::async_runtime::block_on(async {
         match addon_discovery::check_for_updates(handle.clone(), state.clone()).await {
             Ok(folders) => {
-                println!("✓ Successfully scanned {} addon folders", folders.len());
-                for folder in &folders {
-                    if !folder.repositories.is_empty() {
-                        println!(
-                            "  - {}: {} repositories",
-                            folder.path,
-                            folder.repositories.len()
-                        );
+                if !quiet {
+                    println!("Scanned {} AddOns folders", folders.len());
+                    for folder in &folders {
+                        if !folder.repositories.is_empty() {
+                            println!(
+                                "  - {}: {} repositories",
+                                folder.path,
+                                folder.repositories.len()
+                            );
+                        }
                     }
                 }
             }
             Err(e) => {
-                eprintln!("✗ Failed to check for updates: {}", e);
+                eprintln!("Failed to check for updates: {e}");
                 std::process::exit(1);
             }
         }
 
         match update::update_all_addons_cmd(handle.clone(), state).await {
-            Ok(_) => println!("✓ Update process completed"),
+            Ok(_) => {
+                if !quiet {
+                    println!("All addons are up-to-date");
+                }
+            }
             Err(e) => {
-                eprintln!("✗ Failed to update addons: {}", e);
+                eprintln!("Failed to update addons: {e}");
                 std::process::exit(1);
             }
         }

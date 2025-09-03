@@ -9,13 +9,16 @@ struct Args {
     /// Run the application in headless mode
     #[arg(long)]
     headless: bool,
+    /// Suppress output in headless mode
+    #[arg(long, short, requires = "headless")]
+    quiet: bool,
 }
 
 fn main() {
     let args = Args::parse();
 
     if args.headless {
-        addon_gui_lib::run_headless()
+        addon_gui_lib::run_headless(args.quiet)
     } else {
         addon_gui_lib::run()
     }
