@@ -228,7 +228,7 @@ const saveLogAndClose = async () => {
                         ($event.target as HTMLInputElement).value
                     )
                 "
-                class="input input-bordered flex-1 max-w-xs ml-auto"
+                class="input input-bordered flex-1 ml-auto"
                 placeholder="Search installed"
                 type="search"
             />
