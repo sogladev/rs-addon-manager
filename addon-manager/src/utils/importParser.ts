@@ -14,21 +14,6 @@ export function parseImportLine(line: string) {
     const rest = line.slice(starIdx + 1).trim()
     const [gitUrl, branch] = rest.split(/\s+/, 2)
 
-    // Split the path part to separate base path from addon name
-    // Find the last space that separates the addon name from the path
-    const lastSpaceIdx = beforeStar.lastIndexOf(' ')
-    if (lastSpaceIdx === -1) {
-        throw new Error(
-            'Invalid format: expected <path> <addonName> *<gitUrl> <branch>'
-        )
-    }
-
-    const folderPath = beforeStar.slice(0, lastSpaceIdx).trim()
-    // const addonName = beforeStar.slice(lastSpaceIdx + 1).trim() // not used
-
-    if (!folderPath) {
-        throw new Error('Folder path is empty')
-    }
     if (!gitUrl) {
         throw new Error('Git URL is empty')
     }
@@ -36,5 +21,34 @@ export function parseImportLine(line: string) {
         throw new Error('Branch is empty')
     }
 
-    return { folderPath, gitUrl, branch }
+    // The format can be either:
+    // 1) Legacy (with path): <path> <addonName> *<gitUrl> <branch>
+    // 2) New (no path): <addonName> *<gitUrl> <branch>
+    // We'll parse `beforeStar` and try to split into optional folderPath and addonName.
+
+    // If there's a space in beforeStar we assume legacy format (path + addonName)
+    const lastSpaceIdx = beforeStar.lastIndexOf(' ')
+    let folderPath: string | undefined = undefined
+    let addonName: string
+
+    if (lastSpaceIdx === -1) {
+        // No space => only addonName provided (new format)
+        addonName = beforeStar
+        if (!addonName) {
+            throw new Error('Addon name is empty')
+        }
+    } else {
+        // Legacy: split into folderPath and addonName
+        folderPath = beforeStar.slice(0, lastSpaceIdx).trim()
+        addonName = beforeStar.slice(lastSpaceIdx + 1).trim()
+
+        if (!folderPath) {
+            throw new Error('Folder path is empty')
+        }
+        if (!addonName) {
+            throw new Error('Addon name is empty')
+        }
+    }
+
+    return { folderPath, addonName, gitUrl, branch }
 }
