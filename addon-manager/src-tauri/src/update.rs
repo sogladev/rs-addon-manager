@@ -110,13 +110,17 @@ pub async fn update_addon_cmd(
     path: String,
     branch: String,
 ) -> Result<(), String> {
-    let result = perform_update_op(&app_handle, url, path, branch).await;
+    let result = perform_update_op(&app_handle, url.clone(), path, branch).await;
+    if let Ok(()) = result {
+    } else if let Err(e) = result {
+        eprintln!("Update failed for {url}: {e}");
+    }
 
     app_handle
         .emit("addon-data-updated", ())
         .map_err(|e| format!("Failed to emit addon-data-updated: {e}"))?;
 
-    result
+    Ok(())
 }
 
 /// Tauri command to update all addons across all folders
