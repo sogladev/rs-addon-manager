@@ -158,14 +158,34 @@ pub fn refresh_disk_data(
                 poisoned.into_inner()
             }
         };
-        map.clear();
+
+        // Clone the old state to preserve latest_ref values
+        let old_state = map.clone();
+
         for folder_meta in &config.folders {
             let path = &folder_meta.path;
-            let folder = DiskAddOnsFolder::scan_disk_only(path).unwrap_or_else(|e| {
+            let mut folder = DiskAddOnsFolder::scan_disk_only(path).unwrap_or_else(|e| {
                 eprintln!("Failed to scan path {path:?}: {e:?}");
                 DiskAddOnsFolder::default_with_error(path, e)
             });
-            map.insert(path.clone(), folder.clone());
+
+            // Preserve latest_ref from previous state for each repo
+            if let Some(old_folder) = old_state.get(path) {
+                for repo in &mut folder.repositories {
+                    if let Some(old_repo) = old_folder
+                        .repositories
+                        .iter()
+                        .find(|r| r.repo_url == repo.repo_url)
+                    {
+                        // Preserve the remote ref from the previous check_for_updates
+                        if repo.latest_ref.is_none() && old_repo.latest_ref.is_some() {
+                            repo.latest_ref = old_repo.latest_ref.clone();
+                        }
+                    }
+                }
+            }
+
+            map.insert(path.clone(), folder);
         }
     }
 
