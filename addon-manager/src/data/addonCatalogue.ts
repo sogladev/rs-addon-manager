@@ -6,7 +6,7 @@ export interface CatalogueAddon {
     category: AddonCategory
     notes?: string
     installable?: boolean // whether the addon can be auto-installed via git
-    manualUrl?: string // URL for manual download if not installable
+    cloneUrl?: string // URL for clone download if not installable
     serverCompat?: ServerCompatibility
 }
 
@@ -287,7 +287,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'AH replacement',
         category: 'utility',
         installable: false,
-        manualUrl: 'https://felbite.com/addon/4303-auctionlite/',
+        cloneUrl: 'https://felbite.com/addon/4303-auctionlite/',
     },
     // 6. AUX
     {
@@ -371,7 +371,7 @@ export const ADDON_CATALOGUE: CatalogueAddon[] = [
         description: 'Simplifies decursing targets with one click',
         category: 'combat',
         installable: false,
-        manualUrl:
+        cloneUrl:
             'https://cdn.discordapp.com/attachments/1410021039500689505/1411848406548091061/Decursive.zip',
     },
     // 18. Details

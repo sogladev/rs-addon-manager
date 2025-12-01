@@ -55,8 +55,7 @@ const emit = defineEmits<{
     'update:search': [value: string]
     'update-all': []
     refresh: []
-    'add-addon': []
-    'show-catalogue': []
+    'install-addon': []
 }>()
 
 const showImport = ref(false)
@@ -233,11 +232,8 @@ const saveLogAndClose = async () => {
                 placeholder="Search installed"
                 type="search"
             />
-            <button class="btn btn-accent w-32" @click="emit('add-addon')">
-                Install addon
-            </button>
-            <button class="btn btn-accent w-32" @click="emit('show-catalogue')">
-                Catalogue
+            <button class="btn btn-accent w-32" @click="emit('install-addon')">
+                Install Addon
             </button>
             <OperationEventLog
                 v-if="operations && recentlyCompleted"

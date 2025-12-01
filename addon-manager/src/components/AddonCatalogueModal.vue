@@ -247,10 +247,10 @@ const closeModal = () => {
                                     <button
                                         class="btn btn-secondary btn-sm"
                                         disabled
-                                        title="Manual install only"
+                                        title="Clone install only"
                                     >
                                         <!-- <Download class="w-4 h-4" /> -->
-                                        Manual Install
+                                        Clone Install
                                     </button>
                                 </template>
                             </div>
