@@ -43,11 +43,30 @@ const filteredFolders = computed(() => {
             })
             .filter((folder) => folder.repositories.length > 0)
     }
+
     return foldersToShow.sort((a, b) => a.path.localeCompare(b.path))
 })
 
 const handleDeleteAddon = (repo: AddonRepository, folderPath: string) => {
     emit('delete-addon', folderPath, repo)
+}
+
+// Custom sort: out-of-date or updating repos first, then alphabetically
+function sortedRepositoriesByUpdate(repositories: AddonRepository[]) {
+    function repoPriority(repo: AddonRepository): number {
+        // 1: needs update, 2: normal
+        if (repo.latestRef && repo.repoRef !== repo.latestRef) return 1;
+        return 2;
+    }
+
+    // Sort repositories in each folder by priority, then alphabetically
+    repositories = repositories.sort((a, b) => {
+            const pa = repoPriority(a)
+            const pb = repoPriority(b)
+            if (pa !== pb) return pa - pb
+            return a.repoName.localeCompare(b.repoName)
+        })
+    return repositories
 }
 </script>
 
@@ -63,9 +82,7 @@ const handleDeleteAddon = (repo: AddonRepository, folderPath: string) => {
         >
             <div class="flex flex-col">
                 <AddonRepoCard
-                    v-for="repo in [...folder.repositories].sort((a, b) =>
-                        a.repoName.localeCompare(b.repoName)
-                    )"
+                    v-for="repo in sortedRepositoriesByUpdate(folder.repositories)"
                     :key="repo.repoUrl + (repo.currentBranch || '')"
                     :repo="repo"
                     :folderPath="folder.path"
