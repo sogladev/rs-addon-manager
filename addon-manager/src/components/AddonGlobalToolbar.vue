@@ -68,7 +68,8 @@ const isImporting = ref(false)
 const importProgress = ref({ current: 0, total: 0 })
 
 const confirmImport = async () => {
-    // Each line: <path> <addonName> *<gitUrl> <branch>
+    // Each line: <addonName> *<gitUrl> <branch>
+    // Legacy supported: <path> <addonName> *<gitUrl> <branch>
     // Skip header or comment lines
     if (!importText.value.trim() || isImporting.value) return
 
@@ -83,7 +84,31 @@ const confirmImport = async () => {
         // Process imports sequentially to avoid overwhelming the system
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i]
-            const { folderPath, gitUrl, branch } = parseImportLine(line)
+            const {
+                folderPath: parsedFolderPath,
+                gitUrl,
+                branch,
+            } = parseImportLine(line)
+
+            // If folderPath is omitted (new format), use the first managed folder as default
+            let folderPath = parsedFolderPath
+            if (!folderPath) {
+                if (!folders || folders.length === 0) {
+                    addIssue(
+                        `Import failed on line ${i + 1}: "${line}"\nNo target folder specified and no managed folders available.`,
+                        {
+                            lineNumber: i + 1,
+                            lineContent: line,
+                            gitUrl,
+                            branch,
+                            folderPath: parsedFolderPath,
+                        }
+                    )
+                    importProgress.value.current = i + 1
+                    continue
+                }
+                folderPath = folders[0].path
+            }
 
             try {
                 const alreadyManaged = folders.some?.(
@@ -126,19 +151,20 @@ const confirmImport = async () => {
 }
 
 const handleExport = () => {
-    const header = '# <path> <addonName> *<gitUrl> <branch>'
+    const header = '# <addonName> *<gitUrl> <branch>'
     const lines: string[] = []
     folders.forEach((folder) => {
+        // Add a comment indicating which folder the following repos belong to
+        lines.push(`# Directory: ${folder.path}`)
+        lines.push(header)
         folder.repositories.forEach((repo) => {
             const branch = repo.currentBranch || 'main'
             repo.addons.forEach((addon) => {
-                lines.push(
-                    `${folder.path} ${addon.name} *${repo.repoUrl} ${branch}`
-                )
+                lines.push(`${addon.name} *${repo.repoUrl} ${branch}`)
             })
         })
     })
-    exportText.value = [header, ...lines].join('\n')
+    exportText.value = [...lines].join('\n')
     showExport.value = true
 }
 
@@ -315,7 +341,7 @@ const saveLogAndClose = async () => {
                 rows="6"
                 class="textarea textarea-bordered w-full mt-2"
                 spellcheck="false"
-                placeholder="<path> <name> *<gitUrl> <branch>..."
+                placeholder="<addonName> *<gitUrl> <branch>  (legacy: <path> <addonName> *<gitUrl> <branch>)"
             ></textarea>
             <form method="dialog" class="modal-action flex gap-2">
                 <button
@@ -346,12 +372,12 @@ const saveLogAndClose = async () => {
         class="modal modal-open"
         @click.self="showExport = false"
     >
-        <div class="modal-box">
+        <div class="modal-box max-w-5xl">
             <h3 class="font-bold text-lg">Export Addons</h3>
             <textarea
                 v-model="exportText"
-                rows="6"
-                class="textarea textarea-bordered w-full mt-2"
+                rows="16"
+                class="textarea textarea-bordered w-full mt-2 font-mono h-80 resize-y"
                 readonly
             ></textarea>
             <form method="dialog" class="modal-action flex gap-2">

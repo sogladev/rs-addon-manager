@@ -9,6 +9,19 @@ describe('parseImportLine', () => {
 
         expect(result).toEqual({
             folderPath: '/path/to/addon',
+            addonName: 'AddonName',
+            gitUrl: 'https://github.com/user/repo.git',
+            branch: 'main',
+        })
+    })
+
+    it('parses new format without path', () => {
+        const line = 'AddonName *https://github.com/user/repo.git main'
+        const result = parseImportLine(line)
+
+        expect(result).toEqual({
+            folderPath: undefined,
+            addonName: 'AddonName',
             gitUrl: 'https://github.com/user/repo.git',
             branch: 'main',
         })
@@ -22,6 +35,7 @@ describe('parseImportLine', () => {
         expect(result).toEqual({
             folderPath:
                 '/home/pc/Games/ascension-wow/drive_c/Program Files/Ascension Launcher/resources/epoch_live/Interface/Addons',
+            addonName: 'GroupBulletinBoard',
             gitUrl: 'https://github.com/TheNielDeal/GroupBulletinBoard',
             branch: 'main',
         })
@@ -34,6 +48,7 @@ describe('parseImportLine', () => {
 
         expect(result).toEqual({
             folderPath: '/simple/path',
+            addonName: 'AddonName',
             gitUrl: 'https://github.com/user/repo.git',
             branch: 'develop',
         })
@@ -46,6 +61,7 @@ describe('parseImportLine', () => {
 
         expect(result).toEqual({
             folderPath: '/path/with/spaces',
+            addonName: 'AddonName',
             gitUrl: 'https://github.com/user/repo.git',
             branch: 'main',
         })
@@ -74,11 +90,9 @@ describe('parseImportLine', () => {
     })
 
     it('throws error when format is invalid (no addon name)', () => {
-        const line = '/path/to/addon *https://github.com/user/repo.git main'
+        const line = '*https://github.com/user/repo.git main'
 
-        expect(() => parseImportLine(line)).toThrow(
-            'Invalid format: expected <path> <addonName> *<gitUrl> <branch>'
-        )
+        expect(() => parseImportLine(line)).toThrow('Addon name is empty')
     })
 
     it('handles complex Windows paths with spaces', () => {
@@ -89,6 +103,7 @@ describe('parseImportLine', () => {
         expect(result).toEqual({
             folderPath:
                 'C:\\Program Files\\World of Warcraft\\Interface\\AddOns',
+            addonName: 'MyAddon',
             gitUrl: 'https://github.com/user/myaddon.git',
             branch: 'master',
         })
@@ -101,6 +116,7 @@ describe('parseImportLine', () => {
 
         expect(result).toEqual({
             folderPath: '/path',
+            addonName: 'MyAddon',
             gitUrl: 'https://github.com/user/my-repo_name.git',
             branch: 'feature/branch-name',
         })
