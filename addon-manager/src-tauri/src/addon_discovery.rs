@@ -1,6 +1,6 @@
 use std::sync::RwLockReadGuard;
 
-use crate::addon_disk::DiskAddOnsFolder;
+use crate::addon_disk::{self, DiskAddOnsFolder, DiskAddonSource, get_source_key};
 use crate::view_models;
 use tauri::AppHandle;
 
@@ -94,9 +94,10 @@ pub async fn check_for_updates(
                 .repositories
                 .into_iter()
                 .map(|disk_repo| {
-                    // find the matching repo user‐meta by repo_url
-                    let user_repo = folder_meta
-                        .and_then(|f| f.repos.iter().find(|r| r.repo_url == disk_repo.repo_url));
+                    // find the matching repo user‐meta by source key
+                    let source_key = get_source_key(&disk_repo.source);
+                    let user_repo =
+                        folder_meta.and_then(|f| f.repos.iter().find(|r| r.repo_url == source_key));
 
                     // build addons + user‐meta
                     let addons = disk_repo
@@ -115,17 +116,32 @@ pub async fn check_for_updates(
                         })
                         .collect();
 
-                    view_models::AddonRepository {
-                        repo_url: disk_repo.repo_url.clone(),
-                        repo_name: disk_repo.repo_name,
-                        owner: disk_repo.owner,
-                        current_branch: disk_repo.current_branch,
-                        available_branches: disk_repo.available_branches,
-                        repo_ref: disk_repo.repo_ref,
-                        latest_ref: disk_repo.latest_ref,
-                        readme: disk_repo.readme,
-                        addons,
-                    }
+                    let source = match disk_repo.source {
+                        addon_disk::DiskAddonSource::Git {
+                            repo_url,
+                            owner,
+                            repo_name,
+                            current_branch,
+                            available_branches,
+                            repo_ref,
+                            latest_ref,
+                            readme,
+                        } => view_models::AddonSource::Git {
+                            repo_url,
+                            owner,
+                            repo_name,
+                            current_branch,
+                            available_branches,
+                            repo_ref,
+                            latest_ref,
+                            readme,
+                        },
+                        addon_disk::DiskAddonSource::Local { folder_name, path } => {
+                            view_models::AddonSource::Local { folder_name, path }
+                        }
+                    };
+
+                    view_models::AddonRepository { source, addons }
                 })
                 .collect();
 
@@ -172,14 +188,27 @@ pub fn refresh_disk_data(
             // Preserve latest_ref from previous state for each repo
             if let Some(old_folder) = old_state.get(path) {
                 for repo in &mut folder.repositories {
+                    let source_key = get_source_key(&repo.source);
                     if let Some(old_repo) = old_folder
                         .repositories
                         .iter()
-                        .find(|r| r.repo_url == repo.repo_url)
+                        .find(|r| get_source_key(&r.source) == source_key)
                     {
-                        // Preserve the remote ref from the previous check_for_updates
-                        if repo.latest_ref.is_none() && old_repo.latest_ref.is_some() {
-                            repo.latest_ref = old_repo.latest_ref.clone();
+                        // Preserve the remote ref from the previous check_for_updates (Git only)
+                        if let (
+                            DiskAddonSource::Git {
+                                latest_ref: new_ref,
+                                ..
+                            },
+                            DiskAddonSource::Git {
+                                latest_ref: old_ref,
+                                ..
+                            },
+                        ) = (&mut repo.source, &old_repo.source)
+                        {
+                            if new_ref.is_none() && old_ref.is_some() {
+                                *new_ref = old_ref.clone();
+                            }
                         }
                     }
                 }
@@ -203,9 +232,10 @@ pub fn refresh_disk_data(
                 .repositories
                 .into_iter()
                 .map(|disk_repo| {
-                    // find the matching repo user‐meta by repo_url
-                    let user_repo = folder_meta
-                        .and_then(|f| f.repos.iter().find(|r| r.repo_url == disk_repo.repo_url));
+                    // find the matching repo user‐meta by source key
+                    let source_key = get_source_key(&disk_repo.source);
+                    let user_repo =
+                        folder_meta.and_then(|f| f.repos.iter().find(|r| r.repo_url == source_key));
 
                     // build addons + user‐meta
                     let addons = disk_repo
@@ -224,17 +254,32 @@ pub fn refresh_disk_data(
                         })
                         .collect();
 
-                    view_models::AddonRepository {
-                        repo_url: disk_repo.repo_url.clone(),
-                        repo_name: disk_repo.repo_name,
-                        owner: disk_repo.owner,
-                        current_branch: disk_repo.current_branch,
-                        available_branches: disk_repo.available_branches,
-                        repo_ref: disk_repo.repo_ref,
-                        latest_ref: disk_repo.latest_ref,
-                        readme: disk_repo.readme,
-                        addons,
-                    }
+                    let source = match disk_repo.source {
+                        addon_disk::DiskAddonSource::Git {
+                            repo_url,
+                            owner,
+                            repo_name,
+                            current_branch,
+                            available_branches,
+                            repo_ref,
+                            latest_ref,
+                            readme,
+                        } => view_models::AddonSource::Git {
+                            repo_url,
+                            owner,
+                            repo_name,
+                            current_branch,
+                            available_branches,
+                            repo_ref,
+                            latest_ref,
+                            readme,
+                        },
+                        addon_disk::DiskAddonSource::Local { folder_name, path } => {
+                            view_models::AddonSource::Local { folder_name, path }
+                        }
+                    };
+
+                    view_models::AddonRepository { source, addons }
                 })
                 .collect();
 

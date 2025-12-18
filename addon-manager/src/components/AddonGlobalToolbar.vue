@@ -158,10 +158,14 @@ const handleExport = () => {
         lines.push(`# Directory: ${folder.path}`)
         lines.push(header)
         folder.repositories.forEach((repo) => {
-            const branch = repo.currentBranch || 'main'
-            repo.addons.forEach((addon) => {
-                lines.push(`${addon.name} *${repo.repoUrl} ${branch}`)
-            })
+            // Only export Git repositories
+            if (repo.source.type === 'git') {
+                const gitSource = repo.source
+                const branch = gitSource.current_branch || 'main'
+                repo.addons.forEach((addon) => {
+                    lines.push(`${addon.name} *${gitSource.repo_url} ${branch}`)
+                })
+            }
         })
     })
     exportText.value = [...lines].join('\n')

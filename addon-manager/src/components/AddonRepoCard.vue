@@ -13,7 +13,7 @@ import { computed, ref, watch } from 'vue'
 const { addIssue } = useGlobalError()
 
 const { repo, folderPath } = defineProps<{
-    repo: AddonRepository & { latestRef?: string | null }
+    repo: AddonRepository
     folderPath: string
 }>()
 
@@ -22,13 +22,70 @@ const emit = defineEmits<{
     'branch-change': [newBranch: string]
 }>()
 
+// Helper computed properties to extract fields from the source union
+const isGit = computed(() => repo.source.type === 'git')
+const repoKey = computed(() => {
+    if (repo.source.type === 'git') {
+        return repo.source.repo_url
+    }
+    return `local://${repo.source.folder_name}`
+})
+const repoName = computed(() => {
+    if (repo.source.type === 'git') {
+        return repo.source.repo_name
+    }
+    return repo.source.folder_name
+})
+const owner = computed(() => {
+    if (repo.source.type === 'git') {
+        return repo.source.owner
+    }
+    return 'Unknown'
+})
+const currentBranch = computed(() => {
+    if (repo.source.type === 'git') {
+        return repo.source.current_branch
+    }
+    return null
+})
+const availableBranches = computed(() => {
+    if (repo.source.type === 'git') {
+        return repo.source.available_branches
+    }
+    return []
+})
+const repoRef = computed(() => {
+    if (repo.source.type === 'git') {
+        return repo.source.repo_ref
+    }
+    return null
+})
+const latestRef = computed(() => {
+    if (repo.source.type === 'git') {
+        return repo.source.latest_ref
+    }
+    return null
+})
+const readme = computed(() => {
+    if (repo.source.type === 'git') {
+        return repo.source.readme
+    }
+    return null
+})
+const repoUrl = computed(() => {
+    if (repo.source.type === 'git') {
+        return repo.source.repo_url
+    }
+    return `file://${repo.source.path}`
+})
+
 const showReadmeModal = ref(false)
 const readmeHtml = ref('')
 
 const { openWebsite } = useExternalLink()
 
 const handleWebsite = () => {
-    openWebsite(repo.repoUrl)
+    openWebsite(repoUrl.value)
 }
 
 const { isOperationActive, getOperationType, getProgress } =
@@ -38,13 +95,13 @@ async function handleToggleAddon(addon: Addon) {
     try {
         if (addon.isSymlinked) {
             await invoke('create_addon_symlink', {
-                repoUrl: repo.repoUrl,
+                repoUrl: repoKey.value,
                 folderPath: folderPath,
                 addonName: addon.name,
             })
         } else {
             await invoke('remove_addon_symlink', {
-                repoUrl: repo.repoUrl,
+                repoUrl: repoKey.value,
                 folderPath: folderPath,
                 addonName: addon.name,
             })
@@ -56,27 +113,27 @@ async function handleToggleAddon(addon: Addon) {
 }
 
 function handleButtonClick() {
-    if (!repo.repoRef) {
+    if (!repoRef.value) {
         invoke('install_addon_cmd', {
-            url: repo.repoUrl,
+            url: repoUrl.value,
             path: folderPath,
             branch: selectedBranch.value,
         }).catch((e) => {
             console.error('Install failed:', e)
             addIssue(
-                `Failed to install addon install_addon_cmd: ${repo.repoName}`,
+                `Failed to install addon install_addon_cmd: ${repoName.value}`,
                 e?.message || String(e)
             )
         })
     } else {
         invoke('update_addon_cmd', {
-            url: repo.repoUrl,
+            url: repoUrl.value,
             path: folderPath,
             branch: selectedBranch.value,
         }).catch((e) => {
             console.error('Update failed:', e)
             addIssue(
-                `Failed to update addon update_addon_cmd: ${repo.repoName}`,
+                `Failed to update addon update_addon_cmd: ${repoName.value}`,
                 e?.message || String(e)
             )
         })
@@ -85,10 +142,10 @@ function handleButtonClick() {
 
 async function handleReadme() {
     let content = ''
-    const path = repo.readme
+    const path = readme.value
 
     if (!path) {
-        console.warn('No README path provided for', repo.repoName)
+        console.warn('No README path provided for', repoName.value)
         return
     }
 
@@ -98,7 +155,7 @@ async function handleReadme() {
     } catch (e) {
         console.error(`No README found at ${path}`, e)
         addIssue(
-            `No README found at ${path} for ${repo.repoName} ${repo.repoUrl}`,
+            `No README found at ${path} for ${repoName.value} ${repoUrl.value}`,
             e
         )
     }
@@ -119,28 +176,32 @@ function closeReadmeModal() {
 }
 
 function handleRepair() {
-    console.log('Repair repo', repo.repoUrl)
+    console.log('Repair repo', repoUrl.value)
     // re-install
-    invoke('install_addon_cmd', {
-        url: repo.repoUrl,
-        path: folderPath,
-        branch: repo.currentBranch,
-    })
+    if (isGit.value) {
+        invoke('install_addon_cmd', {
+            url: repoUrl.value,
+            path: folderPath,
+            branch: currentBranch.value,
+        })
+    }
 }
 
-const selectedBranch = ref(repo.currentBranch)
+const selectedBranch = ref(currentBranch.value)
 const branchChanged = ref(false)
 watch(
-    () => repo.currentBranch,
+    () => currentBranch.value,
     (newBranch) => {
         selectedBranch.value = newBranch
         branchChanged.value = false
     }
 )
 
-const isOperating = computed(() => isOperationActive(repo.repoUrl, folderPath))
-const operationType = computed(() => getOperationType(repo.repoUrl, folderPath))
-const operationProgress = computed(() => getProgress(repo.repoUrl, folderPath))
+const isOperating = computed(() => isOperationActive(repoKey.value, folderPath))
+const operationType = computed(() =>
+    getOperationType(repoKey.value, folderPath)
+)
+const operationProgress = computed(() => getProgress(repoKey.value, folderPath))
 
 function handleBranchChange(e: Event) {
     const target = e.target as HTMLSelectElement | null
@@ -148,14 +209,14 @@ function handleBranchChange(e: Event) {
     const newBranch = target.value
     selectedBranch.value = newBranch
     // Enable update only when new branch differs from disk state
-    branchChanged.value = newBranch !== repo.currentBranch
+    branchChanged.value = newBranch !== currentBranch.value
     emit('branch-change', newBranch)
 }
 
 const updateAvailable = computed(() => {
     // If branch was changed, always show update available
     if (branchChanged.value) return true
-    return repo.latestRef && repo.repoRef !== repo.latestRef
+    return latestRef.value && repoRef.value !== latestRef.value
 })
 
 // Computed button text and state
@@ -171,7 +232,11 @@ const buttonText = computed(() => {
         }
     }
 
-    if (!repo.repoRef) {
+    if (!isGit.value) {
+        return 'Local'
+    }
+
+    if (!repoRef.value) {
         return 'Install'
     }
 
@@ -186,8 +251,11 @@ const buttonDisabled = computed(() => {
     // Disable if currently operating
     if (isOperating.value) return true
 
+    // Disable if non-git repository (no updates available)
+    if (!isGit.value) return true
+
     // If not installed, always allow install
-    if (!repo.repoRef) return false
+    if (!repoRef.value) return false
 
     // If branch was changed, always enable update
     if (branchChanged.value) return false
@@ -206,8 +274,8 @@ const progressPercent = computed(() => {
 <template>
     <div class="card card-bordered bg-base-100 flex-row items-center">
         <div class="flex flex-1 flex-col gap-1 p-2">
-            <span class="font-semibold">{{ repo.repoName }}</span>
-            <span class="text-xs text-base-content/60">{{ repo.owner }}</span>
+            <span class="font-semibold">{{ repoName }}</span>
+            <span class="text-xs text-base-content/60">{{ owner }}</span>
             <div v-if="repo.addons && repo.addons.length">
                 <ul class="ml-2 flex flex-col gap-1">
                     <li
@@ -237,14 +305,14 @@ const progressPercent = computed(() => {
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <div class="w-32">
+            <div v-if="isGit" class="w-32">
                 <select
                     class="select select-bordered select-sm w-full truncate"
                     v-model="selectedBranch"
                     @change="handleBranchChange"
                 >
                     <option
-                        v-for="branch in repo.availableBranches"
+                        v-for="branch in availableBranches"
                         :key="branch"
                         :value="branch"
                     >
@@ -252,15 +320,15 @@ const progressPercent = computed(() => {
                     </option>
                 </select>
             </div>
+            <div v-else class="badge badge-neutral">Local Folder</div>
             <button
                 :class="[
                     'btn btn-sm relative overflow-hidden w-20',
-                    updateAvailable || !repo.repoRef
-                        ? 'btn-primary'
-                        : 'btn-primary',
+                    updateAvailable || !repoRef ? 'btn-primary' : 'btn-primary',
                 ]"
                 @click="handleButtonClick"
                 :disabled="buttonDisabled"
+                :title="!isGit ? 'Local folders cannot be updated' : ''"
             >
                 <span class="relative z-10">{{ buttonText }}</span>
                 <div
@@ -278,26 +346,38 @@ const progressPercent = computed(() => {
                     class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-44"
                 >
                     <li
-                        :class="{ 'menu-disabled': !repo.readme }"
+                        :class="{ 'menu-disabled': !readme }"
                         @click="handleReadme"
                     >
                         <button
                             class="flex items-center gap-2"
-                            :disabled="!repo.readme"
+                            :disabled="!readme"
                             tabindex="-1"
                         >
                             <FileText class="w-4 h-4" />
                             Readme
                         </button>
                     </li>
-                    <li @click="handleWebsite">
-                        <button class="flex items-center gap-2">
+                    <li
+                        :class="{ 'menu-disabled': !isGit }"
+                        @click="handleWebsite"
+                    >
+                        <button
+                            class="flex items-center gap-2"
+                            :disabled="!isGit"
+                        >
                             <Globe class="w-4 h-4" />
                             Website
                         </button>
                     </li>
-                    <li @click="handleRepair">
-                        <button class="flex items-center gap-2">
+                    <li
+                        :class="{ 'menu-disabled': !isGit }"
+                        @click="handleRepair"
+                    >
+                        <button
+                            class="flex items-center gap-2"
+                            :disabled="!isGit"
+                        >
                             <Wrench class="w-4 h-4" />
                             Repair
                         </button>

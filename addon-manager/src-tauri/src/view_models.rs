@@ -18,17 +18,29 @@ pub struct Addon {
 #[derive(Debug, Serialize, Deserialize, Clone, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
-pub struct AddonRepository {
-    pub repo_url: String,
-    pub repo_name: String,
-    pub owner: String,
-    pub current_branch: Option<String>,
-    pub available_branches: Vec<String>,
-    pub repo_ref: Option<String>,
-    pub latest_ref: Option<String>,
-    pub readme: Option<String>,
+#[serde(tag = "type")]
+pub enum AddonSource {
+    Git {
+        repo_url: String,
+        owner: String,
+        repo_name: String,
+        current_branch: Option<String>,
+        available_branches: Vec<String>,
+        repo_ref: Option<String>,
+        latest_ref: Option<String>,
+        readme: Option<String>,
+    },
+    Local {
+        folder_name: String,
+        path: String,
+    },
+}
 
-    // merged addon list:
+#[derive(Debug, Serialize, Deserialize, Clone, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct AddonRepository {
+    pub source: AddonSource,
     pub addons: Vec<Addon>,
 }
 

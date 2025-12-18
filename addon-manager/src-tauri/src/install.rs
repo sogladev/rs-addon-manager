@@ -64,6 +64,93 @@ where
     Ok(())
 }
 
+pub fn install_local_folder<F>(
+    source_path: String,
+    dir: String,
+    mut reporter: F,
+) -> Result<(), String>
+where
+    F: FnMut(OperationEvent) + Send,
+{
+    let source = Path::new(&source_path);
+    let dir = Path::new(&dir);
+
+    // Validate source folder exists and contains .toc files
+    if !source.exists() {
+        return Err(format!(
+            "Source folder does not exist: {}",
+            source.display()
+        ));
+    }
+    if !source.is_dir() {
+        return Err(format!(
+            "Source path is not a directory: {}",
+            source.display()
+        ));
+    }
+
+    reporter(OperationEvent::Status(
+        "Starting local folder installation...".to_string(),
+    ));
+
+    let manager_dir = validate::ensure_manager_dir(dir)?;
+
+    // Get folder name from source path
+    let folder_name = source
+        .file_name()
+        .ok_or("Invalid source path")?
+        .to_string_lossy()
+        .to_string();
+
+    reporter(OperationEvent::Status(format!(
+        "Copying folder '{}' to managed directory...",
+        folder_name
+    )));
+
+    let dest_path = manager_dir.join(&folder_name);
+
+    // Remove existing folder if it exists
+    if dest_path.exists() {
+        std::fs::remove_dir_all(&dest_path)
+            .map_err(|e| format!("Failed to remove existing folder: {e}"))?;
+    }
+
+    // Copy the entire folder to .addonmanager
+    copy_dir_recursive(source, &dest_path).map_err(|e| format!("Failed to copy folder: {e}"))?;
+
+    reporter(OperationEvent::Status(
+        "Discovering sub-addons...".to_string(),
+    ));
+    let disk_repo = addon_disk::create_non_git_addon_repository(&dest_path)
+        .map_err(|e| format!("Failed to discover sub-addons: {e}"))?;
+
+    reporter(OperationEvent::Status(
+        "Installing sub-addons (symlinking)...".to_string(),
+    ));
+    install_sub_addons(disk_repo.addons, &dest_path, dir, &mut reporter);
+
+    reporter(OperationEvent::Status(
+        "Local folder installation complete.".to_string(),
+    ));
+    Ok(())
+}
+
+fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(dst)?;
+    for entry in std::fs::read_dir(src)? {
+        let entry = entry?;
+        let path = entry.path();
+        let dest_path = dst.join(entry.file_name());
+
+        if path.is_dir() {
+            copy_dir_recursive(&path, &dest_path)?;
+        } else {
+            std::fs::copy(&path, &dest_path)?;
+        }
+    }
+    Ok(())
+}
+
 pub fn install_sub_addons<F>(
     addons: Vec<addon_disk::DiskAddon>,
     repo_root: &Path,
@@ -200,6 +287,86 @@ pub async fn install_addon_cmd(
 }
 
 #[tauri::command]
+pub async fn install_local_folder_cmd(
+    app_handle: tauri::AppHandle,
+    source_path: String,
+    path: String,
+) -> Result<(), String> {
+    // Create operation key for tracking
+    let folder_name = std::path::Path::new(&source_path)
+        .file_name()
+        .map(|f| f.to_string_lossy().to_string())
+        .unwrap_or_else(|| "unknown".to_string());
+
+    let operation_key = OperationKey {
+        repo_url: format!("local://{}", folder_name),
+        folder_path: path.clone(),
+    };
+
+    let app_handle_clone = app_handle.clone();
+    let operation_key_clone = operation_key.clone();
+
+    // Emit started event
+    app_handle
+        .emit(
+            "operation-event",
+            OperationEventPayload {
+                key: operation_key.clone(),
+                event: OperationEvent::Started {
+                    operation: OperationType::Install,
+                },
+            },
+        )
+        .map_err(|e| format!("Failed to emit operation-event: {e}"))?;
+
+    let install_result = tauri::async_runtime::spawn_blocking(move || {
+        install_local_folder(source_path, path, |event| {
+            if let Err(e) = app_handle.emit(
+                "operation-event",
+                OperationEventPayload {
+                    key: operation_key.clone(),
+                    event,
+                },
+            ) {
+                eprintln!("Failed to emit operation-event: {e}");
+            }
+        })
+    })
+    .await
+    .map_err(|e| format!("Task join error: {e}"))?;
+
+    match install_result {
+        Ok(_) => {
+            app_handle_clone
+                .emit(
+                    "operation-event",
+                    OperationEventPayload {
+                        key: operation_key_clone.clone(),
+                        event: OperationEvent::Completed,
+                    },
+                )
+                .map_err(|e| format!("Failed to emit operation-completed: {e}"))?;
+            app_handle_clone
+                .emit("addon-data-updated", ())
+                .map_err(|e| format!("Failed to emit addon-data-updated: {e}"))?;
+            Ok(())
+        }
+        Err(err_msg) => {
+            app_handle_clone
+                .emit(
+                    "operation-event",
+                    OperationEventPayload {
+                        key: operation_key_clone.clone(),
+                        event: OperationEvent::Error(err_msg.clone()),
+                    },
+                )
+                .map_err(|e| format!("Failed to emit operation-error: {e}"))?;
+            Err(err_msg)
+        }
+    }
+}
+
+#[tauri::command]
 pub async fn create_addon_symlink(
     app_handle: AppHandle,
     folder_path: String,
@@ -243,7 +410,7 @@ pub async fn create_addon_symlink(
         let repo = folder
             .repositories
             .iter()
-            .find(|r| r.repo_url == repo_url)
+            .find(|r| r.get_key() == repo_url)
             .ok_or("Repo not found")?;
         let addon = repo
             .addons
@@ -252,7 +419,7 @@ pub async fn create_addon_symlink(
             .ok_or("Addon not found")?;
         let repo_root = Path::new(&folder_path)
             .join(".addonmanager")
-            .join(&repo.repo_name);
+            .join(repo.get_name());
         let addons_dir = Path::new(&folder_path);
         let symlink_name = &addon.name;
         let target_dir = if addon.dir == "." {
@@ -395,17 +562,27 @@ mod tests {
         let disk_folder = addon_disk::DiskAddOnsFolder::scan(addons_dir_str)
             .expect("Failed to scan addons directory");
 
-        let repo = disk_folder.repositories.iter().find(|r| r.repo_url == url);
+        let repo = disk_folder.repositories.iter().find(|r| r.get_key() == url);
         assert!(
             repo.is_some(),
             "AddOns directory should contain the installed repo"
         );
         let repo = repo.unwrap();
-        assert_eq!(repo.owner, "sogladev", "Repo owner mismatch");
-        assert_eq!(
-            repo.repo_name, "addon-335-train-all-button",
-            "Repo name mismatch"
-        );
+
+        // Verify it's a git repo with correct metadata
+        if let addon_disk::DiskAddonSource::Git {
+            owner, repo_name, ..
+        } = &repo.source
+        {
+            assert_eq!(owner, "sogladev", "Repo owner mismatch");
+            assert_eq!(
+                repo_name, "addon-335-train-all-button",
+                "Repo name mismatch"
+            );
+        } else {
+            panic!("Expected Git source, found Local");
+        }
+
         assert!(
             !repo.addons.is_empty(),
             "Repo should contain at least one sub-addon"
@@ -453,5 +630,119 @@ mod tests {
                 "Symlink does not point to SubAddonDir"
             );
         }
+    }
+
+    #[test]
+    fn test_install_local_folder() {
+        let (_temp_addons, addons_dir) = setup_addons_dir();
+        let addons_path = addons_dir.to_str().unwrap().to_string();
+
+        // Create a temporary source folder to "install"
+        let temp_source = tempfile::tempdir().expect("Failed to create temp source dir");
+        let source_path = temp_source.path();
+        let source_folder_name = "MyCustomAddon";
+        let source_addon_dir = source_path.join(source_folder_name);
+        fs::create_dir_all(&source_addon_dir).expect("Failed to create source addon dir");
+
+        // Create a .toc file to make it valid
+        let toc_file = source_addon_dir.join(format!("{}.toc", source_folder_name));
+        fs::write(
+            &toc_file,
+            "## Interface: 30300\n## Title: My Custom Addon\n",
+        )
+        .expect("Failed to write .toc file");
+
+        println!("Before install_local_folder:");
+        print_dir_tree(addons_dir.to_str().unwrap());
+
+        // Install the local folder
+        let result = install_local_folder(
+            source_addon_dir.to_str().unwrap().to_string(),
+            addons_path.clone(),
+            |_| {},
+        );
+        assert!(result.is_ok(), "install_local_folder failed: {:?}", result);
+
+        println!("After install_local_folder:");
+        print_dir_tree(addons_dir.to_str().unwrap());
+
+        // Validate the folder was copied to .addonmanager
+        let manager_dir = validate::ensure_manager_dir(&addons_dir).unwrap();
+        let installed_folder = manager_dir.join(source_folder_name);
+        assert!(
+            installed_folder.exists(),
+            "Folder was not copied to .addonmanager: {}",
+            installed_folder.display()
+        );
+
+        // Validate symlink was created
+        let symlink_path = addons_dir.join(source_folder_name);
+        assert!(
+            symlink_path.exists(),
+            "Symlink was not created: {}",
+            symlink_path.display()
+        );
+    }
+
+    #[test]
+    fn test_repair_local_folder_symlinks() {
+        let (_temp, addons_dir) = setup_addons_dir();
+        let manager_dir =
+            validate::ensure_manager_dir(&addons_dir).expect("Failed to ensure manager dir");
+
+        // Create a local folder with a .toc file in .addonmanager
+        let local_folder_name = "LocalAddonForRepair";
+        let local_folder_path = manager_dir.join(local_folder_name);
+        fs::create_dir_all(&local_folder_path).expect("Failed to create local folder");
+
+        let toc_file = local_folder_path.join(format!("{}.toc", local_folder_name));
+        fs::write(&toc_file, "## Interface: 30300\n## Title: Repair Test\n")
+            .expect("Failed to write .toc file");
+
+        // Discover the addon
+        let disk_repo = addon_disk::create_non_git_addon_repository(&local_folder_path)
+            .expect("Failed to discover addon");
+
+        println!("Before repair (install_sub_addons):");
+        print_dir_tree(addons_dir.to_str().unwrap());
+
+        // Simulate repair by calling install_sub_addons
+        install_sub_addons(
+            disk_repo.addons.clone(),
+            &local_folder_path,
+            &addons_dir,
+            |_| {},
+        );
+
+        println!("After repair (install_sub_addons):");
+        print_dir_tree(addons_dir.to_str().unwrap());
+
+        // Validate symlink was created
+        let symlink_path = addons_dir.join(local_folder_name);
+        assert!(
+            symlink_path.exists(),
+            "Symlink was not created during repair: {}",
+            symlink_path.display()
+        );
+
+        // Now delete the symlink and repair again
+        fs::remove_file(&symlink_path).expect("Failed to remove symlink");
+        assert!(!symlink_path.exists(), "Symlink should be removed");
+
+        println!("After removing symlink:");
+        print_dir_tree(addons_dir.to_str().unwrap());
+
+        // Repair again
+        install_sub_addons(disk_repo.addons, &local_folder_path, &addons_dir, |_| {});
+
+        println!("After second repair:");
+        print_dir_tree(addons_dir.to_str().unwrap());
+
+        // Validate symlink was recreated
+        assert!(
+            symlink_path.exists(),
+            "Symlink was not recreated during second repair: {}",
+            symlink_path.display()
+        );
     }
 }

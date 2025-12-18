@@ -4,12 +4,32 @@ use tauri::{AppHandle, Emitter};
 
 use crate::{git, operation_reporter::*};
 
-/// Deletes addon repo and symlinks by repo URL and AddOns path
+/// Deletes addon repo and symlinks by repo URL/key and AddOns path
+/// For Git repos: url is like "https://github.com/owner/repo.git"
+/// For Local repos: url is like "local://folder_name" or the actual path
 pub fn delete_addon_files(url: &str, path: &str) -> Result<(), String> {
     let addons_dir = PathBuf::from(path);
     let manager_root = addons_dir.join(".addonmanager");
-    let (_owner, repo_name) =
-        git::extract_owner_repo_from_url(url).map_err(|e| format!("Invalid repo URL: {e}"))?;
+
+    // Determine if this is a Git repo or local folder
+    let repo_name = if url.starts_with("local://") {
+        // Extract folder name from local:// URL
+        url.strip_prefix("local://")
+            .ok_or("Invalid local URL format")?
+            .to_string()
+    } else if url.starts_with('/') || url.starts_with("C:") || url.starts_with("\\") {
+        // Direct path - extract folder name
+        PathBuf::from(url)
+            .file_name()
+            .ok_or("Invalid path format")?
+            .to_string_lossy()
+            .to_string()
+    } else {
+        // Git URL - extract repo name
+        let (_owner, name) =
+            git::extract_owner_repo_from_url(url).map_err(|e| format!("Invalid repo URL: {e}"))?;
+        name
+    };
 
     // Remove any symlinks in AddOns whose target is inside this repo
     let repo_dir = manager_root.join(&repo_name);
@@ -27,8 +47,7 @@ pub fn delete_addon_files(url: &str, path: &str) -> Result<(), String> {
             }
         }
     }
-    // Remove cloned repository directory
-    let repo_dir = manager_root.join(repo_name);
+    // Remove repository/folder directory
     if repo_dir.exists() {
         let _ = fs::remove_dir_all(&repo_dir);
     }
@@ -180,7 +199,7 @@ mod tests {
         let repo_info = disk_folder
             .repositories
             .iter()
-            .find(|r| r.repo_url == url)
+            .find(|r| r.get_key() == url)
             .unwrap();
         for addon in &repo_info.addons {
             let link = addons_dir.join(&addon.name);
@@ -237,5 +256,92 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn test_delete_local_folder_addon() {
+        let (_temp, addons_dir) = setup_addons_dir();
+        let addons_path = addons_dir.to_str().unwrap().to_string();
+        let manager_dir =
+            validate::ensure_manager_dir(&addons_dir).expect("Failed to ensure manager dir");
+
+        // Create a local folder addon with a fake .toc file
+        let local_folder_name = "MyLocalAddon";
+        let local_folder_path = manager_dir.join(local_folder_name);
+        fs::create_dir_all(&local_folder_path).expect("Failed to create local folder");
+
+        // Create a .toc file to make it a valid addon
+        let toc_file = local_folder_path.join(format!("{}.toc", local_folder_name));
+        fs::write(&toc_file, "## Interface: 30300\n## Title: My Local Addon\n")
+            .expect("Failed to write .toc file");
+
+        // Create a symlink for the addon
+        let symlink_path = addons_dir.join(local_folder_name);
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(&local_folder_path, &symlink_path)
+            .expect("Failed to create symlink");
+        #[cfg(windows)]
+        std::os::windows::fs::symlink_dir(&local_folder_path, &symlink_path)
+            .expect("Failed to create symlink");
+
+        println!("Before delete_addon_files (local):");
+        print_dir_tree(addons_dir.to_str().unwrap());
+
+        // Delete using local:// URL format
+        let local_url = format!("local://{}", local_folder_name);
+        let result = delete_addon_files(&local_url, &addons_path);
+        assert!(result.is_ok(), "delete_addon_files failed: {:?}", result);
+
+        println!("After delete_addon_files (local):");
+        print_dir_tree(addons_dir.to_str().unwrap());
+
+        // Assert folder is gone
+        assert!(
+            !local_folder_path.exists(),
+            "Local folder was not deleted: {}",
+            local_folder_path.display()
+        );
+        // Assert symlink is gone
+        assert!(
+            !symlink_path.exists(),
+            "Symlink was not deleted: {}",
+            symlink_path.display()
+        );
+    }
+
+    #[test]
+    fn test_delete_local_folder_with_path_format() {
+        let (_temp, addons_dir) = setup_addons_dir();
+        let addons_path = addons_dir.to_str().unwrap().to_string();
+        let manager_dir =
+            validate::ensure_manager_dir(&addons_dir).expect("Failed to ensure manager dir");
+
+        // Create a local folder addon
+        let local_folder_name = "AnotherLocalAddon";
+        let local_folder_path = manager_dir.join(local_folder_name);
+        fs::create_dir_all(&local_folder_path).expect("Failed to create local folder");
+
+        let toc_file = local_folder_path.join(format!("{}.toc", local_folder_name));
+        fs::write(
+            &toc_file,
+            "## Interface: 30300\n## Title: Another Local Addon\n",
+        )
+        .expect("Failed to write .toc file");
+
+        let symlink_path = addons_dir.join(local_folder_name);
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(&local_folder_path, &symlink_path)
+            .expect("Failed to create symlink");
+        #[cfg(windows)]
+        std::os::windows::fs::symlink_dir(&local_folder_path, &symlink_path)
+            .expect("Failed to create symlink");
+
+        // Delete using path format (as stored in DiskAddonSource::Local)
+        let result = delete_addon_files(local_folder_path.to_str().unwrap(), &addons_path);
+        assert!(result.is_ok(), "delete_addon_files failed: {:?}", result);
+
+        // Assert folder and symlink are gone
+        assert!(!local_folder_path.exists(), "Local folder was not deleted");
+        assert!(!symlink_path.exists(), "Symlink was not deleted");
     }
 }
