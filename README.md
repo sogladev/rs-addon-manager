@@ -163,6 +163,15 @@ Add a new entry to the `ADDON_CATALOGUE` array:
 }
 ```
 
+### Types
+
+Generate TypeScript bindings from Rust types
+
+```zsh
+cargo test
+cargo test export_bindings
+```
+
 ## Acknowledgements
 
 The Addon Manager UI and features were inspired by [GitAddonsManager](https://gitlab.com/woblight/GitAddonsManager) and other existing Wow Addon Managers. For an overview of existing addon managers, I recommend this comparison video by Arcane Intellect: [WoW Addon Managers Compared](https://www.youtube.com/watch?v=_V0RZG4YRVY)
