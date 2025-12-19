@@ -233,13 +233,13 @@ pub async fn install_addon_cmd(
 
     let install_result = tauri::async_runtime::spawn_blocking(move || {
         install_addon(url, path, |event| {
-            if let OperationEvent::Progress { .. } = event {
-                if !first_progress_emitted {
-                    let _ = app_handle.emit("addon-disk-updated", ()).map_err(|e| {
-                        eprintln!("Failed to emit addon-disk-updated: {e}");
-                    });
-                    first_progress_emitted = true;
-                }
+            if let OperationEvent::Progress { .. } = event
+                && !first_progress_emitted
+            {
+                let _ = app_handle.emit("addon-disk-updated", ()).map_err(|e| {
+                    eprintln!("Failed to emit addon-disk-updated: {e}");
+                });
+                first_progress_emitted = true;
             }
             if let Err(e) = app_handle.emit(
                 "operation-event",

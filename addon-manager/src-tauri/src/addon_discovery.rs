@@ -205,10 +205,10 @@ pub fn refresh_disk_data(
                                 ..
                             },
                         ) = (&mut repo.source, &old_repo.source)
+                            && new_ref.is_none()
+                            && old_ref.is_some()
                         {
-                            if new_ref.is_none() && old_ref.is_some() {
-                                *new_ref = old_ref.clone();
-                            }
+                            *new_ref = old_ref.clone();
                         }
                     }
                 }

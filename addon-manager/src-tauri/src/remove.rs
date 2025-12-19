@@ -35,14 +35,14 @@ pub fn delete_addon_files(url: &str, path: &str) -> Result<(), String> {
     let repo_dir = manager_root.join(&repo_name);
     if let Ok(entries) = fs::read_dir(&addons_dir) {
         for entry in entries.flatten() {
-            if let Ok(file_type) = entry.file_type() {
-                if file_type.is_symlink() {
-                    let p = entry.path();
-                    if let Ok(target) = fs::read_link(&p) {
-                        if target.starts_with(&repo_dir) {
-                            let _ = fs::remove_file(&p);
-                        }
-                    }
+            if let Ok(file_type) = entry.file_type()
+                && file_type.is_symlink()
+            {
+                let p = entry.path();
+                if let Ok(target) = fs::read_link(&p)
+                    && target.starts_with(&repo_dir)
+                {
+                    let _ = fs::remove_file(&p);
                 }
             }
         }

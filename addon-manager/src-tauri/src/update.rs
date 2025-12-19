@@ -143,14 +143,11 @@ pub async fn update_all_addons_cmd(
                     latest_ref,
                     ..
                 } = &repo.source
+                    && let (Some(local_ref), Some(remote_ref)) = (repo_ref, latest_ref)
+                    && local_ref != remote_ref
+                    && let Some(branch) = current_branch
                 {
-                    if let (Some(local_ref), Some(remote_ref)) = (repo_ref, latest_ref) {
-                        if local_ref != remote_ref {
-                            if let Some(branch) = current_branch {
-                                tasks.push((folder_path.clone(), repo_url.clone(), branch.clone()));
-                            }
-                        }
-                    }
+                    tasks.push((folder_path.clone(), repo_url.clone(), branch.clone()));
                 }
             }
         }
