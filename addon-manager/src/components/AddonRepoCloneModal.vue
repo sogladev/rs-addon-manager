@@ -38,9 +38,12 @@ const existingRepoUrl = computed(() => {
     if (!Array.isArray(addonFolders) || !addonFolders.length) return false
     const folder = addonFolders.find((f) => f.path === selectedDirectory.value)
     if (!folder || !Array.isArray(folder.repositories)) return false
-    return folder.repositories.some(
-        (repo) => repo.repoUrl === gitUrl.value.trim()
-    )
+    return folder.repositories.some((repo) => {
+        if (repo.source.type === 'git') {
+            return repo.source.repo_url === gitUrl.value.trim()
+        }
+        return false
+    })
 })
 
 const gitUrl = ref('')

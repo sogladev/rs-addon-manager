@@ -67,7 +67,9 @@ const installedMap = computed(() => {
     const map = new Map<string, string>()
     for (const folder of addonFolders) {
         for (const repo of folder.repositories) {
-            map.set(repo.repoUrl, folder.path)
+            if (repo.source.type === 'git') {
+                map.set(repo.source.repo_url, folder.path)
+            }
         }
     }
     return map

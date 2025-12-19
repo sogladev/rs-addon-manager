@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use clap::{arg, command, Parser};
+use clap::Parser;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]

@@ -89,9 +89,13 @@ async function confirmDeleteAddonDirectory() {
 async function confirmAddonDelete() {
     if (folderOfAddonToDelete.value && addonToDelete.value) {
         try {
+            const repoKey =
+                addonToDelete.value.source.type === 'git'
+                    ? addonToDelete.value.source.repo_url
+                    : addonToDelete.value.source.path
             await invoke('delete_addon_cmd', {
                 path: folderOfAddonToDelete.value,
-                url: addonToDelete.value.repoUrl,
+                url: repoKey,
             })
         } catch (err) {
             console.error('Failed to delete addon', err)
@@ -125,9 +129,15 @@ async function handleUpdateAll() {
 
 const hasUpdates = computed(() =>
     addonFolders.value.some((folder) =>
-        folder.repositories.some(
-            (repo) => repo.latestRef && repo.repoRef !== repo.latestRef
-        )
+        folder.repositories.some((repo) => {
+            if (repo.source.type === 'git') {
+                return (
+                    repo.source.latest_ref &&
+                    repo.source.repo_ref !== repo.source.latest_ref
+                )
+            }
+            return false
+        })
     )
 )
 
@@ -135,9 +145,15 @@ const outOfDateCount = computed(() =>
     addonFolders.value.reduce(
         (sum, folder) =>
             sum +
-            folder.repositories.filter(
-                (repo) => repo.latestRef && repo.repoRef !== repo.latestRef
-            ).length,
+            folder.repositories.filter((repo) => {
+                if (repo.source.type === 'git') {
+                    return (
+                        repo.source.latest_ref &&
+                        repo.source.repo_ref !== repo.source.latest_ref
+                    )
+                }
+                return false
+            }).length,
         0
     )
 )

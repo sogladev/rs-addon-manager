@@ -7,6 +7,14 @@ use std::{ffi::OsStr, path::PathBuf};
 use crate::git;
 use crate::symlink;
 
+/// Helper to extract a unique identifier from DiskAddonSource for matching user metadata
+pub fn get_source_key(source: &DiskAddonSource) -> String {
+    match source {
+        DiskAddonSource::Git { repo_url, .. } => repo_url.clone(),
+        DiskAddonSource::Local { folder_name, .. } => format!("local://{}", folder_name),
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct DiskAddOnsFolder {
@@ -35,11 +43,14 @@ impl DiskAddOnsFolder {
                     continue;
                 }
                 let git_dir = repo_path.join(".git");
-                if !git_dir.exists() || !git_dir.is_dir() {
-                    println!("Skipping {}: .git directory not found", repo_path.display());
-                    continue;
-                }
-                let mut disk_repo = create_disk_addon_repository(&repo_path)?;
+                let mut disk_repo = if git_dir.exists() && git_dir.is_dir() {
+                    // Git repository
+                    create_disk_addon_repository(&repo_path)?
+                } else {
+                    // Non-git folder
+                    println!("Found non-git folder: {}", repo_path.display());
+                    create_non_git_addon_repository(&repo_path)?
+                };
                 // Check which addons are actually symlinked in the AddOns directory
                 check_addon_symlinks(&mut disk_repo.addons, addons_path);
                 repositories.push(disk_repo);
@@ -68,11 +79,13 @@ impl DiskAddOnsFolder {
                     continue;
                 }
                 let git_dir = repo_path.join(".git");
-                if !git_dir.exists() || !git_dir.is_dir() {
-                    // If .git does not exist or is not a directory, skip this folder
-                    continue;
-                }
-                let mut disk_repo = create_disk_addon_repository_disk_only(&repo_path)?;
+                let mut disk_repo = if git_dir.exists() && git_dir.is_dir() {
+                    // Git repository
+                    create_disk_addon_repository_disk_only(&repo_path)?
+                } else {
+                    // Non-git folder
+                    create_non_git_addon_repository(&repo_path)?
+                };
                 // Check which addons are actually symlinked in the AddOns directory
                 check_addon_symlinks(&mut disk_repo.addons, addons_path);
                 repositories.push(disk_repo);
@@ -110,17 +123,50 @@ pub struct DiskAddon {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-/// Folder with a .git subdirectory
+#[serde(tag = "type")]
+pub enum DiskAddonSource {
+    Git {
+        repo_url: String,
+        owner: String,
+        repo_name: String,
+        current_branch: Option<String>,
+        available_branches: Vec<String>,
+        repo_ref: Option<String>,
+        latest_ref: Option<String>,
+        readme: Option<String>,
+    },
+    Local {
+        folder_name: String,
+        path: String,
+    },
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+/// Folder with a .git subdirectory or a non-git local folder
 pub struct DiskAddonRepository {
-    pub repo_url: String,
-    pub repo_name: String,
-    pub owner: String,
-    pub current_branch: Option<String>,
-    pub available_branches: Vec<String>,
-    pub repo_ref: Option<String>, // local HEAD commit hash or tag
-    pub latest_ref: Option<String>,
+    pub source: DiskAddonSource,
     pub addons: Vec<DiskAddon>,
-    pub readme: Option<String>,
+}
+
+impl DiskAddonRepository {
+    /// Get a unique key for this repository source (for matching with user metadata)
+    pub fn get_key(&self) -> String {
+        get_source_key(&self.source)
+    }
+
+    /// Get the display name of the repository
+    pub fn get_name(&self) -> &str {
+        match &self.source {
+            DiskAddonSource::Git { repo_name, .. } => repo_name,
+            DiskAddonSource::Local { folder_name, .. } => folder_name,
+        }
+    }
+
+    /// Check if this is a git repository
+    pub fn is_git(&self) -> bool {
+        matches!(&self.source, DiskAddonSource::Git { .. })
+    }
 }
 
 /// Check if addons are symlinked in the AddOns directory
@@ -203,19 +249,42 @@ fn create_disk_addon_repository_inner(
 
     let readme = find_readme(repo_path);
 
+    let repo_name = repo_path
+        .file_name()
+        .map(|f| f.to_string_lossy().to_string())
+        .unwrap_or_default();
+
     Ok(DiskAddonRepository {
-        repo_url,
-        repo_name: repo_path
-            .file_name()
-            .map(|f| f.to_string_lossy().to_string())
-            .unwrap_or_default(),
-        owner,
-        current_branch,
-        available_branches,
-        repo_ref,
-        latest_ref,
+        source: DiskAddonSource::Git {
+            repo_url,
+            owner,
+            repo_name,
+            current_branch,
+            available_branches,
+            repo_ref,
+            latest_ref,
+            readme,
+        },
         addons,
-        readme,
+    })
+}
+
+/// Create a DiskAddonRepository from a non-git local folder
+pub fn create_non_git_addon_repository(folder_path: &Path) -> Result<DiskAddonRepository, String> {
+    let folder_name = folder_path
+        .file_name()
+        .map(|f| f.to_string_lossy().to_string())
+        .unwrap_or_else(|| "Unknown".to_string());
+
+    let addons = find_all_sub_addons(&folder_path.to_path_buf())
+        .map_err(|e| format!("Failed to discover sub-addons: {e}"))?;
+
+    Ok(DiskAddonRepository {
+        source: DiskAddonSource::Local {
+            folder_name,
+            path: folder_path.to_string_lossy().to_string(),
+        },
+        addons,
     })
 }
 

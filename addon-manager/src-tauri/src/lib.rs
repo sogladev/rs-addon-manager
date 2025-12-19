@@ -34,6 +34,7 @@ pub fn run() {
             addon_store::save_theme,
             install::create_addon_symlink,
             install::install_addon_cmd,
+            install::install_local_folder_cmd,
             install::remove_addon_symlink,
             permission_workaround::allow_file,
             remove::delete_addon_cmd,

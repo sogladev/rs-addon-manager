@@ -135,16 +135,19 @@ pub async fn update_all_addons_cmd(
 
         for (folder_path, disk_folder) in disk_state.iter() {
             for repo in &disk_folder.repositories {
-                if let (Some(local_ref), Some(latest_ref)) = (&repo.repo_ref, &repo.latest_ref) {
-                    if local_ref != latest_ref {
-                        if let Some(branch) = &repo.current_branch {
-                            tasks.push((
-                                folder_path.clone(),
-                                repo.repo_url.clone(),
-                                branch.clone(),
-                            ));
-                        }
-                    }
+                // Only check for updates if it's a Git repository
+                if let crate::addon_disk::DiskAddonSource::Git {
+                    repo_url,
+                    current_branch,
+                    repo_ref,
+                    latest_ref,
+                    ..
+                } = &repo.source
+                    && let (Some(local_ref), Some(remote_ref)) = (repo_ref, latest_ref)
+                    && local_ref != remote_ref
+                    && let Some(branch) = current_branch
+                {
+                    tasks.push((folder_path.clone(), repo_url.clone(), branch.clone()));
                 }
             }
         }

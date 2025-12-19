@@ -112,7 +112,7 @@ const confirmImport = async () => {
 
             try {
                 const alreadyManaged = folders.some?.(
-                    (f: { path: any }) => f.path === folderPath
+                    (f: { path: string }) => f.path === folderPath
                 )
                 if (!alreadyManaged) {
                     await invoke('add_addon_directory', {
@@ -157,11 +157,28 @@ const handleExport = () => {
         // Add a comment indicating which folder the following repos belong to
         lines.push(`# Directory: ${folder.path}`)
         lines.push(header)
+
+        // Keep track of urls already exported for this folder to avoid duplicates
+        const seen = new Set<string>()
+
         folder.repositories.forEach((repo) => {
-            const branch = repo.currentBranch || 'main'
-            repo.addons.forEach((addon) => {
-                lines.push(`${addon.name} *${repo.repoUrl} ${branch}`)
-            })
+            // Only export Git repositories
+            if (repo.source.type !== 'git') return
+
+            const gitSource = repo.source
+            const url = gitSource.repo_url
+            if (seen.has(url)) return
+            seen.add(url)
+
+            const branch = gitSource.current_branch || 'main'
+
+            // Use the first addon name as a representative for the entry when available
+            const repName =
+                Array.isArray(repo.addons) && repo.addons.length > 0
+                    ? repo.addons[0].name
+                    : gitSource.repo_name || 'Unknown'
+
+            lines.push(`${repName} *${url} ${branch}`)
         })
     })
     exportText.value = [...lines].join('\n')

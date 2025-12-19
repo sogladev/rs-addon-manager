@@ -28,14 +28,24 @@ const filteredFolders = computed(() => {
     if (term) {
         foldersToShow = folders
             .map((folder) => {
-                const filteredRepos = folder.repositories.filter(
-                    (repo) =>
-                        repo.repoName.toLowerCase().includes(term) ||
-                        repo.owner.toLowerCase().includes(term) ||
+                const filteredRepos = folder.repositories.filter((repo) => {
+                    const repoName =
+                        repo.source.type === 'git'
+                            ? repo.source.repo_name
+                            : repo.source.folder_name
+                    const owner =
+                        repo.source.type === 'git'
+                            ? repo.source.owner
+                            : 'unknown'
+
+                    return (
+                        repoName.toLowerCase().includes(term) ||
+                        owner.toLowerCase().includes(term) ||
                         repo.addons.some((addon) =>
                             addon.name.toLowerCase().includes(term)
                         )
-                )
+                    )
+                })
                 return {
                     ...folder,
                     repositories: filteredRepos,
@@ -55,8 +65,21 @@ const handleDeleteAddon = (repo: AddonRepository, folderPath: string) => {
 function sortedRepositoriesByUpdate(repositories: AddonRepository[]) {
     function repoPriority(repo: AddonRepository): number {
         // 1: needs update, 2: normal
-        if (repo.latestRef && repo.repoRef !== repo.latestRef) return 1
+        if (repo.source.type === 'git') {
+            if (
+                repo.source.latest_ref &&
+                repo.source.repo_ref !== repo.source.latest_ref
+            )
+                return 1
+        }
         return 2
+    }
+
+    function getRepoName(repo: AddonRepository): string {
+        if (repo.source.type === 'git') {
+            return repo.source.repo_name
+        }
+        return repo.source.folder_name
     }
 
     // Sort repositories in each folder by priority, then alphabetically
@@ -64,7 +87,7 @@ function sortedRepositoriesByUpdate(repositories: AddonRepository[]) {
         const pa = repoPriority(a)
         const pb = repoPriority(b)
         if (pa !== pb) return pa - pb
-        return a.repoName.localeCompare(b.repoName)
+        return getRepoName(a).localeCompare(getRepoName(b))
     })
     return repositories
 }
@@ -82,10 +105,10 @@ function sortedRepositoriesByUpdate(repositories: AddonRepository[]) {
         >
             <div class="flex flex-col">
                 <AddonRepoCard
-                    v-for="repo in sortedRepositoriesByUpdate(
+                    v-for="(repo, index) in sortedRepositoriesByUpdate(
                         folder.repositories
                     )"
-                    :key="repo.repoUrl + (repo.currentBranch || '')"
+                    :key="`${folder.path}-${index}`"
                     :repo="repo"
                     :folderPath="folder.path"
                     @delete="handleDeleteAddon(repo, folder.path)"

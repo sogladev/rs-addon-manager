@@ -19,7 +19,11 @@ const emit = defineEmits<{
             <h3 class="font-bold text-lg mb-4">Delete Addon</h3>
             <p>
                 Are you sure you want to delete addon
-                <span class="font-mono">{{ addon?.repoName }}</span>
+                <span class="font-mono">{{
+                    addon?.source.type === 'git'
+                        ? addon.source.repo_name
+                        : addon?.source.folder_name
+                }}</span>
                 from directory
                 <span class="font-mono">{{ folderPath }}</span
                 >?

@@ -10,13 +10,23 @@ import {
 } from '@/data/addonCatalogue'
 import type { AddOnsFolder } from '@bindings/AddOnsFolder'
 import { computed, ref, watch } from 'vue'
-import { Globe, AlertTriangle, X, Search, ExternalLink } from 'lucide-vue-next'
+import {
+    Globe,
+    AlertTriangle,
+    X,
+    Search,
+    ExternalLink,
+    FolderOpen,
+} from 'lucide-vue-next'
 import { useExternalLink } from '@/composables/useExternalLink'
 import { useGlobalError } from '@/composables/useGlobalError'
+import { useOperationTracker } from '@/composables/useOperationTracker'
 import { invoke } from '@tauri-apps/api/core'
+import { open as openDialog } from '@tauri-apps/plugin-dialog'
 
 const { addIssue } = useGlobalError()
 const { openWebsite } = useExternalLink()
+const { isOperationActive } = useOperationTracker()
 
 const {
     open,
@@ -83,9 +93,12 @@ const existingRepoUrl = computed(() => {
     if (!Array.isArray(addonFolders) || !addonFolders.length) return false
     const folder = addonFolders.find((f) => f.path === selectedDirectory.value)
     if (!folder || !Array.isArray(folder.repositories)) return false
-    return folder.repositories.some(
-        (repo) => repo.repoUrl === gitUrl.value.trim()
-    )
+    return folder.repositories.some((repo) => {
+        if (repo.source.type === 'git') {
+            return repo.source.repo_url === gitUrl.value.trim()
+        }
+        return false
+    })
 })
 
 // Watch for prefill prop changes and update form
@@ -151,7 +164,9 @@ const installedMap = computed(() => {
     const map = new Map<string, string>()
     for (const folder of addonFolders) {
         for (const repo of folder.repositories) {
-            map.set(repo.repoUrl, folder.path)
+            if (repo.source.type === 'git') {
+                map.set(repo.source.repo_url, folder.path)
+            }
         }
     }
     return map
@@ -163,6 +178,66 @@ const getInstalledPath = (addon: CatalogueAddon): string | undefined => {
 
 const isInstalled = (addon: CatalogueAddon): boolean => {
     return !!getInstalledPath(addon)
+}
+
+// Local folder installation
+const pendingLocalInstall = ref<string | null>(null)
+
+// Check if a local folder is currently being installed in the selected directory
+const isLocalInstallActive = computed(() => {
+    if (!selectedDirectory.value || !pendingLocalInstall.value) return false
+    return isOperationActive(pendingLocalInstall.value, selectedDirectory.value)
+})
+
+const handleBrowseFolder = async () => {
+    if (!selectedDirectory.value) {
+        errorMessage.value = 'Please select an install directory first'
+        return
+    }
+
+    try {
+        const selected = await openDialog({
+            directory: true,
+            multiple: false,
+            title: 'Select Addon Folder',
+        })
+
+        if (selected && typeof selected === 'string') {
+            await handleLocalFolderInstall(selected)
+        }
+    } catch (err: unknown) {
+        console.error('Failed to browse for folder', err)
+        errorMessage.value = err instanceof Error ? err.message : String(err)
+        addIssue('Failed to browse for folder', err)
+    }
+}
+
+const handleLocalFolderInstall = async (folderPath: string) => {
+    if (!selectedDirectory.value) return
+
+    try {
+        // Extract folder name to create operation key
+        const folderName = folderPath.split(/[/\\]/).pop() || 'unknown'
+        const operationKey = `local://${folderName}`
+
+        // Track this operation
+        pendingLocalInstall.value = operationKey
+
+        emit('update:open', false)
+        await invoke('install_local_folder_cmd', {
+            sourcePath: folderPath,
+            path: selectedDirectory.value,
+        })
+        console.log('Local folder installed successfully')
+        resetCloneForm()
+        pendingLocalInstall.value = null
+    } catch (err: unknown) {
+        console.error('Failed to install local folder', err)
+        errorMessage.value = err instanceof Error ? err.message : String(err)
+        addIssue('Failed to install local folder', err)
+        emit('update:open', true)
+        pendingLocalInstall.value = null
+    }
 }
 
 // Install handlers
@@ -389,8 +464,49 @@ const canInstallClone = computed(() => {
                         @click="handleCloneInstall"
                         :disabled="!canInstallClone"
                     >
-                        Install
+                        Install from Git
                     </button>
+
+                    <div class="divider">OR</div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text"
+                                >Install from Local Folder</span
+                            >
+                        </label>
+                        <div class="text-sm text-base-content/70 mb-2">
+                            <p class="mb-2">
+                                Install an addon from a local folder (non-git).
+                                The folder will be copied and managed locally.
+                            </p>
+                            <p class="mb-2">
+                                If the addon is an archive (e.g.,
+                                <code>.zip</code>, <code>.7z</code>,
+                                <code>.rar</code>), please extract it
+                            </p>
+                            <p class="text-warning text-xs">
+                                The folder name must match the addon's
+                                <code>.toc</code> file name
+                            </p>
+                            <p class="text-warning text-xs">
+                                Non-git addons cannot be updated automatically.
+                            </p>
+                        </div>
+                        <button
+                            class="btn btn-secondary"
+                            @click="handleBrowseFolder"
+                            :disabled="
+                                !selectedDirectory || isLocalInstallActive
+                            "
+                        >
+                            <FolderOpen class="w-4 h-4 mr-2" />
+                            <span v-if="isLocalInstallActive"
+                                >Installing...</span
+                            >
+                            <span v-else>Browse for Folder</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- GitHub Search Tab -->
