@@ -47,7 +47,7 @@ For Windows users: I recommend the MSI installer (`addon-manager_*.msi`) as it s
 | Install via Git (HTTPS)                                                        | Yes               |
 | Install via Git (SSH)                                                          | Not planned       |
 | Install from GitHub Releases or Packages                                       | Not yet supported |
-| Manage non-Git addons                                                          | Not yet supported |
+| Manage non-Git addons                                                          | Yes               |
 | Auto updater with [Tauri Updater plugin](https://v2.tauri.app/plugin/updater/) | Yes               |
 | CLI Headless mode                                                              | Yes               |
 
@@ -76,6 +76,19 @@ Example Git URLs:
 
 https://github.com/user-attachments/assets/2491b729-0b62-41d4-bf91-dabb3065cbea
 
+### Advanced: "Easy" install
+
+If you already have addon folders you can quickly "install" them by moving or dragging the addon folder into the hidden `.addonmanager` folder inside your `Interface/AddOns` directory. The Addon Manager scans the `.addonmanager` folder on startup (and when changes are detected):
+
+- Folders inside `.addonmanager` that contain a `.git` directory are treated as Git-tracked repositories and will be tracked and updatable.
+- Folders without a `.git` directory are treated as **local** addons. They are managed by the Addon Manager (symlinked into `Interface/AddOns`), but they cannot be updated automatically.
+- The manager is intentionally simple: it scans the disk and classifies repositories vs. local folders based on the presence of `.git`.
+
+Notes:
+
+- This is useful for migrating old addons, installing manually downloaded addons, or quickly moving addon folders from one install to another.
+- To remove a local addon completely remove its folder from `.addonmanager` or use the UI Remove action (which also removes symlinks).
+
 ### Command Line Options
 
 ```bash
@@ -89,8 +102,14 @@ https://github.com/user-attachments/assets/2491b729-0b62-41d4-bf91-dabb3065cbea
 
 ### Import Format Example
 
+Lines beginning with `#` are automaticly ignored.
+
 ```
-C:\Games\wow335\Interface\AddOns AdiBags *https://github.com/Sattva-108/AdiBags.git main
+# Directory: /home/pc/Games/wow335-stock/Interface/AddOns
+# <addonName> *<gitUrl> <branch>
+AnyIDTooltip *https://github.com/Raynbock/AtlaslootProjectEpoch.git main
+AtlasLoot *https://github.com/Raynbock/AtlaslootProjectEpoch.git main
+
 ```
 
 ## Tech Stack
