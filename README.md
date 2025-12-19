@@ -65,7 +65,7 @@ Example Git URLs:
 - `https://github.com/Sattva-108/AdiBags.git`
 - `https://gitlab.com/username/addon-name.git`
 
-![Clone](images/addon-manager/clone.png)
+![Install](images/addon-manager/install.png)
 
 ![Catalogue](images/addon-manager/catalogue-0.2.11.jpg)
 
