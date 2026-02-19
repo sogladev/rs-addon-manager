@@ -6,7 +6,15 @@ import type { Addon } from '@bindings/Addon'
 import type { AddonRepository } from '@bindings/AddonRepository'
 import { invoke } from '@tauri-apps/api/core'
 import { readTextFile } from '@tauri-apps/plugin-fs'
-import { Ellipsis, FileText, Globe, Trash2, Wrench } from 'lucide-vue-next'
+import {
+    Ellipsis,
+    FileText,
+    Globe,
+    Trash2,
+    Wrench,
+    ChevronDown,
+    ChevronUp,
+} from 'lucide-vue-next'
 import { marked } from 'marked'
 import { computed, ref, watch } from 'vue'
 
@@ -81,6 +89,23 @@ const repoUrl = computed(() => {
 
 const showReadmeModal = ref(false)
 const readmeHtml = ref('')
+
+// collapse behaviour: show only the first N addons, collapse the rest behind a single toggle row
+const VISIBLE_ADDON_COUNT = 6
+const shouldCollapseAddons = computed(
+    () => !!(repo.addons && repo.addons.length > VISIBLE_ADDON_COUNT)
+)
+const visibleAddons = computed(() =>
+    repo.addons ? repo.addons.slice(0, VISIBLE_ADDON_COUNT) : []
+)
+const hiddenAddons = computed(() =>
+    repo.addons ? repo.addons.slice(VISIBLE_ADDON_COUNT) : []
+)
+const hiddenCount = computed(() => hiddenAddons.value.length)
+const showHiddenAddons = ref(false)
+function toggleHiddenAddons() {
+    showHiddenAddons.value = !showHiddenAddons.value
+}
 
 const { openWebsite } = useExternalLink()
 
@@ -278,8 +303,9 @@ const progressPercent = computed(() => {
             <span class="text-xs text-base-content/60">{{ owner }}</span>
             <div v-if="repo.addons && repo.addons.length">
                 <ul class="ml-2 flex flex-col gap-1">
+                    <!-- visible (always) -->
                     <li
-                        v-for="addon in repo.addons"
+                        v-for="addon in visibleAddons"
                         :key="addon.name"
                         class="flex items-center gap-2"
                     >
@@ -301,6 +327,59 @@ const progressPercent = computed(() => {
                             {{ addon.name }}
                         </span>
                     </li>
+
+                    <!-- collapsed toggle row (appears only when we should collapse) -->
+                    <li
+                        v-if="shouldCollapseAddons"
+                        class="flex items-center gap-2"
+                    >
+                        <button
+                            class="btn btn-ghost btn-xs gap-2"
+                            @click="toggleHiddenAddons"
+                            type="button"
+                        >
+                            <span
+                                class="font-mono text-xs text-base-content/70"
+                            >
+                                <template v-if="!showHiddenAddons">
+                                    +{{ hiddenCount }} more
+                                </template>
+                                <template v-else>Show less</template>
+                            </span>
+                            <ChevronDown
+                                class="w-4 h-4"
+                                v-if="!showHiddenAddons"
+                            />
+                            <ChevronUp class="w-4 h-4" v-else />
+                        </button>
+                    </li>
+
+                    <!-- hidden addons (rendered only when expanded) -->
+                    <template v-if="showHiddenAddons">
+                        <li
+                            v-for="addon in hiddenAddons"
+                            :key="addon.name"
+                            class="flex items-center gap-2 pl-4"
+                        >
+                            <input
+                                type="checkbox"
+                                class="checkbox checkbox-sm"
+                                v-model="addon.isSymlinked"
+                                @change="handleToggleAddon(addon)"
+                            />
+                            <span
+                                class="font-mono text-xs flex items-center gap-1"
+                                :class="
+                                    addon.notes
+                                        ? 'tooltip tooltip-right cursor-pointer'
+                                        : ''
+                                "
+                                :data-tip="addon.notes || undefined"
+                            >
+                                {{ addon.name }}
+                            </span>
+                        </li>
+                    </template>
                 </ul>
             </div>
         </div>
